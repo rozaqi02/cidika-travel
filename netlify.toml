@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "22.17.0"
+  REACT_APP_SUPABASE_URL = ""
+  REACT_APP_SUPABASE_ANON_KEY = ""
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

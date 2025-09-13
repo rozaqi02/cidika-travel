@@ -1,0 +1,325 @@
+[
+  {
+    "id": "mix-east-west",
+    "title": "Paket Mix Nusa Penida (Barat + Timur)",
+    "spots": [
+      "Diamond Beach",
+      "Raja Lima / Pulau Seribu",
+      "Rumah Pohon Molenteng",
+      "Angel's Billabong",
+      "Broken Beach / Pasih Uug",
+      "Kelingking Beach"
+    ],
+    "itinerary": [
+      "07:30 Pengambilan tiket fastboat di Pelabuhan Sanur",
+      "08:00 Berangkat ke Nusa Penida",
+      "09:00 Tiba di Nusa Penida",
+      "10:00 Diamond Beach (tracking ±10 menit)",
+      "11:00 Raja Lima & Rumah Pohon Molenteng",
+      "12:00 Makan siang & istirahat",
+      "13:30 Angel's Billabong & Broken Beach",
+      "14:30 Kelingking Beach",
+      "15:45 Berangkat ke pelabuhan",
+      "17:00 Fastboat ke Sanur",
+      "17:45 Tiba di Sanur"
+    ],
+    "include": [
+      "Tiket fast boat PP",
+      "Tiket masuk objek wisata",
+      "Transport mobil AC + Driver/Guide",
+      "Makan siang ala carte"
+    ],
+    "priceTiers": [
+      [
+        "1",
+        1000000
+      ],
+      [
+        "2",
+        550000
+      ],
+      [
+        "3",
+        425000
+      ],
+      [
+        "4",
+        385000
+      ],
+      [
+        "5",
+        335000
+      ],
+      [
+        "6",
+        300000
+      ]
+    ],
+    "note": "Harga domestik. Non-domestik +IDR 100.000/pax."
+  },
+  {
+    "id": "halfday-barat",
+    "title": "Half Day Tour Nusa Penida Barat",
+    "spots": [
+      "Kelingking Beach",
+      "Pohon Cinta",
+      "Broken Beach",
+      "Angel’s Billabong",
+      "Crystal Bay"
+    ],
+    "include": [
+      "Tiket speed boat PP",
+      "Mobil AC (BBM + Driver/Guide)",
+      "Tiket Masuk",
+      "Guide Lokal (rangkap fotografer)",
+      "Private Tour",
+      "Lunch dekat Kelingking"
+    ],
+    "itinerary": [
+      "07:30 Meeting point Pantai Sanur",
+      "08:00 Berangkat ke Nusa Penida (speedboat)",
+      "08:30 Tiba di Nusa Penida",
+      "09:30 Broken Beach & Angel’s Billabong",
+      "12:00 Pohon Cinta & Kelingking Beach",
+      "13:00 Makan siang",
+      "14:00 Crystal Bay",
+      "15:00 Kembali ke dermaga",
+      "15:30 Speedboat ke Sanur",
+      "16:30 Tiba di Sanur"
+    ],
+    "priceTiers": [
+      [
+        "1",
+        800000
+      ],
+      [
+        "2",
+        485000
+      ],
+      [
+        "3",
+        385000
+      ],
+      [
+        "4",
+        325000
+      ],
+      [
+        "5",
+        295000
+      ],
+      [
+        "6",
+        270000
+      ]
+    ],
+    "note": "Domestik saja. Foreign + Rp150.000/pax."
+  },
+  {
+    "id": "halfday-timur",
+    "title": "Half Day Tour Nusa Penida Timur",
+    "spots": [
+      "Atuh Beach",
+      "Diamond Beach",
+      "Pulau Seribu / Raja Lima",
+      "Rumah Pohon Molenteng",
+      "Bukit Teletubbies"
+    ],
+    "include": [
+      "Tiket speed boat PP",
+      "Mobil AC (BBM + Driver/Guide)",
+      "Tiket Masuk",
+      "Guide Lokal (fotografer)",
+      "Private Tour",
+      "Lunch"
+    ],
+    "itinerary": [],
+    "priceTiers": [
+      [
+        "1",
+        800000
+      ],
+      [
+        "2",
+        485000
+      ],
+      [
+        "3",
+        385000
+      ],
+      [
+        "4",
+        325000
+      ],
+      [
+        "5",
+        295000
+      ],
+      [
+        "6",
+        270000
+      ]
+    ],
+    "note": "Domestik saja. Foreign + Rp150.000/pax."
+  },
+  {
+    "id": "halfday-snorkeling",
+    "title": "Half Day + Snorkeling",
+    "spots": [
+      "Broken Beach",
+      "Angel’s Billabong",
+      "Kelingking Beach",
+      "Crystal Bay"
+    ],
+    "snorkeling": [
+      "Manta Bay",
+      "Crystal Bay",
+      "Gamat Bay",
+      "Wall Point (maks 2 spot)"
+    ],
+    "include": [
+      "Tiket Speed Boat PP",
+      "Mobil AC",
+      "Tiket Masuk",
+      "Guide Lokal (fotografi)",
+      "Sewa alat snorkeling + jukung + pemandu",
+      "Private Tour",
+      "Lunch dekat Kelingking"
+    ],
+    "priceTiers": [
+      [
+        "1",
+        1000000
+      ],
+      [
+        "2",
+        650000
+      ],
+      [
+        "3",
+        575000
+      ],
+      [
+        "4",
+        500000
+      ],
+      [
+        "5",
+        475000
+      ],
+      [
+        "6",
+        450000
+      ]
+    ],
+    "note": "Domestik saja. Foreign + Rp150.000/pax."
+  },
+  {
+    "id": "1d1n-snorkeling",
+    "title": "1 Hari 1 Malam + Snorkeling",
+    "spots": [
+      "Pohon Cinta",
+      "Kelingking Beach",
+      "Broken Beach",
+      "Angel’s Billabong",
+      "Crystal Bay"
+    ],
+    "snorkeling": [
+      "Crystal Bay",
+      "Gamat Bay",
+      "Wall Point",
+      "Manta Bay (maks 3 spot)"
+    ],
+    "include": [
+      "Tiket Speed Boat PP",
+      "Mobil AC",
+      "Hotel (BF, Wifi, Hot Water)",
+      "Tiket Masuk",
+      "Guide Lokal (fotografer)",
+      "Private Tour",
+      "Makan Siang",
+      "Sewa alat snorkeling + jukung + pemandu"
+    ],
+    "priceTiers": [
+      [
+        "1",
+        1900000
+      ],
+      [
+        "2",
+        1175000
+      ],
+      [
+        "3",
+        1000000
+      ],
+      [
+        "4",
+        875000
+      ],
+      [
+        "5",
+        800000
+      ],
+      [
+        "6",
+        767000
+      ]
+    ]
+  },
+  {
+    "id": "2d1n",
+    "title": "Paket Wisata 2 Hari 1 Malam",
+    "spots_day1": [
+      "Kelingking Beach",
+      "Broken Beach",
+      "Angel’s Billabong",
+      "Crystal Bay"
+    ],
+    "spots_day2": [
+      "Atuh Beach",
+      "Diamond Beach",
+      "Pulau Seribu/Raja Lima",
+      "Rumah Pohon Molenteng",
+      "Bukit Teletubbies"
+    ],
+    "include": [
+      "Tiket Speed Boat PP",
+      "Mobil AC",
+      "Hotel (BF, Wifi, Hot Water)",
+      "Tiket Masuk",
+      "Guide Lokal (fotografer)",
+      "Private Tour",
+      "Makan Siang",
+      "Air mineral",
+      "Day 1 Full Day",
+      "Day 2 Half Day"
+    ],
+    "priceTiers": [
+      [
+        "1",
+        1500000
+      ],
+      [
+        "2",
+        950000
+      ],
+      [
+        "3",
+        800000
+      ],
+      [
+        "4",
+        700000
+      ],
+      [
+        "5",
+        625000
+      ],
+      [
+        "6",
+        575000
+      ]
+    ]
+  }
+]

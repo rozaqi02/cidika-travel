@@ -1,0 +1,23 @@
+{
+  "brand": "CIDIKA TRAVEL&TOUR",
+  "nav": {
+    "explore": "Explore",
+    "destinasi": "Destinasi",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "login": "Login Admin"
+  },
+  "hero": {
+    "line1": "Jelajahi Nusa Penida dengan",
+    "line2": "CIDIKA TRAVEL&TOUR",
+    "desc": "Agen perjalanan yang siap menemani eksplorasi Anda — nyaman, hangat, profesional. Bisa pesan via Email, Instagram, WhatsApp, atau telepon langsung.",
+    "ctaExplore": "Lihat Paket",
+    "ctaContact": "Hubungi Kami"
+  },
+  "footer": {
+    "address": "Alamat",
+    "email": "Email",
+    "phone": "WA/Telp",
+    "instagram": "Instagram"
+  }
+}

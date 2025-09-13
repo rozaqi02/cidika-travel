@@ -1,0 +1,23 @@
+{
+  "brand": "CIDIKA TRAVEL&TOUR",
+  "nav": {
+    "explore": "Explore",
+    "destinasi": "Destinations",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "login": "Login Admin"
+  },
+  "hero": {
+    "line1": "Explore Nusa Penida with",
+    "line2": "CIDIKA TRAVEL&TOUR",
+    "desc": "Your friendly travel partner for tours and snorkeling. Comfort, warmth, and professionalism in every trip — book via Email, Instagram, WhatsApp, or call us directly.",
+    "ctaExplore": "See Packages",
+    "ctaContact": "Contact Us"
+  },
+  "footer": {
+    "address": "Address",
+    "email": "Email",
+    "phone": "Phone/WhatsApp",
+    "instagram": "Instagram"
+  }
+}
