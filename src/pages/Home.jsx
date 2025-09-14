@@ -7,7 +7,7 @@ import { useCart } from "../context/CartContext";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
 
-const heroImages = ["/hero1.jpg", "/hero2.jpg", "/hero3.jpg", "/hero4.jpg", "/hero5.jpg", "/hero6.jpg"];
+const heroImages = ["/hero3.jpeg", "/hero4.jpg", "/hero1.jpg", "/hero4.jpg", "/hero5.jpg", "/hero6.jpeg"];
 
 export default function Home() {
   const { t } = useTranslation();
