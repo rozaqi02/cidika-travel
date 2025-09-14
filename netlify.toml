@@ -4,8 +4,8 @@
 
 [build.environment]
   NODE_VERSION = "22.17.0"
-  REACT_APP_SUPABASE_URL = ""
-  REACT_APP_SUPABASE_ANON_KEY = ""
+  REACT_APP_SUPABASE_URL = "https://sftqstwvvtflwyfrvqdt.supabase.co"
+  REACT_APP_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmdHFzdHd2dnRmbHd5ZnJ2cWR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3Njg0NDIsImV4cCI6MjA3MzM0NDQ0Mn0.0NHiIXOAsmXJzrP1D4Pxzskzb3S3Wp8G0XqwGUh31eQ"
 
 [[redirects]]
   from = "/*"

@@ -11,6 +11,42 @@ html, body, #root { height: 100%; }
 /* Smooth scroll */
 html { scroll-behavior: smooth; }
 
+/* ==== THEME BASE (biar semua ikut gelap/terang) ==== */
+body { @apply bg-white text-slate-900; }
+.dark body { @apply bg-slate-950 text-slate-100; }
+
+/* ==== TRANSISI HALUS WARNA (dark <-> light) ==== */
+/* Dibuat cukup luas tapi tetap aman performa */
+body, main, header, footer, nav,
+.card, .btn, .btn-outline, .btn-primary,
+input, select, textarea, details, summary,
+table, th, td, .border, .rounded-2xl {
+  transition:
+    background-color .35s ease,
+    color .35s ease,
+    border-color .35s ease,
+    box-shadow .35s ease;
+}
+
+/* ==== FORM BASE (semua input otomatis ikut dark mode) ==== */
+input, select, textarea {
+  @apply bg-white text-slate-900 border border-slate-300 rounded-2xl px-3 py-2;
+}
+.dark input, .dark select, .dark textarea {
+  @apply bg-slate-900 text-slate-100 border-slate-700;
+}
+
+/* Placeholder warna kontras */
+input::placeholder, textarea::placeholder {
+  @apply text-slate-400;
+}
+.dark input::placeholder, .dark textarea::placeholder {
+  @apply text-slate-500;
+}
+
+/* Details/summary biar kontras di dark */
+summary { @apply text-slate-900 dark:text-slate-100; }
+
 /* Reusable utility */
 .btn {
   @apply inline-flex items-center justify-center rounded-2xl px-4 py-2 font-medium shadow-smooth transition;
