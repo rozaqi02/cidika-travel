@@ -1,5 +1,6 @@
 {
   "nav": {
+    "home": "ホーム",
     "explore": "エクスプロア",
     "destinasi": "目的地",
     "faq": "FAQ",
@@ -22,7 +23,6 @@
     "pax": "名",
     "perPax": "名",
     "addToCart": "カートに追加",
-
     "aboutTitle": "快適にヌサ・ペニダへ",
     "aboutBody": "CIDIKA TRAVEL&TOUR はヌサ・ペニダ専門。陸路ツアー、シュノーケリング、宿泊付きなど、快適さ・温かさ・プロ意識を大切にしています。予約はメール／Instagram／WhatsApp／電話で簡単・安心。",
     "point1": "充実のプラン：日帰り、半日、1泊＋シュノーケリング、2日1泊。",
@@ -30,14 +30,12 @@
     "point3": "プライベートツアーで柔軟なスケジュール。",
     "point4": "往復ファストボート＆入場料込みの明瞭価格。",
     "banner1": "ケリンキング、ダイヤモンド、クリスタルベイ—人気スポットを一度に。",
-
     "how1": "プランを選ぶ",
     "how1d": "詳細と行程をチェック。",
     "how2": "問い合わせ",
     "how2d": "日程を確定—すぐに空き状況を確認します。",
     "how3": "出発！",
     "how3d": "旅を楽しむだけ—手配と快適性はお任せください。",
-
     "ctaTitle": "ヌサ・ペニダへ行きませんか？",
     "ctaDesc": "WhatsApp／Instagram／Emailでご連絡ください。時間とご予算に合う最適行程をご提案します。"
   },
@@ -46,8 +44,142 @@
     "spots": "見どころ",
     "includes": "含まれるもの",
     "prices": "人数別料金",
+    "itinerary": "行程",
+    "seeDetail": "詳細を見る",
+    "hideDetail": "詳細を閉じる",
     "snorkeling": "シュノーケリング",
     "day1": "1日目",
     "day2": "2日目"
+  },
+  "faq": {
+    "title": "よくある質問",
+    "list": [
+      { "q": "予約方法は？", "a": "パッケージをカートに追加してチェックアウト、または直接ご連絡ください。" },
+      { "q": "プライベートツアーですか？", "a": "はい、すべてプライベート（相乗りなし）です。" },
+      { "q": "行程のカスタムは可能？", "a": "可能です。ご希望をお問い合わせ時にお知らせください。" }
+    ]
+  },
+  "dest": {
+    "title": "目的地",
+    "empty": "コンテンツは管理画面と Supabase から管理されます。"
+  },
+  "contact": {
+    "title": "お問い合わせ",
+    "formTitle": "クイックフォーム",
+    "formNote": "デモ用フォームです。本番では WhatsApp／Email へリダイレクトしてください。",
+    "name": "お名前",
+    "emailwa": "Email／WhatsApp",
+    "message": "メッセージ",
+    "send": "送信",
+    "sent": "ありがとうございます。追ってご連絡します。",
+    "addressLabel": "住所",
+    "emailLabel": "メール",
+    "phoneLabel": "電話／WA",
+    "instagramLabel": "インスタ"
+  },
+  "checkout": {
+    "title": "チェックアウト",
+    "name": "氏名",
+    "email": "メール",
+    "phone": "電話／WA",
+    "date": "旅行日 (YYYY-MM-DD)",
+    "notes": "備考",
+    "submit": "注文を確定",
+    "processing": "処理中...",
+    "summary": "サマリー",
+    "cartEmptyShort": "カートは空です",
+    "cartEmpty": "カートは空です。",
+    "creating": "注文を作成中...",
+    "success": "注文が作成されました！公開コード: {{code}}",
+    "failed": "注文の作成に失敗しました"
+  },
+  "footer": {
+    "cta": {
+      "kicker": "準備はいい？",
+      "title": "ヌサ・ペニダの旅、手配は私たちにお任せ。",
+      "whatsapp": "WhatsAppで相談",
+      "contact": "お問い合わせ"
+    },
+    "brand": {
+      "tagline": "ヌサ・ペニダ島ツアー＆シュノーケリング。プライベート対応、柔軟な行程、経験豊富なローカルチーム。"
+    },
+    "links": {
+      "title": "メニュー",
+      "packages": "料金とプラン",
+      "destinations": "人気スポット",
+      "faq": "FAQ",
+      "contact": "お問い合わせ"
+    },
+    "contact": {
+      "title": "連絡先",
+      "addressText": "ブンガ・メカル／ヌサ・ペニダ／クルンクン県／バリ"
+    },
+    "newsletter": {
+      "title": "最新情報を受け取る",
+      "desc": "プロモや最新行程をメールでお届けします。",
+      "placeholder": "メールアドレス",
+      "submit": "登録",
+      "note": "登録によりプライバシーポリシーに同意したものとします。",
+      "thanks": "ありがとうございます！最新情報をお送りします 🎉"
+    },
+    "bottom": {
+      "rights": "無断転載禁止。",
+      "terms": "利用規約",
+      "privacy": "プライバシー",
+      "follow": "フォロー"
+    }
+  },
+  "admin": {
+    "common": {
+      "empty": "データはまだありません"
+    },
+    "login": {
+      "title": "管理者ログイン",
+      "email": "メール",
+      "password": "パスワード",
+      "submit": "ログイン",
+      "loggingIn": "ログイン中..."
+    },
+    "dashboard": {
+      "stats": {
+        "bookings": "予約",
+        "packages": "パッケージ",
+        "sections": "セクション"
+      },
+      "latestOrders": "最新の注文",
+      "table": {
+        "date": "日時",
+        "name": "名前",
+        "status": "ステータス",
+        "totalIDR": "合計 (IDR)"
+      }
+    },
+    "customize": {
+      "title": "ホームページのカスタマイズ",
+      "saveAll": "すべて保存",
+      "saving": "保存中...",
+      "section": "セクション:",
+      "sort": "並び順",
+      "dataJsonLabel": "データ (JSON) — 例: hero: { images:[] }",
+      "titleLabel": "タイトル",
+      "bodyLabel": "本文 (Markdown)",
+      "saved": "保存しました",
+      "saveFailed": "保存に失敗しました"
+    },
+    "orders": {
+      "title": "注文一覧",
+      "table": {
+        "date": "日時",
+        "package": "パッケージ",
+        "name": "氏名",
+        "contact": "連絡先",
+        "pax": "人数",
+        "status": "状況",
+        "totalIDR": "合計 (IDR)"
+      }
+    }
+  },
+  "misc": {
+    "loading": "読み込み中..."
   }
 }

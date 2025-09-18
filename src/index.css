@@ -2,61 +2,181 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --brand: #0ea5e9; /* sky-500 */
+/* ===============================
+   Base tokens
+=================================*/
+:root{
+  --brand:#0ea5e9; /* sky-500 */
+  --brand-2:#38bdf8;/* sky-400 */
+  --ink:#0f172a;    /* slate-900 */
+  --bg:#ffffff;
+  --bg-dark:#0b1220; /* deep slate-950-ish */
 }
 
+/* Full-height app */
 html, body, #root { height: 100%; }
 
 /* Smooth scroll */
-html { scroll-behavior: smooth; }
+html{ scroll-behavior:smooth; }
 
-/* ==== THEME BASE (biar semua ikut gelap/terang) ==== */
-body { @apply bg-white text-slate-900; }
-.dark body { @apply bg-slate-950 text-slate-100; }
+/* Theme base */
+body{ @apply text-slate-900 bg-white; }
+.dark body{ @apply text-slate-100 bg-slate-950; }
 
-/* ==== TRANSISI HALUS WARNA (dark <-> light) ==== */
-/* Dibuat cukup luas tapi tetap aman performa */
-body, main, header, footer, nav,
-.card, .btn, .btn-outline, .btn-primary,
-input, select, textarea, details, summary,
-table, th, td, .border, .rounded-2xl {
-  transition:
-    background-color .35s ease,
-    color .35s ease,
-    border-color .35s ease,
-    box-shadow .35s ease;
+/* Prefer transform/opacity transitions only → anti flicker */
+*{ -webkit-tap-highlight-color: transparent; }
+img{ image-rendering: -webkit-optimize-contrast; }
+
+/* Hindari repaint global saat apapun berubah */
+body, main, header, footer, nav, .card, .btn, input, select, textarea {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: .25s;
+  transition-timing-function: ease;
 }
 
-/* ==== FORM BASE (semua input otomatis ikut dark mode) ==== */
-input, select, textarea {
-  @apply bg-white text-slate-900 border border-slate-300 rounded-2xl px-3 py-2;
-}
-.dark input, .dark select, .dark textarea {
-  @apply bg-slate-900 text-slate-100 border-slate-700;
-}
+/* Content-visibility untuk boost performa list panjang */
+.card, section, article { content-visibility:auto; }
 
-/* Placeholder warna kontras */
-input::placeholder, textarea::placeholder {
-  @apply text-slate-400;
-}
-.dark input::placeholder, .dark textarea::placeholder {
-  @apply text-slate-500;
-}
-
-/* Details/summary biar kontras di dark */
-summary { @apply text-slate-900 dark:text-slate-100; }
-
-/* Reusable utility */
-.btn {
-  @apply inline-flex items-center justify-center rounded-2xl px-4 py-2 font-medium shadow-smooth transition;
-}
-.btn-primary {
-  @apply bg-sky-600 text-white hover:bg-sky-700;
-}
-.btn-outline {
-  @apply border border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800;
-}
-.card {
+/* ===============================
+   Cards
+=================================*/
+.card{
   @apply rounded-2xl shadow-smooth bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800;
 }
+
+/* ===============================
+   FORMS
+=================================*/
+input, select, textarea{
+  @apply bg-white text-slate-900 border border-slate-300 rounded-2xl px-3 py-2;
+}
+.dark input, .dark select, .dark textarea{
+  @apply bg-slate-900 text-slate-100 border-slate-700;
+}
+input::placeholder, textarea::placeholder{ @apply text-slate-400; }
+.dark input::placeholder, .dark textarea::placeholder{ @apply text-slate-500; }
+
+/* ===============================
+   BUTTONS → Glassy by default
+   (semua .btn jadi kaca lembut + adaptif light/dark)
+=================================*/
+.btn{
+  @apply inline-flex items-center justify-center rounded-2xl font-medium;
+  padding: .55rem 1rem;
+  backdrop-filter: blur(8px);
+  /* Glass base */
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
+  border: 1px solid rgba(2,6,23,.10); /* slate-950 @ 10% */
+  color: var(--ink);
+  box-shadow: 0 6px 24px rgba(2,6,23,.06), 0 2px 8px rgba(2,6,23,.04);
+  will-change: transform, opacity;
+}
+.btn:hover{ transform: translateY(-1px); }
+.btn:active{ transform: translateY(0); }
+.btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+.dark .btn{
+  background: color-mix(in srgb, rgba(2,6,23,.85) 36%, transparent); /* lebih gelap, less milk */
+  border-color: rgba(148,163,184,.25);
+  color: #e2e8f0; /* slate-200ish */
+}
+
+/* Variant — Primary (brand tint, tetap glassy) */
+.btn-primary{
+  color:#fff;
+  background: color-mix(in srgb, var(--brand) 22%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 45%, transparent);
+}
+.btn-primary:hover{
+  background: color-mix(in srgb, var(--brand) 28%, transparent);
+}
+.dark .btn-primary{
+  background: color-mix(in srgb, var(--brand) 26%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 50%, transparent);
+}
+
+/* Variant — Outline (netral kaca tipis) */
+.btn-outline{
+  background: color-mix(in srgb, var(--bg) 28%, transparent);
+  border-color: rgba(2,6,23,.15);
+  color: inherit;
+}
+.btn-outline:hover{
+  background: color-mix(in srgb, var(--bg) 36%, transparent);
+}
+.dark .btn-outline{
+  background: color-mix(in srgb, rgba(2,6,23,.92) 28%, transparent);
+  border-color: rgba(148,163,184,.25);
+  color: #e2e8f0;
+}
+
+/* Utility ‘glass’ (alias penambah kaca). Dipakai CTA hero juga) */
+.glass{
+  background: color-mix(in srgb, var(--bg) 42%, transparent);
+}
+.dark .glass{
+  background: color-mix(in srgb, rgba(2,6,23,.85) 34%, transparent);
+}
+
+/* CTA hero di light mode "jangan terlalu putih" → sedikit lebih transparan */
+.grain .btn.glass{
+  background: color-mix(in srgb, var(--bg) 38%, transparent);
+}
+.dark .grain .btn.glass{
+  background: color-mix(in srgb, rgba(2,6,23,.88) 32%, transparent);
+}
+
+/* Fokus ring halus */
+:focus-visible{ outline:2px solid var(--brand-2); outline-offset:3px; }
+
+/* ===============================
+   Route Progress (NProgress) — SOLID
+=================================*/
+#nprogress{ pointer-events:none; }
+#nprogress .bar{
+  background: var(--brand, #0ea5e9) !important; /* solid */
+  position: fixed; z-index: 2000; top:0; left:0; height:3px !important;
+}
+#nprogress .peg{ box-shadow: none !important; }
+#nprogress .spinner{ display:none !important; }
+
+/* ===============================
+   Scroll Progress bar
+=================================*/
+.scroll-progress{
+  position: fixed; top: 3px; left:0; height: 3px; width: 0%;
+  background: var(--brand, #0ea5e9); /* solid agar konsisten */
+  z-index: 1900;
+}
+
+/* ===============================
+   Micro-effects (bagian dari "25 efek")
+=================================*/
+/* 1) Hover lift */
+.hover-lift{ transform: translateY(0); }
+.hover-lift:hover{ transform: translateY(-2px); }
+
+/* 2) Soft shadow */
+.shadow-smooth{ box-shadow: 0 6px 30px rgba(2,6,23,.06), 0 2px 10px rgba(2,6,23,.04); }
+
+/* 3) Ken Burns animasi (hero) */
+@keyframes kenburns{
+  0%{ transform: scale(1) translate3d(0,0,0);}
+  100%{ transform: scale(1.08) translate3d(0,0,0);}
+}
+.kenburns{ animation: kenburns 9s ease-in-out both; }
+
+/* 4) Grain overlay (hero) */
+.grain::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' opacity='.05'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode:soft-light;
+}
+
+/* 5) Flag emoji render tweak */
+.flag-emoji{
+  font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",system-ui,sans-serif;
+}
+
+/* 6) Reduce flicker saat slider crossfade */
+.hero-img{ will-change: opacity; backface-visibility:hidden; }

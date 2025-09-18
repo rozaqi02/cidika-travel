@@ -1,5 +1,6 @@
 {
   "nav": {
+    "home": "Beranda",
     "explore": "Explore",
     "destinasi": "Destinasi",
     "faq": "FAQ",
@@ -22,7 +23,6 @@
     "pax": "pax",
     "perPax": "pax",
     "addToCart": "Tambah ke Keranjang",
-
     "aboutTitle": "Jelajahi Nusa Penida dengan Nyaman",
     "aboutBody": "CIDIKA TRAVEL&TOUR berfokus pada pengalaman di Nusa Penida: tour darat, snorkeling, hingga paket menginap. Kami menggabungkan kenyamanan, kehangatan, dan profesionalisme. Pemesanan mudah via Email, Instagram, WhatsApp, atau telepon—transparan dan aman.",
     "point1": "Paket lengkap: One Day, Half Day, 1D1N + Snorkeling, 2D1N.",
@@ -30,14 +30,12 @@
     "point3": "Private tour—jadwal fleksibel, tidak digabung rombongan.",
     "point4": "Harga jelas termasuk fast boat PP & tiket masuk.",
     "banner1": "Spot ikonik—Kelingking, Diamond, Crystal Bay—dalam satu perjalanan.",
-
     "how1": "Pilih Paket",
     "how1d": "Lihat detail & itinerary yang sesuai kebutuhan.",
     "how2": "Hubungi Kami",
     "how2d": "Konfirmasi tanggal—kami cek ketersediaan cepat.",
     "how3": "Berangkat!",
     "how3d": "Nikmati perjalanan—logistik & kenyamanan kami urus.",
-
     "ctaTitle": "Siap Berpetualang di Nusa Penida?",
     "ctaDesc": "Hubungi kami via WhatsApp/Instagram/Email. Tim akan bantu atur itinerary terbaik sesuai waktu & budget."
   },
@@ -46,8 +44,142 @@
     "spots": "Spot Wisata",
     "includes": "Termasuk",
     "prices": "Harga per Pax",
+    "itinerary": "Rundown",
+    "seeDetail": "Lihat Detail",
+    "hideDetail": "Tutup Detail",
     "snorkeling": "Spot Snorkeling",
     "day1": "Hari 1",
     "day2": "Hari 2"
+  },
+  "faq": {
+    "title": "FAQ",
+    "list": [
+      { "q": "Bagaimana cara booking?", "a": "Tambah paket ke keranjang lalu Checkout, atau hubungi kami langsung." },
+      { "q": "Apakah private tour?", "a": "Ya, semua paket bersifat private (tidak digabung)." },
+      { "q": "Bisa custom itinerary?", "a": "Bisa. Sebutkan preferensi Anda saat menghubungi kami." }
+    ]
+  },
+  "dest": {
+    "title": "Destinasi",
+    "empty": "Konten akan diisi dari menu Admin & Supabase."
+  },
+  "contact": {
+    "title": "Kontak Kami",
+    "formTitle": "Form Cepat",
+    "formNote": "Form ini contoh; di produksi arahkan ke WhatsApp/Email.",
+    "name": "Nama",
+    "emailwa": "Email/WA",
+    "message": "Pesan",
+    "send": "Kirim",
+    "sent": "Terima kasih! Kami akan menghubungi Anda.",
+    "addressLabel": "ALAMAT",
+    "emailLabel": "EMAIL",
+    "phoneLabel": "WA/TLP",
+    "instagramLabel": "IG"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "name": "Nama Lengkap",
+    "email": "Email",
+    "phone": "Telepon/WA",
+    "date": "Tanggal Trip (YYYY-MM-DD)",
+    "notes": "Catatan",
+    "submit": "Buat Pesanan",
+    "processing": "Memproses...",
+    "summary": "Ringkasan",
+    "cartEmptyShort": "Keranjang kosong",
+    "cartEmpty": "Keranjang kosong.",
+    "creating": "Membuat order...",
+    "success": "Order dibuat! Kode publik: {{code}}",
+    "failed": "Gagal membuat order"
+  },
+  "footer": {
+    "cta": {
+      "kicker": "Siap Jelajah",
+      "title": "Siap liburan ke Nusa Penida? Kami urus dari A sampai Z.",
+      "whatsapp": "Chat WhatsApp",
+      "contact": "Kontak Kami"
+    },
+    "brand": {
+      "tagline": "PAKET TRIP NUSA PENIDA ISLAND TOUR & SNORKELING. Private trip, itinerary fleksibel, dan tim lokal berpengalaman."
+    },
+    "links": {
+      "title": "Jelajahi",
+      "packages": "Paket & Harga",
+      "destinations": "Destinasi Populer",
+      "faq": "FAQ",
+      "contact": "Kontak"
+    },
+    "contact": {
+      "title": "Kontak",
+      "addressText": "Bunga Mekar, Nusa Penida, Kab. Klungkung, Bali"
+    },
+    "newsletter": {
+      "title": "Dapatkan Penawaran",
+      "desc": "Masukkan email untuk menerima promo & itinerary terbaru.",
+      "placeholder": "Alamat email",
+      "submit": "Daftar",
+      "note": "Dengan mendaftar Anda setuju dengan kebijakan privasi kami.",
+      "thanks": "Terima kasih! Kami akan mengabari promo terbaru 🎉"
+    },
+    "bottom": {
+      "rights": "Hak cipta dilindungi.",
+      "terms": "Syarat",
+      "privacy": "Privasi",
+      "follow": "Ikuti"
+    }
+  },
+  "admin": {
+    "common": {
+      "empty": "Belum ada data"
+    },
+    "login": {
+      "title": "Login Admin",
+      "email": "Email",
+      "password": "Kata sandi",
+      "submit": "Login",
+      "loggingIn": "Masuk..."
+    },
+    "dashboard": {
+      "stats": {
+        "bookings": "Order",
+        "packages": "Paket",
+        "sections": "Section"
+      },
+      "latestOrders": "Order Terbaru",
+      "table": {
+        "date": "Tanggal",
+        "name": "Nama",
+        "status": "Status",
+        "totalIDR": "Total (IDR)"
+      }
+    },
+    "customize": {
+      "title": "Kustomisasi Halaman Home",
+      "saveAll": "Simpan Semua",
+      "saving": "Menyimpan...",
+      "section": "Section:",
+      "sort": "Sort",
+      "dataJsonLabel": "Data (JSON) — contoh hero: { images:[] }",
+      "titleLabel": "Judul",
+      "bodyLabel": "Isi (Markdown)",
+      "saved": "Tersimpan",
+      "saveFailed": "Gagal simpan"
+    },
+    "orders": {
+      "title": "Orderan",
+      "table": {
+        "date": "Tanggal",
+        "package": "Paket",
+        "name": "Nama",
+        "contact": "Kontak",
+        "pax": "Pax",
+        "status": "Status",
+        "totalIDR": "Total (IDR)"
+      }
+    }
+  },
+  "misc": {
+    "loading": "Memuat..."
   }
 }

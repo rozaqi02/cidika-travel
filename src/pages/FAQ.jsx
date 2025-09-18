@@ -1,18 +1,18 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+
 export default function FAQ() {
-  const faqs = [
-    ["Bagaimana cara booking?", "Tambah paket ke keranjang lalu Checkout, atau hubungi kontak kami."],
-    ["Apakah private tour?", "Ya, semua paket bersifat private (tidak digabung)."],
-    ["Bisa custom itinerary?", "Bisa, silakan sebutkan preferensi Anda saat menghubungi kami."]
-  ];
+  const { t } = useTranslation();
+  const faqs = t("faq.list", { returnObjects: true }) || [];
+
   return (
     <div className="container mt-6">
-      <h1 className="text-2xl font-bold mb-4">FAQ</h1>
+      <h1 className="text-2xl font-bold mb-4">{t("faq.title")}</h1>
       <div className="space-y-3">
-        {faqs.map(([q,a],i)=>(
+        {faqs.map((item, i) => (
           <details key={i} className="card p-4">
-            <summary className="font-medium cursor-pointer">{q}</summary>
-            <p className="mt-2 text-slate-600 dark:text-slate-300">{a}</p>
+            <summary className="font-medium cursor-pointer">{item.q}</summary>
+            <p className="mt-2 text-slate-600 dark:text-slate-300">{item.a}</p>
           </details>
         ))}
       </div>

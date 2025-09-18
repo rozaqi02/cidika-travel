@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient.js";
+import { useTranslation } from "react-i18next";
 
 export default function Orderan() {
+  const { t } = useTranslation();
   const [rows, setRows] = useState([]);
 
   const load = async () => {
@@ -15,12 +17,18 @@ export default function Orderan() {
 
   return (
     <div className="container mt-6">
-      <h1 className="text-2xl font-bold mb-3">Orderan</h1>
+      <h1 className="text-2xl font-bold mb-3">{t("admin.orders.title")}</h1>
       <div className="card overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="text-left">
-              <th className="p-3">Tanggal</th><th>Paket</th><th>Nama</th><th>Kontak</th><th>Pax</th><th>Status</th><th>Total (IDR)</th>
+              <th className="p-3">{t("admin.orders.table.date")}</th>
+              <th>{t("admin.orders.table.package")}</th>
+              <th>{t("admin.orders.table.name")}</th>
+              <th>{t("admin.orders.table.contact")}</th>
+              <th>{t("admin.orders.table.pax")}</th>
+              <th>{t("admin.orders.table.status")}</th>
+              <th>{t("admin.orders.table.totalIDR")}</th>
             </tr>
           </thead>
           <tbody>
@@ -35,7 +43,11 @@ export default function Orderan() {
                 <td>{r.total_idr.toLocaleString("id-ID")}</td>
               </tr>
             ))}
-            {rows.length === 0 && <tr><td className="p-3 text-slate-500" colSpan={7}>Belum ada data</td></tr>}
+            {rows.length === 0 && (
+              <tr>
+                <td className="p-3 text-slate-500" colSpan={7}>{t("admin.common.empty")}</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

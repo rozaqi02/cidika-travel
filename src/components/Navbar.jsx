@@ -1,24 +1,22 @@
-// src/components/Navbar.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { Menu, Moon, Sun, ShoppingCart, Globe, LogOut } from "lucide-react";
+import { Menu, Moon, Sun, Heart, Globe, LogOut, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabaseClient.js";
 
 const LANGS = [
-  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "en", label: "English",  flag: "🇬🇧" },
   { code: "id", label: "Indonesia", flag: "🇮🇩" },
-  { code: "ja", label: "日本語",   flag: "🇯🇵" },
+  { code: "ja", label: "日本語",     flag: "🇯🇵" },
 ];
 
 export default function Navbar({ onCartOpen }) {
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-
   const [atTop, setAtTop] = useState(true);
   const [show, setShow] = useState(true);
   const lastY = useRef(0);
@@ -28,8 +26,7 @@ export default function Navbar({ onCartOpen }) {
   const { items } = useCart();
   const { role, session } = useAuth();
   const isAdmin = role === "admin";
-
-  const cartCount = items.reduce((s, it) => s + (it.qty || 0), 0);
+  const wishlistCount = items.reduce((s, it) => s + (it.qty || 0), 0);
   const location = useLocation();
 
   useEffect(() => {
@@ -60,7 +57,7 @@ export default function Navbar({ onCartOpen }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        "px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 " +
+        "px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 " +
         (isActive ? "bg-slate-100 dark:bg-slate-800" : "")
       }
       onClick={() => setOpen(false)}
@@ -103,6 +100,7 @@ export default function Navbar({ onCartOpen }) {
           <nav className="hidden md:flex items-center gap-2">
             {!isAdmin ? (
               <>
+                {navItem("/", t("nav.home", { defaultValue: "Home", }))} {/* NEW: Home di kiri Explore */}
                 {navItem("/explore", t("nav.explore"))}
                 {navItem("/destinasi", t("nav.destinasi"))}
                 {navItem("/faq", t("nav.faq"))}
@@ -116,15 +114,13 @@ export default function Navbar({ onCartOpen }) {
               </>
             )}
 
-            {!session && (
-              <NavLink to="/admin/login" className="px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
-                {t("nav.login")}
+            {!session ? (
+              <NavLink to="/admin/login" className="p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Login">
+                <UserRound size={18} />
               </NavLink>
-            )}
-
-            {session && (
+            ) : (
               <button
-                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800"
                 onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
                 title="Logout"
                 aria-label="Logout"
@@ -135,7 +131,7 @@ export default function Navbar({ onCartOpen }) {
 
             {/* Theme */}
             <button
-              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               aria-label="Toggle theme"
             >
@@ -145,39 +141,40 @@ export default function Navbar({ onCartOpen }) {
             {/* Language */}
             <div className="relative" ref={langRef}>
               <button
-                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800"
                 onClick={() => setLangOpen(v => !v)}
                 aria-label={t("nav.language")}
               >
                 <Globe size={18} />
               </button>
               {langOpen && (
-                <div className="absolute right-0 mt-2 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-smooth">
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-smooth p-1">
                   {LANGS.map(({ code, label, flag }) => (
                     <button
                       key={code}
                       onClick={() => { i18n.changeLanguage(code); setLangOpen(false); }}
-                      className="px-3 py-2 w-full text-left hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                      className="px-3 py-2 w-full text-left hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-2"
                     >
-                      <span className="text-base">{flag}</span>
+                      <span className="text-lg flag-emoji">{flag}</span>
                       <span className="flex-1">{label}</span>
+                      <span className="text-xs text-slate-400 uppercase">{code}</span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Cart */}
+            {/* Wishlist */}
             {!isAdmin && (
               <button
                 onClick={onCartOpen}
-                className="relative p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
-                aria-label={t("nav.cart")}
+                className="relative p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                aria-label="Wishlist"
               >
-                <ShoppingCart size={18} />
-                {cartCount > 0 && (
+                <Heart size={18} />
+                {wishlistCount > 0 && (
                   <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-[6px] rounded-full bg-sky-600 text-white text-[10px] leading-[18px] text-center">
-                    {cartCount}
+                    {wishlistCount}
                   </span>
                 )}
               </button>
@@ -191,16 +188,27 @@ export default function Navbar({ onCartOpen }) {
             <div className="flex flex-col">
               {!isAdmin ? (
                 <>
-                  <Link to="/explore" onClick={() => setOpen(false)} className="px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">{t("nav.explore")}</Link>
-                  <Link to="/destinasi" onClick={() => setOpen(false)} className="px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">{t("nav.destinasi")}</Link>
-                  <Link to="/faq" onClick={() => setOpen(false)} className="px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">{t("nav.faq")}</Link>
-                  <Link to="/contact" onClick={() => setOpen(false)} className="px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">{t("nav.contact")}</Link>
+                  <Link to="/" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                    {t("nav.home", { defaultValue: "Home" })}
+                  </Link>
+                  <Link to="/explore" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                    {t("nav.explore")}
+                  </Link>
+                  <Link to="/destinasi" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                    {t("nav.destinasi")}
+                  </Link>
+                  <Link to="/faq" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                    {t("nav.faq")}
+                  </Link>
+                  <Link to="/contact" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                    {t("nav.contact")}
+                  </Link>
                 </>
               ) : (
                 <>
-                  <Link to="/admin" onClick={() => setOpen(false)} className="px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">Dashboard</Link>
-                  <Link to="/admin/orderan" onClick={() => setOpen(false)} className="px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">Orderan</Link>
-                  <Link to="/admin/kustomisasi" onClick={() => setOpen(false)} className="px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">Kustomisasi</Link>
+                  <Link to="/admin" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">Dashboard</Link>
+                  <Link to="/admin/orderan" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">Orderan</Link>
+                  <Link to="/admin/kustomisasi" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">Kustomisasi</Link>
                 </>
               )}
 
@@ -208,17 +216,16 @@ export default function Navbar({ onCartOpen }) {
                 <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="btn btn-outline">
                   {theme === "dark" ? "Light" : "Dark"}
                 </button>
-
                 <button onClick={() => setLangOpen(v => !v)} className="btn btn-outline">
                   {t("nav.language")}
                 </button>
 
                 {!isAdmin && (
                   <button onClick={onCartOpen} className="btn btn-outline relative">
-                    {t("nav.cart")}
-                    {cartCount > 0 && (
+                    Wishlist
+                    {wishlistCount > 0 && (
                       <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-[6px] rounded-full bg-sky-600 text-white text-[10px] leading-[18px] text-center">
-                        {cartCount}
+                        {wishlistCount}
                       </span>
                     )}
                   </button>
@@ -233,8 +240,8 @@ export default function Navbar({ onCartOpen }) {
                   <LogOut size={16}/> Logout
                 </button>
               ) : (
-                <Link to="/admin/login" onClick={() => setOpen(false)} className="btn btn-outline mx-3 mt-2">
-                  Login
+                <Link to="/admin/login" onClick={() => setOpen(false)} className="btn btn-outline mx-3 mt-2" aria-label="Login">
+                  <UserRound size={16} /> Login
                 </Link>
               )}
             </div>
