@@ -2,7 +2,10 @@
   command = "npm run build"
   publish = "build"
 
-# Redirect semua route ke index.html agar SPA bisa handle client-side routing
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
