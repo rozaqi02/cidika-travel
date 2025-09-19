@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabaseClient.js";
 import { useNavigate } from "react-router-dom";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
+import { motion } from "framer-motion";
 
 export default function Checkout() {
   const { t } = useTranslation();
@@ -34,11 +35,14 @@ export default function Checkout() {
     [items]
   );
 
+  const first = items[0] || null;
+  const audience = first?.audience || "domestic";
+  const audienceLabel = audience === "foreign" ? "Foreign" : "Domestik";
+
   const onSubmit = async (e) => {
     e.preventDefault();
     if (!items.length) { setMsg(t("checkout.cartEmpty", { defaultValue: "Wishlist kosong." })); return; }
 
-    const first = items[0]; // order-level pax ambil dari item pertama (satu paket per order)
     setLoading(true);
     setMsg(t("checkout.creating", { defaultValue: "Membuat order..." }));
 
@@ -47,25 +51,25 @@ export default function Checkout() {
         p_package_id: first.id,
         p_date: form.date || new Date().toISOString().slice(0,10),
         p_pax: Math.max(1, n(first.pax, 1)),
-        p_audience: "domestic",
+        p_audience: audience, // <-- pakai audience dari item
         p_customer_name: form.name,
         p_email: form.email,
         p_phone: form.phone,
         p_notes: form.notes || "",
-        // KUNCI: kirim price_idr = price_per_pax × pax → biar backend (qty*price_idr) = subtotal baris
+        // Kirim price_idr = price_per_pax × pax → subtotal per baris
         p_items: items.map(it => ({
-          item_name: it.title,
+          item_name: it.title + (it.audience ? ` (${it.audience})` : ""),
           qty: Math.max(1, n(it.qty, 1)),
-          price_idr: n(it.price) * Math.max(1, n(it.pax, 1))
-        }))
+          price_idr: n(it.price) * Math.max(1, n(it.pax, 1)),
+        })),
       };
 
       const { data, error } = await supabase.rpc("place_order", payload);
       if (error) throw error;
 
       clear();
-      setMsg(t("checkout.success", { defaultValue: "Order dibuat!", code: data?.[0]?.public_code || "" }));
-      nav("/"); // arahkan pulang / bisa diarahkan ke halaman 'Terima kasih'
+      setMsg(t("checkout.success", { defaultValue: "Order dibuat!" }));
+      nav("/");
     } catch (e2) {
       setMsg(e2.message || t("checkout.failed", { defaultValue: "Gagal membuat order" }));
     } finally {
@@ -74,51 +78,98 @@ export default function Checkout() {
   };
 
   return (
-    <div className="container mt-6 grid md:grid-cols-2 gap-6">
-      <div className="card p-4">
-        <h1 className="text-2xl font-bold mb-2">{t("checkout.title", { defaultValue: "Checkout" })}</h1>
-        <form onSubmit={onSubmit} className="grid gap-3">
-          <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900" placeholder={t("checkout.name", { defaultValue: "Nama Lengkap" })} value={form.name} onChange={e=>setForm({...form, name:e.target.value})} required />
-          <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900" placeholder={t("checkout.email", { defaultValue: "Email" })} type="email" value={form.email} onChange={e=>setForm({...form, email:e.target.value})} required />
-          <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900" placeholder={t("checkout.phone", { defaultValue: "Telepon/WA" })} value={form.phone} onChange={e=>setForm({...form, phone:e.target.value})} />
-          <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900" placeholder={t("checkout.date", { defaultValue: "Tanggal Trip (YYYY-MM-DD)" })} value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
-          <textarea className="border rounded-2xl px-3 py-2 dark:bg-slate-900" placeholder={t("checkout.notes", { defaultValue: "Catatan" })} rows="4" value={form.notes} onChange={e=>setForm({...form, notes:e.target.value})} />
-          <button className="btn btn-primary" disabled={loading}>
-            {loading ? t("checkout.processing", { defaultValue: "Memproses..." }) : t("checkout.submit", { defaultValue: "Buat Pesanan" })}
-          </button>
-          {msg && <p className="text-sm text-slate-500">{msg}</p>}
-        </form>
+    <div className="container mt-4 space-y-4">
+      {/* HERO / toolbar kecil */}
+      <div className="sticky top-16 z-[5] rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-4 py-3 glass flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+            {audienceLabel}
+          </span>
+          <h1 className="text-xl font-bold">{t("checkout.title", { defaultValue: "Checkout" })}</h1>
+        </div>
+        <div className="text-sm text-slate-600 dark:text-slate-300">
+          {t("checkout.itemsCount", { defaultValue: "{{count}} item", count: items.length })}
+        </div>
       </div>
 
-      <div className="card p-4">
-        <h2 className="font-semibold mb-2">{t("checkout.summary", { defaultValue: "Ringkasan" })}</h2>
-        {items.length === 0 ? (
-          <p className="text-slate-500">{t("checkout.cartEmptyShort", { defaultValue: "Wishlist kosong" })}</p>
-        ) : (
-          <>
-            <ul className="space-y-2">
-              {items.map(it => {
-                const pax = Math.max(1, n(it.pax, 1));
-                const qty = Math.max(1, n(it.qty, 1));
-                const price = n(it.price);
-                const subtotal = price * pax * qty;
-                return (
-                  <li key={`${it.id}-${pax}`} className="flex items-center justify-between">
-                    <span>
-                      {it.title} — {pax} {t("home.pax", { defaultValue: "pax" })} × {qty}
-                    </span>
-                    <span>{formatMoneyFromIDR(subtotal, currency, fx, locale)}</span>
-                  </li>
-                );
-              })}
-            </ul>
-            <hr className="my-3 border-slate-200 dark:border-slate-800" />
-            <div className="flex items-center justify-between font-semibold">
-              <span>Total</span>
-              <span>{formatMoneyFromIDR(grandTotal, currency, fx, locale)}</span>
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* FORM */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="lg:col-span-2 card p-4"
+        >
+          <h2 className="font-semibold mb-2">{t("checkout.details", { defaultValue: "Detail Pemesan" })}</h2>
+          <form onSubmit={onSubmit} className="grid sm:grid-cols-2 gap-3">
+            <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900 sm:col-span-2" placeholder={t("checkout.name", { defaultValue: "Nama Lengkap" })} value={form.name} onChange={e=>setForm({...form, name:e.target.value})} required />
+            <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900" placeholder={t("checkout.email", { defaultValue: "Email" })} type="email" value={form.email} onChange={e=>setForm({...form, email:e.target.value})} required />
+            <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900" placeholder={t("checkout.phone", { defaultValue: "Telepon/WA" })} value={form.phone} onChange={e=>setForm({...form, phone:e.target.value})} />
+            <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900" placeholder={t("checkout.date", { defaultValue: "Tanggal Trip (YYYY-MM-DD)" })} value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
+            <textarea className="border rounded-2xl px-3 py-2 dark:bg-slate-900 sm:col-span-2" placeholder={t("checkout.notes", { defaultValue: "Catatan" })} rows="4" value={form.notes} onChange={e=>setForm({...form, notes:e.target.value})} />
+
+            <div className="sm:col-span-2 flex items-center gap-3 mt-1">
+              <button className="btn btn-primary" disabled={loading}>
+                {loading ? t("checkout.processing", { defaultValue: "Memproses..." }) : t("checkout.submit", { defaultValue: "Buat Pesanan" })}
+              </button>
+              {msg && <p className="text-sm text-slate-500">{msg}</p>}
             </div>
-          </>
-        )}
+          </form>
+        </motion.div>
+
+        {/* RINGKASAN (sticky) */}
+        <motion.aside
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: 0.05 }}
+          className="card p-4 h-max sticky top-[7.5rem]"
+        >
+          <h3 className="font-semibold mb-2">
+            {t("checkout.summary", { defaultValue: "Ringkasan" })} — <span className="text-sky-700 dark:text-sky-300">{audienceLabel}</span>
+          </h3>
+
+          {items.length === 0 ? (
+            <p className="text-slate-500">{t("checkout.cartEmptyShort", { defaultValue: "Wishlist kosong" })}</p>
+          ) : (
+            <>
+              <ul className="space-y-2">
+                {items.map(it => {
+                  const pax = Math.max(1, n(it.pax, 1));
+                  const qty = Math.max(1, n(it.qty, 1));
+                  const price = n(it.price);
+                  const subtotal = price * pax * qty;
+                  const aud = it.audience === "foreign" ? "Foreign" : "Domestik";
+                  return (
+                    <li key={`${it.id}-${pax}-${it.audience || "domestic"}`} className="flex items-start justify-between gap-2">
+                      <span className="text-sm">
+                        <span className="font-medium">{it.title}</span>{" "}
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] uppercase tracking-wide bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                          {aud}
+                        </span>
+                        <br />
+                        <span className="text-slate-500 dark:text-slate-400 text-xs">
+                          {pax} {t("home.pax", { defaultValue: "pax" })} × {qty} • {formatMoneyFromIDR(price, currency, fx, locale)}/pax
+                        </span>
+                      </span>
+                      <span className="font-medium">{formatMoneyFromIDR(subtotal, currency, fx, locale)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <hr className="my-3 border-slate-200 dark:border-slate-800" />
+              <div className="flex items-center justify-between font-semibold">
+                <span>Total</span>
+                <span>{formatMoneyFromIDR(grandTotal, currency, fx, locale)}</span>
+              </div>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                {audience === "foreign"
+                  ? t("checkout.noteForeign", { defaultValue: "Termasuk penyesuaian untuk wisatawan mancanegara." })
+                  : t("checkout.noteDomestic", { defaultValue: "Harga khusus wisatawan domestik." })}
+              </p>
+            </>
+          )}
+        </motion.aside>
       </div>
     </div>
   );

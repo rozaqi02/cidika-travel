@@ -1,5 +1,5 @@
 // src/hooks/usePackages.js
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabaseClient.js";
 
@@ -7,9 +7,9 @@ export default function usePackages({ live = true } = {}) {
   const { i18n } = useTranslation();
   const lang = (i18n.resolvedLanguage || i18n.language || "en").split("-")[0];
 
-  const [rows, setRows]     = useState([]);
-  const [loading, setLoad]  = useState(true);
-  const [error, setError]   = useState(null);
+  const [rows, setRows] = useState([]);
+  const [loading, setLoad] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchData = async () => {
     setLoad(true);
@@ -18,7 +18,7 @@ export default function usePackages({ live = true } = {}) {
     const { data, error } = await supabase
       .from("packages")
       .select(`
-        id, slug, is_active, default_image,
+        id, slug, is_active, default_image, created_at,
         price_tiers ( pax, price_idr, audience ),
         package_locales ( lang, title, summary, spots, itinerary, include, note )
       `)
@@ -33,14 +33,21 @@ export default function usePackages({ live = true } = {}) {
     }
 
     const mapped = (data || []).map((p) => {
+      // Pilih locale sesuai bahasa UI
       const loc =
-        p.package_locales?.find((l) => l.lang === lang) ||
-        p.package_locales?.find((l) => l.lang === "en") ||
-        p.package_locales?.[0] ||
+        (Array.isArray(p.package_locales) && p.package_locales.find((l) => l.lang === lang)) ||
+        (Array.isArray(p.package_locales) && p.package_locales.find((l) => l.lang === "en")) ||
+        (Array.isArray(p.package_locales) && p.package_locales[0]) ||
         null;
 
-      // default audience: domestic
-      const tiers = (p.price_tiers || []).filter((t) => (t.audience || "domestic") === "domestic");
+      // >>> TIDAK mem-filter audience. Bawa semua tier & normalisasi tipe.
+      const tiers = Array.isArray(p.price_tiers)
+        ? p.price_tiers.map((t) => ({
+            pax: Number(t.pax),
+            price_idr: Number(t.price_idr),
+            audience: String(t.audience || "domestic"),
+          }))
+        : [];
 
       return {
         id: p.id,
@@ -55,7 +62,10 @@ export default function usePackages({ live = true } = {}) {
     setLoad(false);
   };
 
-  useEffect(() => { fetchData(); /* eslint-disable-next-line */ }, [lang]);
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   useEffect(() => {
     if (!live) return;
@@ -66,7 +76,7 @@ export default function usePackages({ live = true } = {}) {
       .on("postgres_changes", { event: "*", schema: "public", table: "package_locales" }, fetchData)
       .subscribe();
     return () => supabase.removeChannel(ch);
-  }, [live]);
+  }, [live]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { rows, loading, error, refetch: fetchData };
 }

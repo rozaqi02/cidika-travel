@@ -108,13 +108,19 @@ export default function WishlistDrawer({ open, onClose }) {
           ) : (
             items.map((it) => {
               const subtotal = itemTotal(it);
+              const audLabel = it.audience === "foreign" ? "Foreign" : "Domestik";
               return (
                 <div
-                  key={`${it.id}-${it.pax}`}
+                  key={`${it.id}-${it.pax}-${it.audience || "domestic"}`}
                   className="flex items-start justify-between border border-slate-200 dark:border-slate-800 rounded-xl p-3 hover:shadow-md transition"
                 >
                   <div className="pr-3">
-                    <p className="font-medium leading-snug">{it.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium leading-snug">{it.title}</p>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                        {audLabel}
+                      </span>
+                    </div>
                     <p className="text-xs mt-0.5 text-slate-500 dark:text-slate-400">
                       {/* contoh: "2 pax × Rp250.000 × 1" */}
                       {t("wishlist.meta", {

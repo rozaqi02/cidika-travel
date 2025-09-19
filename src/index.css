@@ -66,7 +66,8 @@ input::placeholder, textarea::placeholder{ @apply text-slate-400; }
   backdrop-filter: blur(8px);
   /* Glass base */
   background: color-mix(in srgb, var(--bg) 45%, transparent);
-  border: 1px solid rgba(2,6,23,.10); /* slate-950 @ 10% */
+  /* sedikit lebih kontras di light */
+  border: 1px solid rgba(2,6,23,.12); /* slate-950 @ ~12% */
   color: var(--ink);
   box-shadow: 0 6px 24px rgba(2,6,23,.06), 0 2px 8px rgba(2,6,23,.04);
   will-change: transform, opacity;
@@ -82,15 +83,18 @@ input::placeholder, textarea::placeholder{ @apply text-slate-400; }
 }
 
 /* Variant — Primary (brand tint, tetap glassy) */
+/* Light: teks gelap agar terbaca di latar putih */
 .btn-primary{
-  color:#fff;
-  background: color-mix(in srgb, var(--brand) 22%, transparent);
-  border-color: color-mix(in srgb, var(--brand) 45%, transparent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--brand) 16%, var(--bg) 84%);
+  border-color: color-mix(in srgb, var(--brand) 40%, rgba(2,6,23,.10));
 }
 .btn-primary:hover{
-  background: color-mix(in srgb, var(--brand) 28%, transparent);
+  background: color-mix(in srgb, var(--brand) 22%, var(--bg) 78%);
 }
+/* Dark: primary tetap putih dengan tint lebih pekat */
 .dark .btn-primary{
+  color:#fff;
   background: color-mix(in srgb, var(--brand) 26%, transparent);
   border-color: color-mix(in srgb, var(--brand) 50%, transparent);
 }
@@ -98,7 +102,7 @@ input::placeholder, textarea::placeholder{ @apply text-slate-400; }
 /* Variant — Outline (netral kaca tipis) */
 .btn-outline{
   background: color-mix(in srgb, var(--bg) 28%, transparent);
-  border-color: rgba(2,6,23,.15);
+  border-color: rgba(2,6,23,.18); /* lebih kontras di light */
   color: inherit;
 }
 .btn-outline:hover{
@@ -112,7 +116,7 @@ input::placeholder, textarea::placeholder{ @apply text-slate-400; }
 
 /* Utility ‘glass’ (alias penambah kaca). Dipakai CTA hero juga) */
 .glass{
-  background: color-mix(in srgb, var(--bg) 42%, transparent);
+  background: color-mix(in srgb, var(--bg) 48%, transparent); /* naikkan dari 42% → 48% */
 }
 .dark .glass{
   background: color-mix(in srgb, rgba(2,6,23,.85) 34%, transparent);
@@ -120,7 +124,7 @@ input::placeholder, textarea::placeholder{ @apply text-slate-400; }
 
 /* CTA hero di light mode "jangan terlalu putih" → sedikit lebih transparan */
 .grain .btn.glass{
-  background: color-mix(in srgb, var(--bg) 38%, transparent);
+  background: color-mix(in srgb, var(--bg) 40%, transparent);
 }
 .dark .grain .btn.glass{
   background: color-mix(in srgb, rgba(2,6,23,.88) 32%, transparent);
@@ -130,12 +134,15 @@ input::placeholder, textarea::placeholder{ @apply text-slate-400; }
 :focus-visible{ outline:2px solid var(--brand-2); outline-offset:3px; }
 
 /* ===============================
-   Route Progress (NProgress) — SOLID
+   Route Progress (NProgress) — smoother bar
+   (catatan: konfigurasi JS ada di App.jsx)
 =================================*/
 #nprogress{ pointer-events:none; }
 #nprogress .bar{
-  background: var(--brand, #0ea5e9) !important; /* solid */
+  background: linear-gradient(90deg, var(--brand), var(--brand-2)) !important;
   position: fixed; z-index: 2000; top:0; left:0; height:3px !important;
+  will-change: width, opacity;
+  transition: width .2s linear, opacity .2s ease;
 }
 #nprogress .peg{ box-shadow: none !important; }
 #nprogress .spinner{ display:none !important; }

@@ -100,7 +100,7 @@ export default function Navbar({ onCartOpen }) {
           <nav className="hidden md:flex items-center gap-2">
             {!isAdmin ? (
               <>
-                {navItem("/", t("nav.home", { defaultValue: "Home", }))} {/* NEW: Home di kiri Explore */}
+                {navItem("/", t("nav.home", { defaultValue: "Home", }))} 
                 {navItem("/explore", t("nav.explore"))}
                 {navItem("/destinasi", t("nav.destinasi"))}
                 {navItem("/faq", t("nav.faq"))}
