@@ -7,7 +7,11 @@
     "contact": "お問い合わせ",
     "login": "管理者ログイン",
     "language": "言語",
-    "cart": "カート"
+    "cart": "カート",
+    "wishlist": "お気に入り",
+    "theme": "テーマ",
+    "light": "ライト",
+    "dark": "ダーク"
   },
   "hero": {
     "tag": "BEST OFFERS",
@@ -19,23 +23,52 @@
   },
   "home": {
     "popular": "人気パッケージ",
+    "popularSub": "旅行者に人気のプラン。",
     "calcFor": "人数別の料金",
     "pax": "名",
     "perPax": "名",
-    "addToCart": "カートに追加",
+    "flexible": "フレキシブル",
+    "viewDetails": "詳細を見る",
+    "orderViaWA": "WhatsAppで予約",
+    "viewAllPackages": "すべてのプランを見る",
+    "ctaPopular": "人気パッケージを見る",
+
     "aboutTitle": "快適にヌサ・ペニダへ",
     "aboutBody": "CIDIKA TRAVEL&TOUR はヌサ・ペニダ専門。陸路ツアー、シュノーケリング、宿泊付きなど、快適さ・温かさ・プロ意識を大切にしています。予約はメール／Instagram／WhatsApp／電話で簡単・安心。",
     "point1": "充実のプラン：日帰り、半日、1泊＋シュノーケリング、2日1泊。",
     "point2": "写真サポートもできるローカルガイド。",
     "point3": "プライベートツアーで柔軟なスケジュール。",
-    "point4": "往復ファストボート＆入場料込みの明瞭価格。",
+    "point4": "往復ファストボート＆入場料込みの明朗価格。",
     "banner1": "ケリンキング、ダイヤモンド、クリスタルベイ—人気スポットを一度に。",
-    "how1": "プランを選ぶ",
-    "how1d": "詳細と行程をチェック。",
-    "how2": "問い合わせ",
-    "how2d": "日程を確定—すぐに空き状況を確認します。",
-    "how3": "出発！",
-    "how3d": "旅を楽しむだけ—手配と快適性はお任せください。",
+
+    "whyTitle": "選ばれる理由",
+    "whySubtitle": "安心して楽しめるポイント。",
+    "whyItems": [
+      { "title": "公認・経験豊富なオペレーター", "text": "ローカルチームがベストスポットとタイミングを熟知。" },
+      { "title": "誰でも楽しめる", "text": "一人旅・カップル・家族・会社旅行。" },
+      { "title": "柔軟なスケジュール", "text": "プライベートチャーター／オープントリップ。" },
+      { "title": "最適化された行程", "text": "効率的でもベストな瞬間を逃しません。" }
+    ],
+
+    "stats": {
+      "travelers": "満足した旅行者",
+      "media": "写真・動画",
+      "rating": "評価"
+    },
+
+    "howTitle": "ご利用の流れ",
+    "howSubtitle": "ログイン不要で簡単・スピーディー。",
+    "how": [
+      { "title": "プランを選ぶ", "text": "比較して人数を設定。" },
+      { "title": "問い合わせ", "text": "WhatsAppをタップ—すぐ返信します。" },
+      { "title": "日程を決める", "text": "日付と集合場所を決定。" },
+      { "title": "出発！", "text": "あとは楽しむだけ。" }
+    ],
+
+    "testimonialsTitle": "お客様の声",
+    "helpCTA": "お困りですか？WhatsAppで相談",
+
+    "addToCart": "カートに追加",
     "ctaTitle": "ヌサ・ペニダへ行きませんか？",
     "ctaDesc": "WhatsApp／Instagram／Emailでご連絡ください。時間とご予算に合う最適行程をご提案します。"
   },
@@ -79,19 +112,26 @@
   },
   "checkout": {
     "title": "チェックアウト",
+    "details": "ご予約者情報",
+    "itemsCount": "{{count}} 件",
     "name": "氏名",
     "email": "メール",
     "phone": "電話／WA",
     "date": "旅行日 (YYYY-MM-DD)",
     "notes": "備考",
     "submit": "注文を確定",
+    "next": "次へ",
+    "goToWA": "WhatsAppへ進む",
+    "redirectingWA": "WhatsAppを開いています...",
     "processing": "処理中...",
     "summary": "サマリー",
     "cartEmptyShort": "カートは空です",
     "cartEmpty": "カートは空です。",
     "creating": "注文を作成中...",
     "success": "注文が作成されました！公開コード: {{code}}",
-    "failed": "注文の作成に失敗しました"
+    "failed": "注文の作成に失敗しました",
+    "noteForeign": "海外旅行者向けの調整込み。",
+    "noteDomestic": "国内旅行者向けの特別料金。"
   },
   "footer": {
     "cta": {
@@ -130,6 +170,11 @@
     }
   },
   "admin": {
+    "menu": {
+      "dashboard": "ダッシュボード",
+      "orders": "注文一覧",
+      "customize": "カスタマイズ"
+    },
     "common": {
       "empty": "データはまだありません"
     },
@@ -155,16 +200,17 @@
       }
     },
     "customize": {
-      "title": "ホームページのカスタマイズ",
+      "title": "ページのカスタマイズ",
       "saveAll": "すべて保存",
       "saving": "保存中...",
       "section": "セクション:",
       "sort": "並び順",
-      "dataJsonLabel": "データ (JSON) — 例: hero: { images:[] }",
+      "dataJsonLabel": "データ (JSON) — 例: hero { images:[] }",
       "titleLabel": "タイトル",
       "bodyLabel": "本文 (Markdown)",
       "saved": "保存しました",
-      "saveFailed": "保存に失敗しました"
+      "saveFailed": "保存に失敗しました",
+      "addSection": "セクションを追加"
     },
     "orders": {
       "title": "注文一覧",
@@ -176,10 +222,27 @@
         "pax": "人数",
         "status": "状況",
         "totalIDR": "合計 (IDR)"
+      },
+      "status": {
+        "pending": "保留",
+        "success": "完了",
+        "cancelled": "キャンセル"
+      },
+      "actions": {
+        "edit": "編集",
+        "save": "保存",
+        "saving": "保存中...",
+        "saved": "保存しました",
+        "updateStatus": "ステータスを更新",
+        "invoice": "インボイス",
+        "invoicePlaceholder": "インボイス番号／リンクを貼り付け",
+        "viewBooking": "予約を表示"
       }
     }
   },
   "misc": {
-    "loading": "読み込み中..."
+    "loading": "読み込み中...",
+    "success": "成功しました",
+    "error": "エラーが発生しました"
   }
 }

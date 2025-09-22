@@ -1,7 +1,13 @@
 // src/App.jsx
 import "nprogress/nprogress.css";
-import React, { useState, useEffect, useMemo } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigationType,
+} from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import NProgress from "nprogress";
 import { Heart } from "lucide-react";
@@ -26,7 +32,10 @@ import { CurrencyProvider } from "./context/CurrencyContext";
 import { AuthProvider } from "./context/AuthContext";
 import ScrollProgressBar from "./components/ScrollProgressBar";
 
-/* NProgress untuk perpindahan halaman */
+// ⬇️ IMPORT HALAMAN DETAIL PAKET BARU
+import PackageDetail from "./pages/PackageDetail";
+
+/* NProgress: hanya untuk perpindahan halaman */
 NProgress.configure({
   showSpinner: false,
   minimum: 0.06,
@@ -36,7 +45,7 @@ NProgress.configure({
   speed: 420,
 });
 
-/* ===== 1) Hook preferensi motion (untuk accessibility) ===== */
+/* ========= [EFEK #1] prefers-reduced-motion hook ========= */
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -50,12 +59,24 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-/* ===== 2) ScrollToTop dengan animasi terlihat + hash offset aware ===== */
-function ScrollToTop() {
-  const { pathname, hash } = useLocation();
+/* ========= [EFEK #2] Scroll manager ========= */
+function ScrollManager() {
   const reduced = usePrefersReducedMotion();
+  const { pathname, hash } = useLocation();
+  const navType = useNavigationType();
+  const prevPath = useRef(pathname);
 
   useEffect(() => {
+    const save = () =>
+      sessionStorage.setItem(`scroll:${prevPath.current}`, String(window.scrollY || 0));
+    window.addEventListener("beforeunload", save);
+    return () => window.removeEventListener("beforeunload", save);
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem(`scroll:${prevPath.current}`, String(window.scrollY || 0));
+    prevPath.current = pathname;
+
     if (hash) {
       const id = hash.replace("#", "");
       const el = document.getElementById(id);
@@ -65,12 +86,19 @@ function ScrollToTop() {
         return;
       }
     }
-    window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
-  }, [pathname, hash, reduced]);
+
+    if (navType === "POP") {
+      const saved = Number(sessionStorage.getItem(`scroll:${pathname}`) || 0);
+      window.scrollTo({ top: saved, behavior: "auto" });
+    } else {
+      window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+    }
+  }, [pathname, hash, navType, reduced]);
+
   return null;
 }
 
-/* ===== 3) Variants transisi halaman (dinamis jika reduced motion) ===== */
+/* ========= [EFEK #3] Variants transisi halaman ========= */
 function usePageVariants() {
   const reduced = usePrefersReducedMotion();
   return useMemo(
@@ -83,7 +111,7 @@ function usePageVariants() {
   );
 }
 
-/* ===== 4) Scrim overlay halus saat transisi (mengurangi “flash”) ===== */
+/* ========= [EFEK #4] Scrim overlay saat transisi ========= */
 function TransitionScrim({ routeKey }) {
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -100,7 +128,7 @@ function TransitionScrim({ routeKey }) {
   );
 }
 
-/* ===== NEW: WishlistFX overlay (burst anim + dark blur background) ===== */
+/* ========= [EFEK #5] Wishlist FX ========= */
 function WishlistFXOverlay() {
   const reduced = usePrefersReducedMotion();
   const [show, setShow] = useState(false);
@@ -110,8 +138,15 @@ function WishlistFXOverlay() {
     const handler = () => {
       setKey((k) => k + 1);
       setShow(true);
-      const t = setTimeout(() => setShow(false), reduced ? 220 : 800);
-      return () => clearTimeout(t);
+      document.documentElement.style.overflow = "hidden";
+      const t = setTimeout(() => {
+        setShow(false);
+        document.documentElement.style.overflow = "";
+      }, reduced ? 220 : 800);
+      return () => {
+        clearTimeout(t);
+        document.documentElement.style.overflow = "";
+      };
     };
     window.addEventListener("WISHLIST_FX", handler);
     return () => window.removeEventListener("WISHLIST_FX", handler);
@@ -125,9 +160,8 @@ function WishlistFXOverlay() {
           className="fixed inset-0 z-[70] grid place-items-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 1 }} // biar sub-elemen yang handle fade
+          exit={{ opacity: 1 }}
         >
-          {/* BACKDROP: gelap + blur layar di belakang heart */}
           <motion.div
             className="absolute inset-0 bg-slate-900/45 dark:bg-slate-950/55 backdrop-blur-sm"
             initial={{ opacity: 0 }}
@@ -136,7 +170,6 @@ function WishlistFXOverlay() {
             transition={{ duration: reduced ? 0.08 : 0.18, ease: "easeOut" }}
             style={{ willChange: "opacity" }}
           />
-          {/* glow */}
           <motion.div
             initial={{ scale: 0.7, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -144,7 +177,6 @@ function WishlistFXOverlay() {
             transition={{ duration: reduced ? 0.12 : 0.22 }}
             className="absolute w-56 h-56 rounded-full bg-sky-500/12 blur-2xl"
           />
-          {/* heart */}
           <motion.div
             initial={{ scale: 0.4, rotate: 0, opacity: 0 }}
             animate={{ scale: [0.4, 1.15, 1], rotate: [0, 8, 0], opacity: [0, 1, 1] }}
@@ -153,17 +185,7 @@ function WishlistFXOverlay() {
             className="relative"
           >
             <Heart size={76} className="text-sky-600 drop-shadow-lg" fill="currentColor" />
-            {!reduced && (
-              <motion.div
-                className="absolute inset-0 rounded-full"
-                style={{ border: "3px solid rgba(56,189,248,.55)" }}
-                initial={{ scale: 0.4, opacity: 0.8 }}
-                animate={{ scale: 2.2, opacity: 0 }}
-                transition={{ duration: 0.7, ease: "easeOut" }}
-              />
-            )}
           </motion.div>
-          {/* caption kecil */}
           <motion.div
             className="mt-4 text-slate-700 dark:text-slate-200 text-sm font-medium"
             initial={{ y: 6, opacity: 0 }}
@@ -179,24 +201,101 @@ function WishlistFXOverlay() {
   );
 }
 
-function Layout({ children, onWishlistOpen }) {
-  const location = useLocation();
-  const pageVariants = usePageVariants();
-
-  // 5) Mobile 100vh fix
+/* ========= [EFEK #6] Mobile 100vh fix ========= */
+function MobileVhFix() {
   useEffect(() => {
-    const set = () => document.documentElement.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
+    const set = () =>
+      document.documentElement.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
     set();
     window.addEventListener("resize", set, { passive: true });
     return () => window.removeEventListener("resize", set);
   }, []);
+  return null;
+}
 
-  // Pastikan bar tidak terlihat pada initial mount
+/* ========= [EFEK #7] Focus main ========= */
+function FocusMainOnRoute() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const main = document.querySelector("main");
+    if (main) {
+      if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+      main.focus({ preventScroll: true });
+    }
+  }, [pathname]);
+  return null;
+}
+
+/* ========= [EFEK #8] Cegah ghost-drag <img> ========= */
+function PreventImageDrag() {
+  useEffect(() => {
+    const prevent = (e) => {
+      const t = e.target;
+      if (t && t.tagName === "IMG" && !t.closest("a")) e.preventDefault();
+    };
+    document.addEventListener("dragstart", prevent);
+    return () => document.removeEventListener("dragstart", prevent);
+  }, []);
+  return null;
+}
+
+/* ========= [EFEK #9] Button ripple ========= */
+function ButtonRippleEffect() {
+  useEffect(() => {
+    const onClick = (e) => {
+      const target = e.target.closest?.(".btn");
+      if (!target) return;
+      const rect = target.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const d = Math.max(rect.width, rect.height);
+      const ripple = document.createElement("span");
+      ripple.style.position = "absolute";
+      ripple.style.left = `${x - d / 2}px`;
+      ripple.style.top = `${y - d / 2}px`;
+      ripple.style.width = ripple.style.height = `${d}px`;
+      ripple.style.borderRadius = "9999px";
+      ripple.style.pointerEvents = "none";
+      ripple.style.background = "rgba(14,165,233,.25)";
+      ripple.style.transform = "scale(0)";
+      ripple.style.opacity = "0.8";
+      ripple.style.transition = "transform .45s ease, opacity .6s ease";
+      ripple.className = "btn-ripple";
+
+      target.style.position = target.style.position || "relative";
+      target.appendChild(ripple);
+      requestAnimationFrame(() => (ripple.style.transform = "scale(1)"));
+      setTimeout(() => {
+        ripple.style.opacity = "0";
+        setTimeout(() => ripple.remove(), 350);
+      }, 220);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+  return null;
+}
+
+/* ========= [EFEK #10] Page reveal once ========= */
+function PageRevealOnce() {
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add("page-reveal");
+    const t = setTimeout(() => root.classList.remove("page-reveal"), 350);
+    return () => clearTimeout(t);
+  }, []);
+  return null;
+}
+
+/* ==================== Layout ==================== */
+function Layout({ children, onWishlistOpen }) {
+  const location = useLocation();
+  const pageVariants = usePageVariants();
+
   useEffect(() => {
     NProgress.done();
   }, []);
 
-  // Mulai progress saat path berubah; fallback agar tidak nyangkut
   useEffect(() => {
     NProgress.start();
     NProgress.set(0.18);
@@ -204,20 +303,10 @@ function Layout({ children, onWishlistOpen }) {
     return () => clearTimeout(fallback);
   }, [location.pathname]);
 
-  // 6) Focus management
-  useEffect(() => {
-    const main = document.querySelector("main");
-    if (main) {
-      if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
-      main.focus({ preventScroll: true });
-    }
-  }, [location.pathname]);
-
   return (
     <>
       <ScrollProgressBar />
       <Navbar onCartOpen={onWishlistOpen} />
-      {/* FX overlay */}
       <WishlistFXOverlay />
       <TransitionScrim routeKey={location.pathname} />
 
@@ -246,29 +335,30 @@ function Layout({ children, onWishlistOpen }) {
   );
 }
 
+/* ==================== App Root ==================== */
 export default function App() {
   const [wishOpen, setWishOpen] = useState(false);
-
-  /* 7) Small polish: cegah “drag image ghost” */
-  useEffect(() => {
-    const prevent = (e) => {
-      const t = e.target;
-      if (t && t.tagName === "IMG" && !t.closest("a")) e.preventDefault();
-    };
-    document.addEventListener("dragstart", prevent);
-    return () => document.removeEventListener("dragstart", prevent);
-  }, []);
 
   return (
     <ThemeProvider>
       <AuthProvider>
         <CurrencyProvider>
           <CartProvider>
-            <ScrollToTop />
+            {/* Register UX effects */}
+            <MobileVhFix />
+            <ScrollManager />
+            <FocusMainOnRoute />
+            <PreventImageDrag />
+            <ButtonRippleEffect />
+            <PageRevealOnce />
+
             <WishlistDrawer open={wishOpen} onClose={() => setWishOpen(false)} />
             <Routes>
               <Route path="/" element={<Layout onWishlistOpen={() => setWishOpen(true)}><Home /></Layout>} />
               <Route path="/explore" element={<Layout onWishlistOpen={() => setWishOpen(true)}><Explore /></Layout>} />
+              {/* ⬇️ ROUTE BARU: DETAIL PAKET */}
+              <Route path="/packages/:id" element={<Layout onWishlistOpen={() => setWishOpen(true)}><PackageDetail /></Layout>} />
+
               <Route path="/destinasi" element={<Layout onWishlistOpen={() => setWishOpen(true)}><Destinasi /></Layout>} />
               <Route path="/faq" element={<Layout onWishlistOpen={() => setWishOpen(true)}><FAQ /></Layout>} />
               <Route path="/contact" element={<Layout onWishlistOpen={() => setWishOpen(true)}><Contact /></Layout>} />

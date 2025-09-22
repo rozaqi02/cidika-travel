@@ -7,7 +7,11 @@
     "contact": "Contact",
     "login": "Admin Login",
     "language": "Language",
-    "cart": "Cart"
+    "cart": "Cart",
+    "wishlist": "Wishlist",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark"
   },
   "hero": {
     "tag": "BEST OFFERS",
@@ -19,10 +23,16 @@
   },
   "home": {
     "popular": "Popular Packages",
+    "popularSub": "Top choices for travelers.",
     "calcFor": "Price for",
     "pax": "pax",
     "perPax": "pax",
-    "addToCart": "Add to Cart",
+    "flexible": "Flexible",
+    "viewDetails": "See Details",
+    "orderViaWA": "Order via WhatsApp",
+    "viewAllPackages": "See all packages",
+    "ctaPopular": "See Popular Packages",
+
     "aboutTitle": "Travel Nusa Penida Comfortably",
     "aboutBody": "CIDIKA TRAVEL&TOUR focuses on Nusa Penida experiences: land tours, snorkeling, and stay packages. We combine comfort, warmth, and professionalism. Booking is easy via Email, Instagram, WhatsApp, or phone—transparent and secure.",
     "point1": "Complete packages: One Day, Half Day, 1D1N + Snorkeling, 2D1N.",
@@ -30,12 +40,35 @@
     "point3": "Private tours—flexible schedule, no shared groups.",
     "point4": "Clear pricing including round-trip fast boat and entrance fees.",
     "banner1": "Iconic spots—Kelingking, Diamond, Crystal Bay—in one trip.",
-    "how1": "Choose a Package",
-    "how1d": "Check details & itinerary that match your needs.",
-    "how2": "Contact Us",
-    "how2d": "Confirm the dates—we'll check availability quickly.",
-    "how3": "Go!",
-    "how3d": "Enjoy the trip—let us handle logistics and comfort.",
+
+    "whyTitle": "Why choose us?",
+    "whySubtitle": "Advantages that make your trip worry-free.",
+    "whyItems": [
+      { "title": "Licensed & Experienced Operator", "text": "Local team knows the best spots and timing." },
+      { "title": "Great for Everyone", "text": "Solo, couple, family, or company trip." },
+      { "title": "Flexible Schedule", "text": "Private charter / open trip." },
+      { "title": "Optimized Itinerary", "text": "Efficient while still catching the best moments." }
+    ],
+
+    "stats": {
+      "travelers": "Happy travelers",
+      "media": "Photos & videos",
+      "rating": "Rating"
+    },
+
+    "howTitle": "How It Works",
+    "howSubtitle": "Simple and fast—no login needed.",
+    "how": [
+      { "title": "Choose a Package", "text": "Compare and set your pax." },
+      { "title": "Chat Admin", "text": "Tap WhatsApp—we reply quickly." },
+      { "title": "Set the Date", "text": "Pick dates & meeting point." },
+      { "title": "Go!", "text": "Enjoy the trip." }
+    ],
+
+    "testimonialsTitle": "What They Say",
+    "helpCTA": "Need help? Chat on WhatsApp",
+
+    "addToCart": "Add to Cart",
     "ctaTitle": "Ready for Nusa Penida?",
     "ctaDesc": "Reach us via WhatsApp/Instagram/Email. We'll tailor the best itinerary for your time & budget."
   },
@@ -44,10 +77,12 @@
     "spots": "Attractions",
     "includes": "Includes",
     "prices": "Price per Pax",
+    "itinerary": "Itinerary",
+    "seeDetail": "See Details",
+    "hideDetail": "Hide Details",
     "snorkeling": "Snorkeling Spots",
     "day1": "Day 1",
-    "day2": "Day 2",
-    "itinerary": "Itinerary"
+    "day2": "Day 2"
   },
   "faq": {
     "title": "FAQ",
@@ -77,19 +112,26 @@
   },
   "checkout": {
     "title": "Checkout",
+    "details": "Customer Details",
+    "itemsCount": "{{count}} item",
     "name": "Full Name",
     "email": "Email",
     "phone": "Phone/WA",
     "date": "Trip Date (YYYY-MM-DD)",
     "notes": "Notes",
     "submit": "Place Order",
+    "next": "Next",
+    "goToWA": "Continue to WhatsApp",
+    "redirectingWA": "Opening WhatsApp...",
     "processing": "Processing...",
     "summary": "Summary",
     "cartEmptyShort": "Cart is empty",
     "cartEmpty": "Cart is empty.",
     "creating": "Creating order...",
     "success": "Order created! Public code: {{code}}",
-    "failed": "Failed to create order"
+    "failed": "Failed to create order",
+    "noteForeign": "Includes adjustments for international travelers.",
+    "noteDomestic": "Special pricing for domestic travelers."
   },
   "footer": {
     "cta": {
@@ -128,6 +170,11 @@
     }
   },
   "admin": {
+    "menu": {
+      "dashboard": "Dashboard",
+      "orders": "Orders",
+      "customize": "Customize"
+    },
     "common": {
       "empty": "No data yet"
     },
@@ -153,16 +200,17 @@
       }
     },
     "customize": {
-      "title": "Customize Home Page",
+      "title": "Customize Pages",
       "saveAll": "Save All",
       "saving": "Saving...",
       "section": "Section:",
       "sort": "Sort",
-      "dataJsonLabel": "Data (JSON) — e.g. hero: { images:[] }",
+      "dataJsonLabel": "Data (JSON) — e.g. hero { images:[] }",
       "titleLabel": "Title",
       "bodyLabel": "Body (Markdown)",
       "saved": "Saved",
-      "saveFailed": "Failed to save"
+      "saveFailed": "Failed to save",
+      "addSection": "Add Section"
     },
     "orders": {
       "title": "Orders",
@@ -174,10 +222,27 @@
         "pax": "Pax",
         "status": "Status",
         "totalIDR": "Total (IDR)"
+      },
+      "status": {
+        "pending": "Pending",
+        "success": "Success",
+        "cancelled": "Cancelled"
+      },
+      "actions": {
+        "edit": "Edit",
+        "save": "Save",
+        "saving": "Saving...",
+        "saved": "Saved",
+        "updateStatus": "Update Status",
+        "invoice": "Invoice",
+        "invoicePlaceholder": "Paste invoice number/link here",
+        "viewBooking": "View Booking"
       }
     }
   },
   "misc": {
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Something went wrong"
   }
 }

@@ -1,3 +1,4 @@
+// src/pages/Checkout.jsx
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCart } from "../context/CartContext";
@@ -13,64 +14,130 @@ export default function Checkout() {
   const nav = useNavigate();
   const { fx, currency, locale } = useCurrency();
 
-  const [form, setForm] = useState({ name:"", email:"", phone:"", date:"", notes:"" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", date: "", notes: "" });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
+  // tanggal "hari ini" dalam format YYYY-MM-DD untuk <input type="date">
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
   // helper angka aman
-  const n = (v, f=0) => {
+  const n = (v, f = 0) => {
     const x = Number(v);
     return Number.isFinite(x) ? x : f;
   };
 
   const lineSubtotal = (it) => {
     const price = n(it.price);
-    const pax   = Math.max(1, n(it.pax, 1));
-    const qty   = Math.max(1, n(it.qty, 1));
+    const pax = Math.max(1, n(it.pax, 1));
+    const qty = Math.max(1, n(it.qty, 1));
     return price * pax * qty;
   };
 
-  const grandTotal = useMemo(
-    () => items.reduce((s, it) => s + lineSubtotal(it), 0),
-    [items]
-  );
+  const grandTotal = useMemo(() => items.reduce((s, it) => s + lineSubtotal(it), 0), [items]);
 
   const first = items[0] || null;
   const audience = first?.audience || "domestic";
-  const audienceLabel = audience === "foreign" ? "Foreign" : "Domestik";
+  const audienceLabel =
+    audience === "foreign"
+      ? t("checkout.audienceForeign", { defaultValue: "Foreign" })
+      : t("checkout.audienceDomestic", { defaultValue: "Domestik" });
+
+  const buildWAMessage = (summary) => {
+    // summary: { public_code, date, items, grandTotal, name, email, phone, audience }
+    const lines = [];
+    lines.push(t("checkout.wa.header", { defaultValue: "Halo Admin CIDIKA, saya ingin booking." }));
+    lines.push("");
+    lines.push(`${t("checkout.wa.name", { defaultValue: "Nama" })}: ${summary.name}`);
+    if (summary.phone) lines.push(`${t("checkout.wa.phone", { defaultValue: "WA" })}: ${summary.phone}`);
+    if (summary.email) lines.push(`${t("checkout.wa.email", { defaultValue: "Email" })}: ${summary.email}`);
+    lines.push(`${t("checkout.wa.date", { defaultValue: "Tanggal" })}: ${summary.date}`);
+    lines.push(
+      `${t("checkout.wa.audience", { defaultValue: "Tipe" })}: ${
+        summary.audience === "foreign" ? "Foreign" : "Domestik"
+      }`
+    );
+    lines.push("");
+    lines.push(t("checkout.wa.items", { defaultValue: "Detail Item:" }));
+    items.forEach((it) => {
+      const pax = Math.max(1, n(it.pax, 1));
+      const qty = Math.max(1, n(it.qty, 1));
+      const price = n(it.price);
+      const subtotal = price * pax * qty;
+      const tag = it.audience === "foreign" ? "Foreign" : "Domestik";
+      lines.push(
+        `• ${it.title} (${tag}) — ${pax} ${t("home.pax", { defaultValue: "pax" })} × ${qty} = ${formatMoneyFromIDR(
+          subtotal,
+          currency,
+          fx,
+          locale
+        )}`
+      );
+    });
+    lines.push("");
+    lines.push(`${t("checkout.wa.total", { defaultValue: "Total" })}: ${formatMoneyFromIDR(summary.grandTotal, currency, fx, locale)}`);
+    if (summary.public_code) lines.push(`${t("checkout.wa.code", { defaultValue: "Kode" })}: ${summary.public_code}`);
+    lines.push("");
+    lines.push(t("checkout.wa.footer", { defaultValue: "Mohon konfirmasinya ya 🙏" }));
+    return encodeURIComponent(lines.join("\n"));
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!items.length) { setMsg(t("checkout.cartEmpty", { defaultValue: "Wishlist kosong." })); return; }
+    if (!items.length) {
+      setMsg(t("checkout.cartEmpty", { defaultValue: "Keranjang kosong." }));
+      return;
+    }
 
     setLoading(true);
     setMsg(t("checkout.creating", { defaultValue: "Membuat order..." }));
 
     try {
+      const p_date = form.date || today;
       const payload = {
         p_package_id: first.id,
-        p_date: form.date || new Date().toISOString().slice(0,10),
+        p_date,
         p_pax: Math.max(1, n(first.pax, 1)),
-        p_audience: audience, // <-- pakai audience dari item
+        p_audience: audience,
         p_customer_name: form.name,
         p_email: form.email,
         p_phone: form.phone,
         p_notes: form.notes || "",
-        // Kirim price_idr = price_per_pax × pax → subtotal per baris
-        p_items: items.map(it => ({
+        // price_idr = harga per pax × pax (per line)
+        p_items: items.map((it) => ({
           item_name: it.title + (it.audience ? ` (${it.audience})` : ""),
           qty: Math.max(1, n(it.qty, 1)),
           price_idr: n(it.price) * Math.max(1, n(it.pax, 1)),
         })),
       };
 
-      const { data, error } = await supabase.rpc("place_order", payload);
+      const { data, error } = await supabase.rpc("place_order_v2", payload);
       if (error) throw error;
 
+      const row = Array.isArray(data) ? data[0] : data;
+      const public_code = row?.public_code || null;
+
+      // siapkan WA message
+      const text = buildWAMessage({
+        public_code,
+        date: p_date,
+        items,
+        grandTotal,
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        audience,
+      });
+
+      // bersihkan keranjang dulu supaya balik dari WA state-nya bersih
       clear();
-      setMsg(t("checkout.success", { defaultValue: "Order dibuat!" }));
-      nav("/");
+
+      // redirect ke WhatsApp
+      const wa = `https://wa.me/6289523949667?text=${text}`;
+      setMsg(t("checkout.redirecting", { defaultValue: "Mengalihkan ke WhatsApp..." }));
+      window.location.href = wa;
     } catch (e2) {
+      console.error(e2);
       setMsg(e2.message || t("checkout.failed", { defaultValue: "Gagal membuat order" }));
     } finally {
       setLoading(false);
@@ -102,11 +169,55 @@ export default function Checkout() {
         >
           <h2 className="font-semibold mb-2">{t("checkout.details", { defaultValue: "Detail Pemesan" })}</h2>
           <form onSubmit={onSubmit} className="grid sm:grid-cols-2 gap-3">
-            <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900 sm:col-span-2" placeholder={t("checkout.name", { defaultValue: "Nama Lengkap" })} value={form.name} onChange={e=>setForm({...form, name:e.target.value})} required />
-            <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900" placeholder={t("checkout.email", { defaultValue: "Email" })} type="email" value={form.email} onChange={e=>setForm({...form, email:e.target.value})} required />
-            <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900" placeholder={t("checkout.phone", { defaultValue: "Telepon/WA" })} value={form.phone} onChange={e=>setForm({...form, phone:e.target.value})} />
-            <input className="border rounded-2xl px-3 py-2 dark:bg-slate-900" placeholder={t("checkout.date", { defaultValue: "Tanggal Trip (YYYY-MM-DD)" })} value={form.date} onChange={e=>setForm({...form, date:e.target.value})} />
-            <textarea className="border rounded-2xl px-3 py-2 dark:bg-slate-900 sm:col-span-2" placeholder={t("checkout.notes", { defaultValue: "Catatan" })} rows="4" value={form.notes} onChange={e=>setForm({...form, notes:e.target.value})} />
+            <input
+              className="border rounded-2xl px-3 py-2 dark:bg-slate-900 sm:col-span-2"
+              placeholder={t("checkout.name", { defaultValue: "Nama Lengkap" })}
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
+            <input
+              className="border rounded-2xl px-3 py-2 dark:bg-slate-900"
+              placeholder={t("checkout.email", { defaultValue: "Email" })}
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
+            />
+            <input
+              className="border rounded-2xl px-3 py-2 dark:bg-slate-900"
+              placeholder={t("checkout.phone", { defaultValue: "Telepon/WA" })}
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+
+            {/* TRIP DATE — pakai calendar picker native */}
+            <div className="flex flex-col">
+              <label htmlFor="trip-date" className="text-xs mb-1 text-slate-600 dark:text-slate-300">
+                {t("checkout.date", { defaultValue: "Tanggal Trip (YYYY-MM-DD)" })}
+              </label>
+              <input
+                id="trip-date"
+                type="date"
+                className="border rounded-2xl px-3 py-2 dark:bg-slate-900"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                min={today}
+                aria-label={t("checkout.date", { defaultValue: "Tanggal Trip (YYYY-MM-DD)" })}
+                onFocus={() => {
+                  // kalau kosong saat fokus, prefill jadi hari ini agar picker konsisten
+                  if (!form.date) setForm((f) => ({ ...f, date: today }));
+                }}
+              />
+            </div>
+
+            <textarea
+              className="border rounded-2xl px-3 py-2 dark:bg-slate-900 sm:col-span-2"
+              placeholder={t("checkout.notes", { defaultValue: "Catatan" })}
+              rows="4"
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            />
 
             <div className="sm:col-span-2 flex items-center gap-3 mt-1">
               <button className="btn btn-primary" disabled={loading}>
@@ -129,11 +240,11 @@ export default function Checkout() {
           </h3>
 
           {items.length === 0 ? (
-            <p className="text-slate-500">{t("checkout.cartEmptyShort", { defaultValue: "Wishlist kosong" })}</p>
+            <p className="text-slate-500">{t("checkout.cartEmptyShort", { defaultValue: "Keranjang kosong" })}</p>
           ) : (
             <>
               <ul className="space-y-2">
-                {items.map(it => {
+                {items.map((it) => {
                   const pax = Math.max(1, n(it.pax, 1));
                   const qty = Math.max(1, n(it.qty, 1));
                   const price = n(it.price);
@@ -159,7 +270,7 @@ export default function Checkout() {
 
               <hr className="my-3 border-slate-200 dark:border-slate-800" />
               <div className="flex items-center justify-between font-semibold">
-                <span>Total</span>
+                <span>{t("checkout.total", { defaultValue: "Total" })}</span>
                 <span>{formatMoneyFromIDR(grandTotal, currency, fx, locale)}</span>
               </div>
               <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">

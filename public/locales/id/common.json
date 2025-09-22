@@ -7,7 +7,11 @@
     "contact": "Kontak",
     "login": "Login Admin",
     "language": "Bahasa",
-    "cart": "Keranjang"
+    "cart": "Keranjang",
+    "wishlist": "Wishlist",
+    "theme": "Tema",
+    "light": "Terang",
+    "dark": "Gelap"
   },
   "hero": {
     "tag": "BEST OFFERS",
@@ -19,10 +23,16 @@
   },
   "home": {
     "popular": "Paket Populer",
+    "popularSub": "Pilihan terbaik wisatawan.",
     "calcFor": "Hitung harga untuk",
     "pax": "pax",
     "perPax": "pax",
-    "addToCart": "Tambah ke Keranjang",
+    "flexible": "Fleksibel",
+    "viewDetails": "Lihat Detail",
+    "orderViaWA": "Pesan via WA",
+    "viewAllPackages": "Lihat semua paket",
+    "ctaPopular": "Lihat Paket Populer",
+
     "aboutTitle": "Jelajahi Nusa Penida dengan Nyaman",
     "aboutBody": "CIDIKA TRAVEL&TOUR berfokus pada pengalaman di Nusa Penida: tour darat, snorkeling, hingga paket menginap. Kami menggabungkan kenyamanan, kehangatan, dan profesionalisme. Pemesanan mudah via Email, Instagram, WhatsApp, atau telepon—transparan dan aman.",
     "point1": "Paket lengkap: One Day, Half Day, 1D1N + Snorkeling, 2D1N.",
@@ -30,12 +40,35 @@
     "point3": "Private tour—jadwal fleksibel, tidak digabung rombongan.",
     "point4": "Harga jelas termasuk fast boat PP & tiket masuk.",
     "banner1": "Spot ikonik—Kelingking, Diamond, Crystal Bay—dalam satu perjalanan.",
-    "how1": "Pilih Paket",
-    "how1d": "Lihat detail & itinerary yang sesuai kebutuhan.",
-    "how2": "Hubungi Kami",
-    "how2d": "Konfirmasi tanggal—kami cek ketersediaan cepat.",
-    "how3": "Berangkat!",
-    "how3d": "Nikmati perjalanan—logistik & kenyamanan kami urus.",
+
+    "whyTitle": "Kenapa pilih kami?",
+    "whySubtitle": "Keunggulan yang bikin trip kamu lebih tenang.",
+    "whyItems": [
+      { "title": "Operator Resmi & Berpengalaman", "text": "Tim lokal paham spot & timing terbaik." },
+      { "title": "Cocok untuk Semua", "text": "Solo, couple, family, rombongan kantor." },
+      { "title": "Jadwal Fleksibel", "text": "Private charter / open trip." },
+      { "title": "Itinerary Optimal", "text": "Efisien, tetap dapat momen terbaik." }
+    ],
+
+    "stats": {
+      "travelers": "Traveler puas",
+      "media": "Foto & video",
+      "rating": "Rating"
+    },
+
+    "howTitle": "Cara Kerja",
+    "howSubtitle": "Simple dan cepat tanpa login.",
+    "how": [
+      { "title": "Pilih Paket", "text": "Bandingkan & sesuaikan pax." },
+      { "title": "Chat Admin", "text": "Klik WhatsApp, kami balas cepat." },
+      { "title": "Atur Jadwal", "text": "Tentukan tanggal & meeting point." },
+      { "title": "Berangkat!", "text": "Nikmati trip." }
+    ],
+
+    "testimonialsTitle": "Kata Mereka",
+    "helpCTA": "Butuh bantuan? Chat WhatsApp",
+
+    "addToCart": "Tambah ke Keranjang",
     "ctaTitle": "Siap Berpetualang di Nusa Penida?",
     "ctaDesc": "Hubungi kami via WhatsApp/Instagram/Email. Tim akan bantu atur itinerary terbaik sesuai waktu & budget."
   },
@@ -79,19 +112,26 @@
   },
   "checkout": {
     "title": "Checkout",
+    "details": "Detail Pemesan",
+    "itemsCount": "{{count}} item",
     "name": "Nama Lengkap",
     "email": "Email",
     "phone": "Telepon/WA",
     "date": "Tanggal Trip (YYYY-MM-DD)",
     "notes": "Catatan",
     "submit": "Buat Pesanan",
+    "next": "Lanjut",
+    "goToWA": "Lanjut ke WhatsApp",
+    "redirectingWA": "Membuka WhatsApp...",
     "processing": "Memproses...",
     "summary": "Ringkasan",
     "cartEmptyShort": "Keranjang kosong",
     "cartEmpty": "Keranjang kosong.",
     "creating": "Membuat order...",
     "success": "Order dibuat! Kode publik: {{code}}",
-    "failed": "Gagal membuat order"
+    "failed": "Gagal membuat order",
+    "noteForeign": "Termasuk penyesuaian untuk wisatawan mancanegara.",
+    "noteDomestic": "Harga khusus wisatawan domestik."
   },
   "footer": {
     "cta": {
@@ -130,6 +170,11 @@
     }
   },
   "admin": {
+    "menu": {
+      "dashboard": "Dashboard",
+      "orders": "Orderan",
+      "customize": "Kustomisasi"
+    },
     "common": {
       "empty": "Belum ada data"
     },
@@ -155,16 +200,17 @@
       }
     },
     "customize": {
-      "title": "Kustomisasi Halaman Home",
+      "title": "Kustomisasi Halaman",
       "saveAll": "Simpan Semua",
       "saving": "Menyimpan...",
       "section": "Section:",
       "sort": "Sort",
-      "dataJsonLabel": "Data (JSON) — contoh hero: { images:[] }",
+      "dataJsonLabel": "Data (JSON) — contoh: hero { images:[] }",
       "titleLabel": "Judul",
       "bodyLabel": "Isi (Markdown)",
       "saved": "Tersimpan",
-      "saveFailed": "Gagal simpan"
+      "saveFailed": "Gagal simpan",
+      "addSection": "Tambah Section"
     },
     "orders": {
       "title": "Orderan",
@@ -176,10 +222,27 @@
         "pax": "Pax",
         "status": "Status",
         "totalIDR": "Total (IDR)"
+      },
+      "status": {
+        "pending": "Pending",
+        "success": "Sukses",
+        "cancelled": "Dibatalkan"
+      },
+      "actions": {
+        "edit": "Ubah",
+        "save": "Simpan",
+        "saving": "Menyimpan...",
+        "saved": "Tersimpan",
+        "updateStatus": "Perbarui Status",
+        "invoice": "Invoice",
+        "invoicePlaceholder": "Tempel nomor/tautan invoice di sini",
+        "viewBooking": "Lihat Booking"
       }
     }
   },
   "misc": {
-    "loading": "Memuat..."
+    "loading": "Memuat...",
+    "success": "Berhasil",
+    "error": "Terjadi kesalahan"
   }
 }

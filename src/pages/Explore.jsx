@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import usePackages from "../hooks/usePackages";
 import { useCurrency } from "../context/CurrencyContext";
 import { useCart } from "../context/CartContext";
@@ -142,7 +142,7 @@ function useTiltRef() {
 }
 
 /* ===============================
-   Mini components for Detail
+   Mini components for Detail (dipakai beberapa bagian)
 ================================= */
 const SectionTitle = ({ icon: Icon, children }) => (
   <div className="flex items-center gap-2 mt-2">
@@ -150,94 +150,6 @@ const SectionTitle = ({ icon: Icon, children }) => (
     <h4 className="font-medium">{children}</h4>
   </div>
 );
-
-function QuickFacts({ audience, pax, priceLabel }) {
-  return (
-    <div className="mt-2 grid grid-cols-3 gap-2">
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-center">
-        <div className="text-[11px] text-slate-500">Audience</div>
-        <div className="text-sm font-semibold">{audience === "domestic" ? "Domestik" : "Foreign"}</div>
-      </div>
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-center">
-        <div className="text-[11px] text-slate-500">Pax</div>
-        <div className="text-sm font-semibold">{pax}</div>
-      </div>
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 px-3 py-2 text-center">
-        <div className="text-[11px] text-slate-500">Price</div>
-        <div className="text-sm font-semibold">{priceLabel}</div>
-      </div>
-    </div>
-  );
-}
-
-function PriceGrid({ tiers, currency, fx, locale, pax, onPickPax, t }) {
-  const forAudience = (tiers || []).slice().sort((a, b) => a.pax - b.pax);
-  if (!forAudience.length) return null;
-  return (
-    <>
-      <SectionTitle icon={DollarSign}>{t("explore.prices")}</SectionTitle>
-      <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {forAudience.map((pt) => {
-          const active = pt.pax === pax;
-          return (
-            <button
-              key={pt.pax}
-              onClick={() => onPickPax?.(pt.pax)}
-              className={
-                "rounded-xl border px-3 py-2 text-left transition " +
-                (active
-                  ? "border-sky-400 bg-sky-50 dark:bg-sky-950/30"
-                  : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60")
-              }
-            >
-              <div className="text-[11px] text-slate-500">
-                {pt.pax} {t("home.pax")}
-              </div>
-              <div className="text-sm font-semibold">
-                {formatMoneyFromIDR(pt.price_idr, currency, fx, locale)}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </>
-  );
-}
-
-function IncludeList({ items }) {
-  const arr = Array.isArray(items) ? items : [];
-  if (!arr.length) return null;
-  return (
-    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-      {arr.map((s, i) => (
-        <div key={i} className="flex items-start gap-2">
-          <Check size={16} className="mt-0.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span className="text-sm">{typeof s === "string" ? s : JSON.stringify(s)}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function GalleryStrip({ images }) {
-  if (!images?.length) return null;
-  return (
-    <div className="mt-2 overflow-x-auto">
-      <div className="flex gap-2 snap-x">
-        {images.map((src, i) => (
-          <div key={i} className="snap-start shrink-0">
-            <img
-              src={src}
-              alt=""
-              loading="lazy"
-              className="w-28 h-20 object-cover rounded-xl border border-slate-200 dark:border-slate-800"
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /* ===============================
    PackageCard
@@ -251,14 +163,11 @@ function PackageCard({
   currency,
   fx,
   locale,
-  isOpen,
-  onToggle,
-  onRegisterRef,
   addItem,
   t,
 }) {
+  const nav = useNavigate();
   const cover = getPkgImage(p);
-  const gallery = getGalleryList(p);
   const tiltRef = useTiltRef();
 
   const tiersAll = (p.price_tiers || []).filter((x) => x.audience === audience);
@@ -272,7 +181,6 @@ function PackageCard({
   return (
     <motion.article
       variants={itemVariants}
-      ref={(el) => onRegisterRef?.(p.id, el)}
       id={`pkg-${p.id}`}
       className="card bg-transparent relative overflow-hidden p-0 hover-lift"
     >
@@ -311,8 +219,11 @@ function PackageCard({
 
       {/* Actions row */}
       <div className="px-4 py-2 flex items-center justify-between gap-3">
-        <button onClick={onToggle} className="btn glass">
-          {isOpen ? t("explore.hideDetail", { defaultValue: "Hide Detail" }) : t("explore.seeDetail", { defaultValue: "See Detail" })}
+        <button
+          onClick={() => nav(`/packages/${p.id}`, { state: { pax, audience } })}
+          className="btn glass"
+        >
+          {t("explore.seeDetail", { defaultValue: "See Detail" })}
         </button>
 
         <div className="flex items-center gap-2">
@@ -327,7 +238,6 @@ function PackageCard({
             className="btn btn-primary glass"
             whileTap={{ scale: 0.98 }}
             onClick={() => {
-              // 1) Tambah item
               addItem({
                 id: p.id,
                 title: loc?.title || p.slug,
@@ -338,7 +248,6 @@ function PackageCard({
                 qty: 1,
                 audience,
               });
-              // 2) Trigger anim pusat layar
               window.dispatchEvent(new CustomEvent("WISHLIST_FX"));
             }}
           >
@@ -346,79 +255,6 @@ function PackageCard({
           </motion.button>
         </div>
       </div>
-
-      {/* Details (revamped) */}
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            key="detail"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 160, damping: 24 }}
-            className="px-4 pb-4"
-          >
-            {/* Gallery Strip */}
-            <SectionTitle icon={Tag}>{loc?.summary || "Highlights"}</SectionTitle>
-            <GalleryStrip images={gallery} />
-
-            {/* Quick facts */}
-            <QuickFacts
-              audience={audience}
-              pax={pax}
-              priceLabel={formatMoneyFromIDR(priceSelected, currency, fx, locale)}
-            />
-
-            <div className="grid md:grid-cols-2 gap-4 pt-3">
-              {/* Column A */}
-              <div>
-                {(loc?.spots?.length || 0) > 0 && (
-                  <>
-                    <SectionTitle icon={MapPin}>{t("explore.spots")}</SectionTitle>
-                    <PillList items={loc?.spots} />
-                  </>
-                )}
-
-                {(loc?.itinerary?.length || 0) > 0 && (
-                  <>
-                    <SectionTitle icon={Calendar}>{t("explore.itinerary", { defaultValue: "Itinerary" })}</SectionTitle>
-                    <ItineraryTimeline data={loc?.itinerary} />
-                  </>
-                )}
-              </div>
-
-              {/* Column B */}
-              <div>
-                {(p.price_tiers?.length || 0) > 0 && (
-                  <PriceGrid
-                    tiers={(p.price_tiers || []).filter((pt) => pt.audience === audience)}
-                    currency={currency}
-                    fx={fx}
-                    locale={locale}
-                    pax={pax}
-                    onPickPax={(n) => setPax(n)}
-                    t={t}
-                  />
-                )}
-
-                {(loc?.include?.length || 0) > 0 && (
-                  <>
-                    <SectionTitle icon={Check}>{t("explore.includes")}</SectionTitle>
-                    <IncludeList items={loc?.include} />
-                  </>
-                )}
-
-                {loc?.note && (
-                  <div className="mt-3 rounded-xl border border-slate-200 dark:border-slate-800 p-3 flex gap-2">
-                    <Info size={16} className="mt-1 text-amber-600" />
-                    <p className="text-sm text-slate-600 dark:text-slate-300">{loc.note}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.article>
   );
 }
@@ -434,39 +270,27 @@ export default function Explore() {
 
   const location = useLocation();
   const qs = new URLSearchParams(location.search);
-  const stateOpenId = location.state?.openId || null;
   const qsId = qs.get("pkg");
-  const initialOpenId = stateOpenId || qsId || null;
   const initialPax = Number(location.state?.pax) || 1;
 
-  const [openId, setOpenId] = useState(initialOpenId);
   const [pax, setPax] = useState(initialPax);
   const [audience, setAudience] = useState("domestic");
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("price");
   const [compact, setCompact] = useState(false);
 
-  const refs = useRef({});
-  const registerRef = (id, el) => {
-    if (el) refs.current[id] = el;
-  };
-
-  useEffect(() => {
-    if (!openId) return;
-    const el = refs.current[openId];
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [openId, data]);
-
   // sticky glass toolbar shrink on scroll
   const { scrollY } = useScroll();
   const barH = useTransform(scrollY, [0, 80], ["4.5rem", "3.5rem"]);
-  const barBg = useTransform(scrollY, [0, 80], ["rgba(255,255,255,0.65)", "rgba(255,255,255,0.9)"]);
-  const barBgDark = useTransform(scrollY, [0, 80], ["rgba(2,6,23,0.55)", "rgba(2,6,23,0.75)"]);
   const barShadow = useTransform(scrollY, [0, 80], ["0 6px 24px rgba(2,6,23,.06)", "0 4px 18px rgba(2,6,23,.12)"]);
+  const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+  const bgFrom = isDark ? "rgba(2,6,23,0.45)" : "rgba(255,255,255,0.60)";
+  const bgTo   = isDark ? "rgba(2,6,23,0.72)" : "rgba(255,255,255,0.90)";
+  const barBg  = useTransform(scrollY, [0, 80], [bgFrom, bgTo]);
 
   // filter + sort
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = (query || "").trim().toLowerCase();
     const list = data.map((p) => {
       const loc = normalizeLocale(p, locale?.slice(0, 2));
       return { ...p, _loc: loc };
@@ -504,12 +328,10 @@ export default function Explore() {
     <div className="container mt-2 space-y-5">
       {/* Sticky glass toolbar */}
       <motion.div
-        style={{ height: barH, boxShadow: barShadow }}
+        style={{ height: barH, boxShadow: barShadow, background: barBg }}
         className="sticky top-16 z-[5] rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 flex items-center"
       >
-        <motion.div className="absolute inset-0 rounded-2xl" style={{ background: barBg }} />
-        <motion.div className="absolute inset-0 rounded-2xl hidden dark:block" style={{ background: barBgDark }} />
-        <div className="relative w-full flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="w-full flex flex-wrap items-center gap-2 sm:gap-3">
           <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 pr-2">
             {t("explore.title")}
           </h1>
@@ -518,6 +340,7 @@ export default function Explore() {
             <div className="relative">
               <input
                 type="text"
+                defaultValue={qsId ? "" : undefined}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("explore.searchPlaceholder", { defaultValue: "Search packages or spots…" })}
@@ -571,7 +394,6 @@ export default function Explore() {
       <motion.div variants={listVariants} initial="hidden" animate="show" className={`grid gap-4 ${compact ? "sm:grid-cols-3" : "md:grid-cols-2"}`}>
         {filtered.map((p) => {
           const loc = normalizeLocale(p, locale?.slice(0, 2));
-          const isOpen = openId === p.id;
           return (
             <PackageCard
               key={p.id}
@@ -583,9 +405,6 @@ export default function Explore() {
               currency={currency}
               fx={fx}
               locale={locale}
-              isOpen={isOpen}
-              onToggle={() => setOpenId(isOpen ? null : p.id)}
-              onRegisterRef={registerRef}
               addItem={addItem}
               t={t}
             />
