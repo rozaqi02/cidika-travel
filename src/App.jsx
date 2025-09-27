@@ -1,16 +1,9 @@
 // src/App.jsx
 import "nprogress/nprogress.css";
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import {
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-  useNavigationType,
-} from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import NProgress from "nprogress";
-import { Heart } from "lucide-react";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -25,27 +18,13 @@ import Kustomisasi from "./pages/admin/Kustomisasi";
 import Orderan from "./pages/admin/Orderan";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./context/ThemeContext";
-import { CartProvider } from "./context/CartContext";
-import WishlistDrawer from "./components/WishlistDrawer";
-import Checkout from "./pages/Checkout";
 import { CurrencyProvider } from "./context/CurrencyContext";
 import { AuthProvider } from "./context/AuthContext";
 import ScrollProgressBar from "./components/ScrollProgressBar";
-
-// ⬇️ IMPORT HALAMAN DETAIL PAKET BARU
 import PackageDetail from "./pages/PackageDetail";
 
-/* NProgress: hanya untuk perpindahan halaman */
-NProgress.configure({
-  showSpinner: false,
-  minimum: 0.06,
-  trickle: true,
-  trickleRate: 0.08,
-  trickleSpeed: 180,
-  speed: 420,
-});
+NProgress.configure({ showSpinner:false, minimum:0.06, trickle:true, trickleRate:0.08, trickleSpeed:180, speed:420 });
 
-/* ========= [EFEK #1] prefers-reduced-motion hook ========= */
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -59,7 +38,6 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-/* ========= [EFEK #2] Scroll manager ========= */
 function ScrollManager() {
   const reduced = usePrefersReducedMotion();
   const { pathname, hash } = useLocation();
@@ -67,8 +45,7 @@ function ScrollManager() {
   const prevPath = useRef(pathname);
 
   useEffect(() => {
-    const save = () =>
-      sessionStorage.setItem(`scroll:${prevPath.current}`, String(window.scrollY || 0));
+    const save = () => sessionStorage.setItem(`scroll:${prevPath.current}`, String(window.scrollY || 0));
     window.addEventListener("beforeunload", save);
     return () => window.removeEventListener("beforeunload", save);
   }, []);
@@ -98,7 +75,6 @@ function ScrollManager() {
   return null;
 }
 
-/* ========= [EFEK #3] Variants transisi halaman ========= */
 function usePageVariants() {
   const reduced = usePrefersReducedMotion();
   return useMemo(
@@ -111,7 +87,6 @@ function usePageVariants() {
   );
 }
 
-/* ========= [EFEK #4] Scrim overlay saat transisi ========= */
 function TransitionScrim({ routeKey }) {
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -128,84 +103,9 @@ function TransitionScrim({ routeKey }) {
   );
 }
 
-/* ========= [EFEK #5] Wishlist FX ========= */
-function WishlistFXOverlay() {
-  const reduced = usePrefersReducedMotion();
-  const [show, setShow] = useState(false);
-  const [key, setKey] = useState(0);
-
-  useEffect(() => {
-    const handler = () => {
-      setKey((k) => k + 1);
-      setShow(true);
-      document.documentElement.style.overflow = "hidden";
-      const t = setTimeout(() => {
-        setShow(false);
-        document.documentElement.style.overflow = "";
-      }, reduced ? 220 : 800);
-      return () => {
-        clearTimeout(t);
-        document.documentElement.style.overflow = "";
-      };
-    };
-    window.addEventListener("WISHLIST_FX", handler);
-    return () => window.removeEventListener("WISHLIST_FX", handler);
-  }, [reduced]);
-
-  return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          key={key}
-          className="fixed inset-0 z-[70] grid place-items-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 1 }}
-        >
-          <motion.div
-            className="absolute inset-0 bg-slate-900/45 dark:bg-slate-950/55 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: reduced ? 0.08 : 0.18, ease: "easeOut" }}
-            style={{ willChange: "opacity" }}
-          />
-          <motion.div
-            initial={{ scale: 0.7, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ duration: reduced ? 0.12 : 0.22 }}
-            className="absolute w-56 h-56 rounded-full bg-sky-500/12 blur-2xl"
-          />
-          <motion.div
-            initial={{ scale: 0.4, rotate: 0, opacity: 0 }}
-            animate={{ scale: [0.4, 1.15, 1], rotate: [0, 8, 0], opacity: [0, 1, 1] }}
-            exit={{ scale: 0.85, opacity: 0 }}
-            transition={{ duration: reduced ? 0.18 : 0.7, times: [0, 0.5, 1], ease: "easeOut" }}
-            className="relative"
-          >
-            <Heart size={76} className="text-sky-600 drop-shadow-lg" fill="currentColor" />
-          </motion.div>
-          <motion.div
-            className="mt-4 text-slate-700 dark:text-slate-200 text-sm font-medium"
-            initial={{ y: 6, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -4, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            Added to Wishlist
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-/* ========= [EFEK #6] Mobile 100vh fix ========= */
 function MobileVhFix() {
   useEffect(() => {
-    const set = () =>
-      document.documentElement.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
+    const set = () => document.documentElement.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
     set();
     window.addEventListener("resize", set, { passive: true });
     return () => window.removeEventListener("resize", set);
@@ -213,7 +113,6 @@ function MobileVhFix() {
   return null;
 }
 
-/* ========= [EFEK #7] Focus main ========= */
 function FocusMainOnRoute() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -226,7 +125,6 @@ function FocusMainOnRoute() {
   return null;
 }
 
-/* ========= [EFEK #8] Cegah ghost-drag <img> ========= */
 function PreventImageDrag() {
   useEffect(() => {
     const prevent = (e) => {
@@ -239,7 +137,6 @@ function PreventImageDrag() {
   return null;
 }
 
-/* ========= [EFEK #9] Button ripple ========= */
 function ButtonRippleEffect() {
   useEffect(() => {
     const onClick = (e) => {
@@ -261,7 +158,6 @@ function ButtonRippleEffect() {
       ripple.style.opacity = "0.8";
       ripple.style.transition = "transform .45s ease, opacity .6s ease";
       ripple.className = "btn-ripple";
-
       target.style.position = target.style.position || "relative";
       target.appendChild(ripple);
       requestAnimationFrame(() => (ripple.style.transform = "scale(1)"));
@@ -276,7 +172,6 @@ function ButtonRippleEffect() {
   return null;
 }
 
-/* ========= [EFEK #10] Page reveal once ========= */
 function PageRevealOnce() {
   useEffect(() => {
     const root = document.documentElement;
@@ -287,15 +182,11 @@ function PageRevealOnce() {
   return null;
 }
 
-/* ==================== Layout ==================== */
-function Layout({ children, onWishlistOpen }) {
+function Layout({ children }) {
   const location = useLocation();
   const pageVariants = usePageVariants();
 
-  useEffect(() => {
-    NProgress.done();
-  }, []);
-
+  useEffect(() => { NProgress.done(); }, []);
   useEffect(() => {
     NProgress.start();
     NProgress.set(0.18);
@@ -306,26 +197,14 @@ function Layout({ children, onWishlistOpen }) {
   return (
     <>
       <ScrollProgressBar />
-      <Navbar onCartOpen={onWishlistOpen} />
-      <WishlistFXOverlay />
+      <Navbar />
       <TransitionScrim routeKey={location.pathname} />
-
       <main className="min-h-[70vh] pt-16">
-        <AnimatePresence
-          mode="wait"
-          initial={false}
-          onExitComplete={() => {
-            NProgress.inc(0.2);
-            requestAnimationFrame(() => NProgress.done());
-          }}
-        >
-          <motion.div
-            key={location.pathname}
-            initial={pageVariants.initial}
-            animate={pageVariants.in}
-            exit={pageVariants.out}
-            onAnimationComplete={() => requestAnimationFrame(() => NProgress.done())}
-          >
+        <AnimatePresence mode="wait" initial={false}
+          onExitComplete={() => { NProgress.inc(0.2); requestAnimationFrame(() => NProgress.done()); }}>
+          <motion.div key={location.pathname}
+            initial={pageVariants.initial} animate={pageVariants.in} exit={pageVariants.out}
+            onAnimationComplete={() => requestAnimationFrame(() => NProgress.done())}>
             {children}
           </motion.div>
         </AnimatePresence>
@@ -335,43 +214,52 @@ function Layout({ children, onWishlistOpen }) {
   );
 }
 
-/* ==================== App Root ==================== */
 export default function App() {
-  const [wishOpen, setWishOpen] = useState(false);
-
   return (
     <ThemeProvider>
       <AuthProvider>
         <CurrencyProvider>
-          <CartProvider>
-            {/* Register UX effects */}
-            <MobileVhFix />
-            <ScrollManager />
-            <FocusMainOnRoute />
-            <PreventImageDrag />
-            <ButtonRippleEffect />
-            <PageRevealOnce />
+          <MobileVhFix />
+          <ScrollManager />
+          <FocusMainOnRoute />
+          <PreventImageDrag />
+          <ButtonRippleEffect />
+          <PageRevealOnce />
 
-            <WishlistDrawer open={wishOpen} onClose={() => setWishOpen(false)} />
-            <Routes>
-              <Route path="/" element={<Layout onWishlistOpen={() => setWishOpen(true)}><Home /></Layout>} />
-              <Route path="/explore" element={<Layout onWishlistOpen={() => setWishOpen(true)}><Explore /></Layout>} />
-              {/* ⬇️ ROUTE BARU: DETAIL PAKET */}
-              <Route path="/packages/:id" element={<Layout onWishlistOpen={() => setWishOpen(true)}><PackageDetail /></Layout>} />
+          {/* Routes */}
+          <Routes>
+            <Route path="/" element={<Layout><Home /></Layout>} />
+            <Route path="/explore" element={<Layout><Explore /></Layout>} />
+            <Route path="/packages/:id" element={<Layout><PackageDetail /></Layout>} />
+            <Route path="/destinasi" element={<Layout><Destinasi /></Layout>} />
+            <Route path="/faq" element={<Layout><FAQ /></Layout>} />
+            <Route path="/contact" element={<Layout><Contact /></Layout>} />
 
-              <Route path="/destinasi" element={<Layout onWishlistOpen={() => setWishOpen(true)}><Destinasi /></Layout>} />
-              <Route path="/faq" element={<Layout onWishlistOpen={() => setWishOpen(true)}><FAQ /></Layout>} />
-              <Route path="/contact" element={<Layout onWishlistOpen={() => setWishOpen(true)}><Contact /></Layout>} />
-              <Route path="/checkout" element={<Layout onWishlistOpen={() => setWishOpen(true)}><Checkout /></Layout>} />
+            <Route path="/admin/login" element={<Layout><Login /></Layout>} />
+            <Route path="/admin" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+            <Route path="/admin/kustomisasi" element={<ProtectedRoute><Layout><Kustomisasi /></Layout></ProtectedRoute>} />
+            <Route path="/admin/orderan" element={<ProtectedRoute><Layout><Orderan /></Layout></ProtectedRoute>} />
 
-              <Route path="/admin/login" element={<Layout><Login /></Layout>} />
-              <Route path="/admin" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
-              <Route path="/admin/kustomisasi" element={<ProtectedRoute><Layout><Kustomisasi /></Layout></ProtectedRoute>} />
-              <Route path="/admin/orderan" element={<ProtectedRoute><Layout><Orderan /></Layout></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
 
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </CartProvider>
+          {/*
+            ─────────────────────────────────────────────────────────────────
+            OPTIONAL LIBRARIES (11+):
+            Install untuk pengalaman maksimal, lalu UNCOMMENT integrasinya.
+            npm i @studio-freight/lenis react-hot-toast react-helmet-async \
+                  swiper dayjs clsx @floating-ui/react-dom @radix-ui/react-tooltip \
+                  react-intersection-observer react-lazy-load-image-component \
+                  react-use
+            ─────────────────────────────────────────────────────────────────
+            Contoh integrasi:
+            - Smooth scroll Lenis
+              import Lenis from '@studio-freight/lenis'
+              useEffect(()=>{ const lenis=new Lenis({lerp:.08}); function raf(t){ lenis.raf(t); requestAnimationFrame(raf); } requestAnimationFrame(raf); return ()=>lenis.destroy(); },[])
+            - Toaster:
+              import { Toaster } from 'react-hot-toast'
+              <Toaster position="top-right" />
+          */}
         </CurrencyProvider>
       </AuthProvider>
     </ThemeProvider>

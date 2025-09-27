@@ -13,15 +13,8 @@ import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
 import usePageSections from "../hooks/usePageSections";
 
-/* ================== Konstanta gambar lokal (bukan dari DB) ================== */
-const HERO_IMAGES_LOCAL = [
-  "/hero1.jpg",
-  "/hero2.jpg",
-  "/hero3.jpg",
-  "/hero4.jpg",
-  "/hero5.jpg",
-  "/hero6.jpg",
-];
+/* ================== Gambar hero lokal (hanya aset, bukan teks) ================== */
+const HERO_IMAGES_LOCAL = ["/hero1.jpg","/hero2.jpg","/hero3.jpg","/hero4.jpg","/hero5.jpg","/hero6.jpg"];
 
 /* ================== Utils kecil ================== */
 function usePreload(images){ useEffect(()=>{ images?.forEach(src=>{ const img=new Image(); img.src=src; }); },[images]); }
@@ -43,46 +36,69 @@ function getPkgImage(p){
 const reveal = { hidden:{opacity:0,y:14}, show:{opacity:1,y:0,transition:{duration:.55,ease:"easeOut"}} };
 const stagger = { hidden:{}, show:{ transition:{ staggerChildren:.08, delayChildren:.05 } } };
 
-/* ================== HERO (gambar lokal + teks i18n) ================== */
-function Hero({ images=[], title, subtitle, desc, chips=[], onSearch, ctaPopularLabel, ctaContactLabel }) {
+/* ================== HERO ================== */
+function Hero({ images=[], subtitle, title, desc, chips=[], onSearch, ctaContactLabel }) {
   const reduced = usePrefersReducedMotion();
   const [idx, setIdx] = useState(0);
+  const par = useRef(null);
+
   usePreload(images);
+
   useEffect(()=>{ if(reduced||images.length<=1) return;
     const id=setInterval(()=>setIdx(i=>(i+1)%images.length), 5200);
     return ()=>clearInterval(id);
   },[reduced, images.length]);
 
+  // Parallax halus (mouse)
+  useEffect(()=>{
+    const el = par.current;
+    if(!el) return;
+    const on = (e)=>{
+      const r = el.getBoundingClientRect();
+      const cx = (e.clientX - (r.left + r.width/2)) / r.width;
+      const cy = (e.clientY - (r.top  + r.height/2)) / r.height;
+      el.style.setProperty("--parx", String(cx * 6));
+      el.style.setProperty("--pary", String(cy * 6));
+    };
+    window.addEventListener("mousemove", on, { passive:true });
+    return ()=>window.removeEventListener("mousemove", on);
+  },[]);
+
   return (
-    <section className="relative h-[78vh] md:h-[88vh] overflow-hidden grain">
-      {/* bg slideshow (lokal) */}
+    <section ref={par} className="relative h-[78vh] md:h-[88vh] overflow-hidden grain">
       {images.map((src,i)=>(
         <img key={src} src={src} alt=""
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ${i===idx?"opacity-100 kenburns":"opacity-0"}`}
+          className={`hero-img absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ${i===idx?"opacity-100 kenburns":"opacity-0"}`}
+          style={{ transform:`translate3d(calc(var(--parx,0px)), calc(var(--pary,0px)), 0)` }}
           loading={i===0?"eager":"lazy"} fetchpriority={i===0?"high":"auto"} />
       ))}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-900/20 to-white/75 dark:to-slate-950/85" />
-      {/* copy */}
-      <div className="relative z-10 container h-full flex flex-col justify-center">
+
+      {/* COPY (mid align) */}
+      <div className="relative z-10 container h-full flex flex-col justify-center items-center text-center">
         {subtitle && (
           <motion.p variants={reveal} initial="hidden" animate="show" className="tracking-[0.28em] text-xs md:text-sm text-white/80">
             {subtitle}
           </motion.p>
         )}
         {title && (
-          <motion.h1 variants={reveal} initial="hidden" animate="show"
-            className="mt-2 font-extrabold text-white leading-[1.05] text-4xl md:text-6xl drop-shadow-[0_8px_24px_rgba(0,0,0,.35)]">
+          <motion.h1
+            variants={reveal} initial="hidden" animate="show"
+            className="mt-2 font-extrabold text-white leading-[1.05] text-4xl md:text-6xl drop-shadow-[0_8px_24px_rgba(0,0,0,.35)]"
+            style={{ fontFamily:'var(--font-hero, "Cinzel", "EB Garamond", ui-serif, Georgia, serif)', letterSpacing:".01em" }}
+          >
             {title}
           </motion.h1>
         )}
         {desc && (
-          <motion.p variants={reveal} initial="hidden" animate="show" className="mt-3 max-w-xl text-white/90">
+          <motion.p variants={reveal} initial="hidden" animate="show" className="mt-4 max-w-2xl mx-auto text-[15px] md:text-base leading-relaxed text-white/90">
             {desc}
           </motion.p>
         )}
-        {/* chips */}
-        {chips?.length>0 && (
-          <motion.div variants={stagger} initial="hidden" animate="show" className="mt-6 flex flex-wrap items-center gap-2">
+
+        {/* Chips hanya jika memang ada di DB */}
+        {!!chips?.length && (
+          <motion.div variants={stagger} initial="hidden" animate="show" className="mt-6 flex flex-wrap items-center justify-center gap-2">
             {chips.map((c,i)=>(
               <motion.button key={i} variants={reveal} onClick={()=>onSearch?.(c.q)} className="btn glass !py-2 !px-3 text-sm">
                 <Search size={14} className="mr-1.5" /> {c.label}
@@ -90,10 +106,13 @@ function Hero({ images=[], title, subtitle, desc, chips=[], onSearch, ctaPopular
             ))}
           </motion.div>
         )}
-        <motion.div variants={reveal} initial="hidden" animate="show" className="mt-5 flex gap-3">
-          <a href="#popular" className="btn btn-primary glass">{ctaPopularLabel}</a>
-          <Link to="/contact" className="btn btn-outline glass">{ctaContactLabel}</Link>
-        </motion.div>
+
+        {/* Hanya tombol Hubungi kami (label dari DB) */}
+        {ctaContactLabel && (
+          <motion.div variants={reveal} initial="hidden" animate="show" className="mt-6 flex justify-center">
+            <Link to="/contact" className="btn btn-outline glass">{ctaContactLabel}</Link>
+          </motion.div>
+        )}
       </div>
     </section>
   );
@@ -103,7 +122,7 @@ function Hero({ images=[], title, subtitle, desc, chips=[], onSearch, ctaPopular
 function FeatureCard({ iconName, title, text }) {
   const Icon = { "badge-check":BadgeCheck, "users":Users, "calendar":Calendar, "map-pin":MapPin }[iconName] || BadgeCheck;
   return (
-    <div className="card p-4">
+    <div className="card p-4 hover-lift">
       <div className="flex items-start gap-3 relative">
         <div className="shrink-0 p-2 rounded-xl bg-slate-100 dark:bg-slate-800">
           <Icon className="text-sky-500" size={18}/>
@@ -188,7 +207,7 @@ function PopularCard({ pkg, price, pax, currency, fx, locale }) {
   const spots = (pkg?.locale?.spots || []).slice(0,4).join(" • ");
   const priceLabel = formatMoneyFromIDR(price, currency, fx, locale);
   return (
-    <div className="border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-smooth overflow-hidden">
+    <div className="border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-smooth overflow-hidden hover-lift">
       <div className="relative aspect-[16/10] overflow-hidden">
         <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-[1.04]" loading="lazy"/>
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/65 to-transparent" />
@@ -266,7 +285,7 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
 function StepCard({ iconName, title, text }) {
   const Icon = { "search":Search, "message":MessageCircle, "calendar":Calendar, "badge-check":BadgeCheck }[iconName] || BadgeCheck;
   return (
-    <div className="card p-4 flex items-start gap-3">
+    <div className="card p-4 flex items-start gap-3 hover-lift">
       <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800"><Icon size={18}/></div>
       <div><div className="font-semibold">{title}</div><p className="text-sm text-slate-600 dark:text-slate-300">{text}</p></div>
     </div>
@@ -299,7 +318,7 @@ function Testimonials({ title, items=[] }) {
       {title && <motion.h2 variants={reveal} initial="hidden" whileInView="show" viewport={{ once:true }} className="text-2xl md:text-3xl font-bold">{title}</motion.h2>}
       <div className="mt-4 overflow-x-auto snap-x">
         <div className="flex gap-4 min-w-max">
-          {items.map((tItem,i)=>( // hindari shadowing 't'
+          {items.map((tItem,i)=>(
             <motion.blockquote key={i} variants={reveal} initial="hidden" whileInView="show"
               viewport={{ once:true, amount:.3 }} className="snap-start w-[320px] card p-4">
               <div className="flex items-center gap-2 text-amber-500 mb-1">{[...Array(5)].map((_,s)=><Star key={s} size={16}/>)}</div>
@@ -357,42 +376,35 @@ function StickyHelpCTA() {
   );
 }
 
-/* ================== HOME (bind semua section) ================== */
+/* ================== HOME ================== */
 export default function Home(){
   const { rows:packages=[] } = usePackages();
   const { fx, currency, locale } = useCurrency();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // Tetap ambil teks dari DB bila ada (locale mengikuti i18n), namun gambar hero dipaksa lokal
   const { sections } = usePageSections("home");
   const S = useMemo(()=>Object.fromEntries((sections||[]).map(s=>[s.section_key,s])),[sections]);
 
   const onQuickSearch = (q)=> navigate(`/explore?tag=${encodeURIComponent(q)}`);
 
-  // Gambar hero: HANYA lokal
-  const heroImages = HERO_IMAGES_LOCAL;
-
-  // Chips: dari DB jika ada, jika tidak dari i18n list, jika tidak ada pakai default
-  const heroChips =
-    (Array.isArray(S.hero?.data?.chips) && S.hero.data.chips) ||
-    t("hero.chips", { returnObjects: true, defaultValue: [] }) ||
-    [{ label: t("home.quickChips.oneDay", { defaultValue: "One Day Trip" }), q: "one-day" }];
+  // Hero hanya pakai teks dari DB
+  const heroTitle = S.hero?.locale?.body_md || "";
+  const heroDesc  = S.hero?.locale?.extra?.desc || "";
+  const heroSub   = S.hero?.locale?.title || "";
+  const heroCTA   = S.hero?.locale?.extra?.cta_contact_label || "";
+  const heroChips = Array.isArray(S.hero?.data?.chips) ? S.hero.data.chips : [];
 
   return (
     <>
       <Hero
-        images={heroImages}
-        subtitle={S.hero?.locale?.title || t("hero.tag", { defaultValue: "BEST OFFERS" })}
-        title={
-          S.hero?.locale?.body_md?.split("\n")[0] ||
-          `${t("hero.line1", { defaultValue: "Jelajahi Nusa Penida bersama" })} ${t("hero.line2", { defaultValue: "CIDIKA TRAVEL&TOUR" })}`
-        }
-        desc={S.hero?.locale?.extra?.desc || t("hero.desc", { defaultValue: "Agen perjalanan terpercaya untuk tour, snorkeling, dan lainnya." })}
+        images={HERO_IMAGES_LOCAL}
+        subtitle={heroSub}
+        title={heroTitle}
+        desc={heroDesc}
         chips={heroChips}
         onSearch={onQuickSearch}
-        ctaPopularLabel={t("home.ctaPopular", { defaultValue: "Lihat Paket Populer" })}
-        ctaContactLabel={t("hero.ctaContact", { defaultValue: "Hubungi Kami" })}
+        ctaContactLabel={heroCTA}
       />
 
       <WhyUs
