@@ -69,6 +69,23 @@ input, select, textarea{ @apply bg-white text-slate-900 border border-slate-300 
 input::placeholder, textarea::placeholder{ @apply text-slate-400; }
 .dark input::placeholder, .dark textarea::placeholder{ @apply text-slate-500; }
 
+/* Floating label helper (agar label tidak menimpa teks saat sudah terisi) */
+.floating-label{
+  @apply pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 text-sm text-slate-500 dark:text-white/60 transition-all bg-white/70 dark:bg-white/10 px-1 rounded;
+}
+/* Saat fokus ATAU saat input sudah ada nilainya, kecilkan & naikkan label */
+.peer:focus ~ .floating-label,
+.peer:not(:placeholder-shown) ~ .floating-label{
+  top: .25rem;              /* sama dengan top-1 */
+  transform: translateY(0); /* hilangkan -translate-y-1/2 */
+  font-size: .75rem;        /* text-xs */
+  color: rgb(2 132 199);    /* sky-600 */
+}
+.dark .peer:focus ~ .floating-label,
+.dark .peer:not(:placeholder-shown) ~ .floating-label{
+  color: rgb(56 189 248);   /* sky-400 */
+}
+
 /* ===============================
    BUTTONS → Glassy
 =================================*/

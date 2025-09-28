@@ -32,7 +32,6 @@
     "orderViaWA": "Pesan via WA",
     "viewAllPackages": "Lihat semua paket",
     "ctaPopular": "Lihat Paket Populer",
-
     "aboutTitle": "Jelajahi Nusa Penida dengan Nyaman",
     "aboutBody": "CIDIKA TRAVEL&TOUR berfokus pada pengalaman di Nusa Penida: tour darat, snorkeling, hingga paket menginap. Kami menggabungkan kenyamanan, kehangatan, dan profesionalisme. Pemesanan mudah via Email, Instagram, WhatsApp, atau telepon—transparan dan aman.",
     "point1": "Paket lengkap: One Day, Half Day, 1D1N + Snorkeling, 2D1N.",
@@ -40,7 +39,6 @@
     "point3": "Private tour—jadwal fleksibel, tidak digabung rombongan.",
     "point4": "Harga jelas termasuk fast boat PP & tiket masuk.",
     "banner1": "Spot ikonik—Kelingking, Diamond, Crystal Bay—dalam satu perjalanan.",
-
     "whyTitle": "Kenapa pilih kami?",
     "whySubtitle": "Keunggulan yang bikin trip kamu lebih tenang.",
     "whyItems": [
@@ -49,13 +47,11 @@
       { "title": "Jadwal Fleksibel", "text": "Private charter / open trip." },
       { "title": "Itinerary Optimal", "text": "Efisien, tetap dapat momen terbaik." }
     ],
-
     "stats": {
       "travelers": "Traveler puas",
       "media": "Foto & video",
       "rating": "Rating"
     },
-
     "howTitle": "Cara Kerja",
     "howSubtitle": "Simple dan cepat tanpa login.",
     "how": [
@@ -64,10 +60,8 @@
       { "title": "Atur Jadwal", "text": "Tentukan tanggal & meeting point." },
       { "title": "Berangkat!", "text": "Nikmati trip." }
     ],
-
     "testimonialsTitle": "Kata Mereka",
     "helpCTA": "Butuh bantuan? Chat WhatsApp",
-
     "addToCart": "Tambah ke Keranjang",
     "ctaTitle": "Siap Berpetualang di Nusa Penida?",
     "ctaDesc": "Hubungi kami via WhatsApp/Instagram/Email. Tim akan bantu atur itinerary terbaik sesuai waktu & budget."
@@ -82,12 +76,16 @@
     "hideDetail": "Tutup Detail",
     "snorkeling": "Spot Snorkeling",
     "day1": "Hari 1",
-    "day2": "Hari 2"
+    "day2": "Hari 2",
+    "searchPlaceholder": "Cari paket atau spot…",
+    "domestic": "Domestik",
+    "foreign": "Mancanegara",
+    "empty": "Tidak ada paket yang sesuai dengan filter."
   },
   "actions": {
-  "order": "Pesan",
-  "askMore": "Tanya lebih lanjut"
-},
+    "order": "Pesan",
+    "askMore": "Tanya lebih lanjut"
+  },
   "faq": {
     "title": "FAQ",
     "list": [
@@ -102,6 +100,8 @@
   },
   "contact": {
     "title": "Kontak Kami",
+    "subtitle": "Hubungi kami untuk pertanyaan atau custom trip—balas cepat via WhatsApp.",
+    "info": "Informasi Kontak",
     "formTitle": "Form Cepat",
     "formNote": "Form ini contoh; di produksi arahkan ke WhatsApp/Email.",
     "name": "Nama",
@@ -135,7 +135,11 @@
     "success": "Order dibuat! Kode publik: {{code}}",
     "failed": "Gagal membuat order",
     "noteForeign": "Termasuk penyesuaian untuk wisatawan mancanegara.",
-    "noteDomestic": "Harga khusus wisatawan domestik."
+    "noteDomestic": "Harga khusus wisatawan domestik.",
+    "wa": {
+      "header": "Halo Admin CIDIKA, saya ingin bertanya.",
+      "footer": "Mohon info lebih lanjut ya 🙏"
+    }
   },
   "footer": {
     "cta": {
@@ -248,5 +252,7 @@
     "loading": "Memuat...",
     "success": "Berhasil",
     "error": "Terjadi kesalahan"
-  }
+  },
+  "back": "Kembali",
+  "gallery": "Galeri"
 }

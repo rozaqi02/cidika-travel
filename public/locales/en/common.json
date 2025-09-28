@@ -32,7 +32,6 @@
     "orderViaWA": "Order via WhatsApp",
     "viewAllPackages": "See all packages",
     "ctaPopular": "See Popular Packages",
-
     "aboutTitle": "Travel Nusa Penida Comfortably",
     "aboutBody": "CIDIKA TRAVEL&TOUR focuses on Nusa Penida experiences: land tours, snorkeling, and stay packages. We combine comfort, warmth, and professionalism. Booking is easy via Email, Instagram, WhatsApp, or phone—transparent and secure.",
     "point1": "Complete packages: One Day, Half Day, 1D1N + Snorkeling, 2D1N.",
@@ -40,7 +39,6 @@
     "point3": "Private tours—flexible schedule, no shared groups.",
     "point4": "Clear pricing including round-trip fast boat and entrance fees.",
     "banner1": "Iconic spots—Kelingking, Diamond, Crystal Bay—in one trip.",
-
     "whyTitle": "Why choose us?",
     "whySubtitle": "Advantages that make your trip worry-free.",
     "whyItems": [
@@ -49,13 +47,11 @@
       { "title": "Flexible Schedule", "text": "Private charter / open trip." },
       { "title": "Optimized Itinerary", "text": "Efficient while still catching the best moments." }
     ],
-
     "stats": {
       "travelers": "Happy travelers",
       "media": "Photos & videos",
       "rating": "Rating"
     },
-
     "howTitle": "How It Works",
     "howSubtitle": "Simple and fast—no login needed.",
     "how": [
@@ -64,10 +60,8 @@
       { "title": "Set the Date", "text": "Pick dates & meeting point." },
       { "title": "Go!", "text": "Enjoy the trip." }
     ],
-
     "testimonialsTitle": "What They Say",
     "helpCTA": "Need help? Chat on WhatsApp",
-
     "addToCart": "Add to Cart",
     "ctaTitle": "Ready for Nusa Penida?",
     "ctaDesc": "Reach us via WhatsApp/Instagram/Email. We'll tailor the best itinerary for your time & budget."
@@ -82,13 +76,16 @@
     "hideDetail": "Hide Details",
     "snorkeling": "Snorkeling Spots",
     "day1": "Day 1",
-    "day2": "Day 2"
+    "day2": "Day 2",
+    "searchPlaceholder": "Search packages or spots…",
+    "domestic": "Domestic",
+    "foreign": "Foreign",
+    "empty": "No packages match your filters."
   },
   "actions": {
-  "order": "Order",
-  "askMore": "Ask more"
-},
-
+    "order": "Order",
+    "askMore": "Ask more"
+  },
   "faq": {
     "title": "FAQ",
     "list": [
@@ -103,6 +100,8 @@
   },
   "contact": {
     "title": "Contact Us",
+    "subtitle": "Reach out for questions or custom trips — we reply fast on WhatsApp.",
+    "info": "Contact Information",
     "formTitle": "Quick Form",
     "formNote": "This is a demo form; in production please redirect to WhatsApp/Email.",
     "name": "Name",
@@ -136,7 +135,11 @@
     "success": "Order created! Public code: {{code}}",
     "failed": "Failed to create order",
     "noteForeign": "Includes adjustments for international travelers.",
-    "noteDomestic": "Special pricing for domestic travelers."
+    "noteDomestic": "Special pricing for domestic travelers.",
+    "wa": {
+      "header": "Hello CIDIKA Admin, I'd like to ask a question.",
+      "footer": "Please share more details 🙏"
+    }
   },
   "footer": {
     "cta": {
@@ -249,5 +252,7 @@
     "loading": "Loading...",
     "success": "Success",
     "error": "Something went wrong"
-  }
+  },
+  "back": "Back",
+  "gallery": "Gallery"
 }

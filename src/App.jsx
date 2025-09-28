@@ -19,10 +19,10 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./context/ThemeContext";
 import { CurrencyProvider } from "./context/CurrencyContext";
 import { AuthProvider } from "./context/AuthContext";
-import { CartProvider } from "./context/CartContext";   // ⬅️ TAMBAH
+import { CartProvider } from "./context/CartContext";
 import ScrollProgressBar from "./components/ScrollProgressBar";
 import PackageDetail from "./pages/PackageDetail";
-import Checkout from "./pages/Checkout";                 // ⬅️ TAMBAH
+import Checkout from "./pages/Checkout";
 
 NProgress.configure({ showSpinner:false, minimum:0.06, trickle:true, trickleRate:0.08, trickleSpeed:180, speed:420 });
 

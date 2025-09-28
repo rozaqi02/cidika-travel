@@ -9,13 +9,17 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-20 relative overflow-hidden">
-      {/* Decorative gradient blobs (subtle, non-flicker) */}
-      <div aria-hidden className="pointer-events-none absolute -top-24 -left-16 h-72 w-72 rounded-full bg-sky-400/20 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute top-10 -right-24 h-80 w-80 rounded-full bg-fuchsia-400/20 blur-3xl" />
+    <footer className="mt-20 relative overflow-hidden isolate">
+      {/* Background glows — diperkecil & digeser ke bawah agar tidak kena tepi atas */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        {/* biru kiri */}
+        <div className="absolute top-32 -left-24 h-[22rem] w-[22rem] rounded-full bg-sky-400/15 blur-[110px]" />
+        {/* ungu kanan */}
+        <div className="absolute top-[26rem] -right-28 h-[24rem] w-[24rem] rounded-full bg-fuchsia-400/15 blur-[120px]" />
+      </div>
 
       {/* CTA Band */}
-      <div className="container relative mt-10 md:mt-12"> {/* <-- jarak atas biar gak mepet */}
+      <div className="container relative mt-10 md:mt-12">
         <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-6 py-7 md:px-10 md:py-8 shadow-smooth">
           <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
             <div className="flex-1">
