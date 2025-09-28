@@ -3,13 +3,12 @@ import React, { useMemo, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, Check, Info, MapPin, DollarSign, Heart } from "lucide-react";
+import { ArrowLeft, Calendar, Check, Info, MapPin, DollarSign } from "lucide-react";
 import usePackages from "../hooks/usePackages";
 import { useCurrency } from "../context/CurrencyContext";
-import { useCart } from "../context/CartContext";
 import { formatMoneyFromIDR } from "../utils/currency";
 
-/* ===== util dari Explore ===== */
+/* ===== util (sama seperti Explore) ===== */
 function getPkgImage(p) {
   const raw =
     p?.default_image ||
@@ -104,7 +103,6 @@ export default function PackageDetail() {
   const location = useLocation();
   const { rows: data = [] } = usePackages();
   const { fx, currency, locale } = useCurrency();
-  const { addItem } = useCart();
 
   const pkg = useMemo(() => data.find((p) => p.id === id || p.slug === id), [data, id]);
   const loc = normalizeLocale(pkg, locale?.slice(0, 2));
@@ -115,8 +113,12 @@ export default function PackageDetail() {
   if (!pkg) {
     return (
       <div className="container py-12">
-        <button onClick={() => nav(-1)} className="btn btn-outline mb-4"><ArrowLeft size={16} className="mr-2" />{t("back", { defaultValue: "Back" })}</button>
-        <div className="card p-6 text-slate-600 dark:text-slate-300">{t("explore.empty", { defaultValue: "No packages match your filters." })}</div>
+        <button onClick={() => nav(-1)} className="btn btn-outline mb-4">
+          <ArrowLeft size={16} className="mr-2" />{t("back", { defaultValue: "Back" })}
+        </button>
+        <div className="card p-6 text-slate-600 dark:text-slate-300">
+          {t("explore.empty", { defaultValue: "No packages match your filters." })}
+        </div>
       </div>
     );
   }
@@ -130,19 +132,31 @@ export default function PackageDetail() {
 
   const audienceLabel = audience === "domestic" ? t("explore.domestic", { defaultValue: "Domestik" }) : "Foreign";
 
-  const buildWAMessage = () => {
+  // WA text — untuk "Tanya lebih lanjut"
+  const buildAskWAMessage = () => {
     const title = loc?.title || pkg.slug;
     const lines = [
-      t("checkout.wa.header", { defaultValue: "Halo Admin CIDIKA, saya ingin booking." }),
+      t("checkout.wa.header", { defaultValue: "Halo Admin CIDIKA, saya ingin bertanya." }),
       "",
       `Paket: ${title}`,
       `${t("home.pax")}: ${pax}`,
       `Tipe: ${audienceLabel}`,
-      `${t("checkout.wa.total", { defaultValue: "Total" })}: ${formatMoneyFromIDR(price, currency, fx, locale)}/pax`,
-      "",
-      t("checkout.wa.footer", { defaultValue: "Mohon konfirmasinya ya 🙏" }),
+      t("checkout.wa.footer", { defaultValue: "Mohon info lebih lanjut ya 🙏" }),
     ];
     return encodeURIComponent(lines.join("\n"));
+  };
+
+  // klik Order → ke Checkout dengan item sesuai pilihan
+  const goOrder = () => {
+    const item = {
+      id: pkg.id,
+      title: loc?.title || pkg.slug,
+      price,  // per pax
+      pax,
+      qty: 1,
+      audience,
+    };
+    nav("/checkout", { state: { items: [item] } });
   };
 
   return (
@@ -209,7 +223,7 @@ export default function PackageDetail() {
             </div>
           )}
 
-          {/* Gallery */}
+          {/* Prices + Gallery */}
           {gallery.length > 1 && (
             <>
               <SectionTitle icon={DollarSign}>{t("explore.prices", { defaultValue: "Price per Pax" })}</SectionTitle>
@@ -218,7 +232,9 @@ export default function PackageDetail() {
                   <button
                     key={pt.pax}
                     onClick={() => setPax(pt.pax)}
-                    className={`rounded-xl border px-3 py-2 text-left transition ${pt.pax === pax ? "border-sky-400 bg-sky-50 dark:bg-sky-950/30" : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60"}`}
+                    className={`rounded-xl border px-3 py-2 text-left transition ${
+                      pt.pax === pax ? "border-sky-400 bg-sky-50 dark:bg-sky-950/30" : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                    }`}
                   >
                     <div className="text-[11px] text-slate-500">
                       {pt.pax} {t("home.pax")}
@@ -246,7 +262,6 @@ export default function PackageDetail() {
           className="card p-4 h-max sticky top-[7.5rem] backdrop-blur-md"
           style={{ background: "color-mix(in srgb, rgba(255,255,255,.72) 50%, transparent)" }}
         >
-          {/* dark: glassy */}
           <div className="hidden dark:block absolute inset-0 -z-10 rounded-2xl backdrop-blur-md" style={{ background: "rgba(2,6,23,.55)" }} />
           <div className="flex items-center justify-between">
             <div className="font-semibold">{t("explore.title", { defaultValue: "Explore Packages" })}</div>
@@ -278,28 +293,15 @@ export default function PackageDetail() {
           </div>
 
           <div className="mt-3 flex gap-2">
-            <button
-              className="btn btn-primary glass flex-1"
-              onClick={() => {
-                addItem({
-                  id: pkg.id,
-                  title: loc?.title || pkg.slug,
-                  price: price,
-                  pax,
-                  qty: 1,
-                  audience,
-                });
-                window.dispatchEvent(new CustomEvent("WISHLIST_FX"));
-              }}
-            >
-              <Heart size={16} className="mr-2" /> {t("home.addToCart", { defaultValue: "Add to Cart" }).replace(/cart|keranjang/i, "Wishlist")}
+            <button className="btn btn-primary glass flex-1" onClick={goOrder}>
+              {t("actions.order", { defaultValue: "Order" })}
             </button>
             <a
               className="btn btn-outline"
-              href={`https://wa.me/6289523949667?text=${buildWAMessage()}`}
+              href={`https://wa.me/6289523949667?text=${buildAskWAMessage()}`}
               target="_blank" rel="noreferrer"
             >
-              WhatsApp
+              {t("actions.askMore", { defaultValue: "Tanya lebih lanjut" })}
             </a>
           </div>
         </motion.aside>

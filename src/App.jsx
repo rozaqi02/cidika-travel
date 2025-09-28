@@ -1,4 +1,3 @@
-// src/App.jsx
 import "nprogress/nprogress.css";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
@@ -20,8 +19,10 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./context/ThemeContext";
 import { CurrencyProvider } from "./context/CurrencyContext";
 import { AuthProvider } from "./context/AuthContext";
+import { CartProvider } from "./context/CartContext";   // ⬅️ TAMBAH
 import ScrollProgressBar from "./components/ScrollProgressBar";
 import PackageDetail from "./pages/PackageDetail";
+import Checkout from "./pages/Checkout";                 // ⬅️ TAMBAH
 
 NProgress.configure({ showSpinner:false, minimum:0.06, trickle:true, trickleRate:0.08, trickleSpeed:180, speed:420 });
 
@@ -219,49 +220,34 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <CurrencyProvider>
-          <MobileVhFix />
-          <ScrollManager />
-          <FocusMainOnRoute />
-          <PreventImageDrag />
-          <ButtonRippleEffect />
-          <PageRevealOnce />
+          <CartProvider>{/* ⬅️ Bungkus semua route dengan CartProvider */}
+            <MobileVhFix />
+            <ScrollManager />
+            <FocusMainOnRoute />
+            <PreventImageDrag />
+            <ButtonRippleEffect />
+            <PageRevealOnce />
 
-          {/* Routes */}
-          <Routes>
-            <Route path="/" element={<Layout><Home /></Layout>} />
-            <Route path="/explore" element={<Layout><Explore /></Layout>} />
-            <Route path="/packages/:id" element={<Layout><PackageDetail /></Layout>} />
-            <Route path="/destinasi" element={<Layout><Destinasi /></Layout>} />
-            <Route path="/faq" element={<Layout><FAQ /></Layout>} />
-            <Route path="/contact" element={<Layout><Contact /></Layout>} />
+            <Routes>
+              <Route path="/" element={<Layout><Home /></Layout>} />
+              <Route path="/explore" element={<Layout><Explore /></Layout>} />
+              <Route path="/packages/:id" element={<Layout><PackageDetail /></Layout>} />
+              <Route path="/checkout" element={<Layout><Checkout /></Layout>} /> {/* ⬅️ ROUTE BARU */}
+              <Route path="/destinasi" element={<Layout><Destinasi /></Layout>} />
+              <Route path="/faq" element={<Layout><FAQ /></Layout>} />
+              <Route path="/contact" element={<Layout><Contact /></Layout>} />
 
-            <Route path="/admin/login" element={<Layout><Login /></Layout>} />
-            <Route path="/admin" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
-            <Route path="/admin/kustomisasi" element={<ProtectedRoute><Layout><Kustomisasi /></Layout></ProtectedRoute>} />
-            <Route path="/admin/orderan" element={<ProtectedRoute><Layout><Orderan /></Layout></ProtectedRoute>} />
+              <Route path="/admin/login" element={<Layout><Login /></Layout>} />
+              <Route path="/admin" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+              <Route path="/admin/kustomisasi" element={<ProtectedRoute><Layout><Kustomisasi /></Layout></ProtectedRoute>} />
+              <Route path="/admin/orderan" element={<ProtectedRoute><Layout><Orderan /></Layout></ProtectedRoute>} />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-
-          {/*
-            ─────────────────────────────────────────────────────────────────
-            OPTIONAL LIBRARIES (11+):
-            Install untuk pengalaman maksimal, lalu UNCOMMENT integrasinya.
-            npm i @studio-freight/lenis react-hot-toast react-helmet-async \
-                  swiper dayjs clsx @floating-ui/react-dom @radix-ui/react-tooltip \
-                  react-intersection-observer react-lazy-load-image-component \
-                  react-use
-            ─────────────────────────────────────────────────────────────────
-            Contoh integrasi:
-            - Smooth scroll Lenis
-              import Lenis from '@studio-freight/lenis'
-              useEffect(()=>{ const lenis=new Lenis({lerp:.08}); function raf(t){ lenis.raf(t); requestAnimationFrame(raf); } requestAnimationFrame(raf); return ()=>lenis.destroy(); },[])
-            - Toaster:
-              import { Toaster } from 'react-hot-toast'
-              <Toaster position="top-right" />
-          */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </CartProvider>
         </CurrencyProvider>
       </AuthProvider>
     </ThemeProvider>
   );
 }
+  

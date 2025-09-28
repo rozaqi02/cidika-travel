@@ -49,8 +49,7 @@ function normalizeLocale(p, currentLang) {
 function useTiltRef() {
   const ref = useRef(null);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const el = ref.current; if (!el) return;
     let rAF = 0;
     const max = 6;
     const onMove = (e) => {
@@ -59,22 +58,13 @@ function useTiltRef() {
       const py = (e.clientY - rect.top) / rect.height - 0.5;
       cancelAnimationFrame(rAF);
       rAF = requestAnimationFrame(() => {
-        el.style.transform = `perspective(1000px) rotateX(${(-py * max).toFixed(
-          2
-        )}deg) rotateY(${(px * max).toFixed(2)}deg)`;
+        el.style.transform = `perspective(1000px) rotateX(${(-py * max).toFixed(2)}deg) rotateY(${(px * max).toFixed(2)}deg)`;
       });
     };
-    const reset = () => {
-      cancelAnimationFrame(rAF);
-      el.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)";
-    };
+    const reset = () => { cancelAnimationFrame(rAF); el.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg)"; };
     el.addEventListener("mousemove", onMove);
     el.addEventListener("mouseleave", reset);
-    return () => {
-      el.removeEventListener("mousemove", onMove);
-      el.removeEventListener("mouseleave", reset);
-      cancelAnimationFrame(rAF);
-    };
+    return () => { el.removeEventListener("mousemove", onMove); el.removeEventListener("mouseleave", reset); cancelAnimationFrame(rAF); };
   }, []);
   return ref;
 }
@@ -105,35 +95,22 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t }) {
 
   const audienceLabel =
     (locale || "").startsWith("id")
-      ? audience === "domestic"
-        ? "Domestik"
-        : "Mancanegara"
+      ? audience === "domestic" ? "Domestik" : "Mancanegara"
       : (locale || "").startsWith("ja")
-      ? audience === "domestic"
-        ? "国内"
-        : "海外"
-      : audience === "domestic"
-      ? "Domestic"
-      : "Foreign";
+      ? audience === "domestic" ? "国内" : "海外"
+      : audience === "domestic" ? "Domestic" : "Foreign";
 
-  const buildWAMessage = () => {
-    const title = loc?.title || p.slug;
-    const lines = [
-      t("checkout.wa.header", { defaultValue: "Halo Admin CIDIKA, saya ingin booking." }),
-      "",
-      `Paket: ${title}`,
-      `${t("home.pax")}: ${pax}`,
-      `Tipe: ${audienceLabel}`,
-      `${t("checkout.wa.total", { defaultValue: "Total" })}: ${formatMoneyFromIDR(
-        priceSelected,
-        currency,
-        fx,
-        locale
-      )}/pax`,
-      "",
-      t("checkout.wa.footer", { defaultValue: "Mohon konfirmasinya ya 🙏" }),
-    ];
-    return encodeURIComponent(lines.join("\n"));
+  const goOrder = () => {
+    // kirim 1 item ke Checkout via navigate state
+    const item = {
+      id: p.id,
+      title: loc?.title || p.slug,
+      price: priceSelected,    // harga per pax
+      pax,                     // jumlah orang yang dipilih di Explore
+      qty: 1,
+      audience,                // domestic/foreign
+    };
+    nav("/checkout", { state: { items: [item] } });
   };
 
   return (
@@ -185,9 +162,9 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t }) {
               </option>
             ))}
           </select>
-          <a className="btn btn-primary glass" href={`https://wa.me/6289523949667?text=${buildWAMessage()}`} target="_blank" rel="noreferrer">
-            WhatsApp
-          </a>
+          <button className="btn btn-primary glass" onClick={goOrder}>
+            {t("actions.order", { defaultValue: "Order" })}
+          </button>
         </div>
       </div>
     </motion.article>
@@ -213,7 +190,7 @@ export default function Explore() {
   const [sortBy, setSortBy] = useState("price");
   const [compact, setCompact] = useState(false);
 
-  // ==== THEME REACTIVE (fix: toolbar mengikuti mode terang/gelap) ====
+  // theme reactive
   const [isDark, setIsDark] = useState(() =>
     typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : false
   );
@@ -227,7 +204,7 @@ export default function Explore() {
     return () => obs.disconnect();
   }, []);
 
-  // sticky glass toolbar shrink on scroll
+  // sticky toolbar
   const { scrollY } = useScroll();
   const barH = useTransform(scrollY, [0, 120], ["6.25rem", "4.75rem"]);
   const barShadow = useTransform(scrollY, [0, 80], ["0 6px 24px rgba(2,6,23,.06)", "0 4px 18px rgba(2,6,23,.12)"]);
@@ -235,7 +212,7 @@ export default function Explore() {
   const bgTo = isDark ? "rgba(2,6,23,0.72)" : "rgba(255,255,255,0.90)";
   const barBg = useTransform(scrollY, [0, 80], [bgFrom, bgTo]);
 
-  // label i18n untuk sort (tanpa update berkas locales)
+  // label sort
   const { sortPriceLabel, sortNameLabel, domesticLabel, foreignLabel } = useMemo(() => {
     const lang = (i18n.language || "id").slice(0, 2);
     if (lang === "ja") {
@@ -244,7 +221,6 @@ export default function Explore() {
     if (lang === "en") {
       return { sortPriceLabel: "Cheapest", sortNameLabel: "A–Z", domesticLabel: "Domestic", foreignLabel: "Foreign" };
     }
-    // id (default)
     return { sortPriceLabel: "Termurah", sortNameLabel: "A–Z", domesticLabel: "Domestik", foreignLabel: "Mancanegara" };
   }, [i18n.language]);
 
@@ -286,13 +262,12 @@ export default function Explore() {
 
   return (
     <div className="container mt-2 space-y-5">
-      {/* Sticky glass toolbar (rapi, lebih tinggi, dan tema reaktif) */}
+      {/* Sticky glass toolbar */}
       <motion.div
         style={{ minHeight: barH, boxShadow: barShadow, background: barBg }}
         className="sticky top-[4.75rem] z-[5] rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 py-3 sm:py-4 flex items-center"
       >
         <div className="w-full flex flex-col gap-2">
-          {/* Row 1: Title + compact toggle */}
           <div className="flex items-center gap-2 justify-between">
             <h1 className="text-base sm:text-xl font-bold text-slate-900 dark:text-slate-100 pr-2">
               {t("explore.title")}
@@ -306,7 +281,6 @@ export default function Explore() {
             </button>
           </div>
 
-          {/* Row 2: Controls */}
           <div className="grid grid-cols-12 gap-2 items-center">
             {/* Search */}
             <div className="col-span-12 sm:col-span-5">
@@ -354,15 +328,13 @@ export default function Explore() {
               </div>
             </div>
 
-            {/* Sort — mobile only */}
+            {/* Sort */}
             <div className="col-span-12 sm:hidden">
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="px-3 py-2 rounded-2xl w-full">
                 <option value="price">{sortPriceLabel}</option>
                 <option value="name">{sortNameLabel}</option>
               </select>
             </div>
-
-            {/* Sort — tablet/desktop only */}
             <div className="hidden sm:col-span-2 sm:flex items-center justify-end">
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="px-3 py-2 rounded-2xl w-full sm:w-auto">
                 <option value="price">{sortPriceLabel}</option>
@@ -380,21 +352,19 @@ export default function Explore() {
         animate="show"
         className={`grid gap-4 ${compact ? "sm:grid-cols-3" : "md:grid-cols-2"}`}
       >
-        {filtered.map((p) => {
-          return (
-            <PackageCard
-              key={p.id}
-              p={p}
-              audience={audience}
-              pax={pax}
-              setPax={setPax}
-              currency={currency}
-              fx={fx}
-              locale={locale}
-              t={t}
-            />
-          );
-        })}
+        {filtered.map((p) => (
+          <PackageCard
+            key={p.id}
+            p={p}
+            audience={audience}
+            pax={pax}
+            setPax={setPax}
+            currency={currency}
+            fx={fx}
+            locale={locale}
+            t={t}
+          />
+        ))}
       </motion.div>
 
       {/* Empty state */}

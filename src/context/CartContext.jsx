@@ -9,9 +9,12 @@ export function CartProvider({ children }) {
   });
   useEffect(() => localStorage.setItem("cart", JSON.stringify(items)), [items]);
 
-  // item: { id, title, price, pax, qty } -> price = price per pax; pax = jumlah orang; qty=1 (selalu)
+  // ganti seluruh isi cart (dipakai saat datang dari Explore/Detail lewat navigate state)
+  const setAll = (arr) => setItems(Array.isArray(arr) ? arr.map(it => ({ ...it, qty: it.qty || 1 })) : []);
+
+  // item: { id, title, price, pax, qty, audience }
   const addItem = (item) => setItems(prev => {
-    const idx = prev.findIndex(p => p.id === item.id && p.pax === item.pax);
+    const idx = prev.findIndex(p => p.id === item.id && p.pax === item.pax && p.audience === item.audience);
     if (idx >= 0) {
       const copy = [...prev]; copy[idx].qty = (copy[idx].qty || 1) + (item.qty || 1); return copy;
     }
@@ -25,7 +28,7 @@ export function CartProvider({ children }) {
   const clear = () => setItems([]);
 
   return (
-    <CartCtx.Provider value={{ items, addItem, updateItem, removeItem, clear }}>
+    <CartCtx.Provider value={{ items, setAll, addItem, updateItem, removeItem, clear }}>
       {children}
     </CartCtx.Provider>
   );

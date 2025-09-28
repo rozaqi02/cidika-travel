@@ -192,3 +192,76 @@ body { opacity: 1; }
     radial-gradient(900px 500px at 100% 0%, rgba(59,130,246,.18), transparent 60%),
     linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
 }
+
+/* ===== FAQ liquid glass ===== */
+.faq-hero {
+  position: relative;
+  overflow: hidden;
+}
+.faq-hero .faq-blob{
+  position:absolute;
+  width: 60vmin; height: 60vmin; border-radius: 50%;
+  background:
+    radial-gradient(closest-side, rgba(56,189,248,.28), rgba(56,189,248,0) 65%),
+    radial-gradient(closest-side, rgba(99,102,241,.26), rgba(99,102,241,0) 70%);
+  filter: blur(20px);
+  opacity: .45;
+  transform: translate3d(0,0,0);
+}
+
+/* Kad kartu */
+.faq-card{
+  position: relative;
+  border-radius: 20px;
+  padding: 1px; /* untuk efek border */
+  background:
+    conic-gradient(from 120deg,
+      rgba(56,189,248,.45),
+      rgba(2,6,23,0),
+      rgba(99,102,241,.45),
+      rgba(56,189,248,.45));
+  /* glow mengikuti pointer */
+  --x: var(--px, 50%); --y: var(--py, 0%);
+  box-shadow: 0 20px 60px rgba(2,6,23,.10);
+  transition: box-shadow .25s ease, transform .25s ease, opacity .25s ease;
+}
+.faq-card::before{
+  content:""; position:absolute; inset:0; border-radius:inherit;
+  padding:1px;
+  background:
+    radial-gradient(400px 400px at var(--x) var(--y), rgba(56,189,248,.35), transparent 55%),
+    radial-gradient(600px 600px at calc(var(--x) + 60px) calc(var(--y) + 60px), rgba(99,102,241,.30), transparent 60%);
+  /* tampilkan hanya sisi border (masking) */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  pointer-events: none;
+  opacity: .9;
+}
+.faq-card:hover{ transform: translateY(-1px); }
+
+.faq-summary{
+  display:flex; align-items:center; justify-content:space-between;
+  width:100%; border:none; background:transparent; cursor:pointer;
+  padding: 16px 18px; border-radius: 18px;
+  color: inherit;
+  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  border: 1px solid rgba(2,6,23,.10);
+}
+.dark .faq-summary{
+  background: color-mix(in srgb, rgba(2,6,23,.88) 46%, transparent);
+  border-color: rgba(148,163,184,.20);
+}
+.faq-q{
+  font-weight: 600; line-height: 1.3;
+}
+.faq-a{
+  padding: 0 18px 16px 18px;
+  color: rgb(71 85 105); /* slate-600 */
+}
+.dark .faq-a{ color: rgb(203 213 225); /* slate-300 */ }
+
+/* pointer vars default bila belum digerakkan */
+:root{ --px: 50%; --py: 0%; }

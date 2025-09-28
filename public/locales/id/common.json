@@ -84,6 +84,10 @@
     "day1": "Hari 1",
     "day2": "Hari 2"
   },
+  "actions": {
+  "order": "Pesan",
+  "askMore": "Tanya lebih lanjut"
+},
   "faq": {
     "title": "FAQ",
     "list": [
