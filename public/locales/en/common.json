@@ -124,22 +124,39 @@
     "date": "Trip Date (YYYY-MM-DD)",
     "notes": "Notes",
     "submit": "Place Order",
-    "next": "Next",
-    "goToWA": "Continue to WhatsApp",
-    "redirectingWA": "Opening WhatsApp...",
     "processing": "Processing...",
     "summary": "Summary",
     "cartEmptyShort": "Cart is empty",
     "cartEmpty": "Cart is empty.",
     "creating": "Creating order...",
-    "success": "Order created! Public code: {{code}}",
     "failed": "Failed to create order",
     "noteForeign": "Includes adjustments for international travelers.",
     "noteDomestic": "Special pricing for domestic travelers.",
+    "audienceDomestic": "Domestic",
+    "audienceForeign": "Foreign",
     "wa": {
-      "header": "Hello CIDIKA Admin, I'd like to ask a question.",
-      "footer": "Please share more details 🙏"
+      "header": "Hello CIDIKA Admin, I'd like to book.",
+      "name": "Name",
+      "phone": "WA",
+      "email": "Email",
+      "date": "Date",
+      "audience": "Type",
+      "items": "Items:",
+      "total": "Total",
+      "code": "Code",
+      "footer": "Please confirm 🙏"
     }
+  },
+  "checkout.success": {
+    "title": "Order received!",
+    "body": "Our admin will process it shortly.",
+    "code": "Order Code",
+    "total": "Total",
+    "contactAdmin": "Confirm to Admin",
+    "goHome": "Go to Home",
+    "mustConfirm": "Please tap “Confirm to Admin” first before going home.",
+    "mustConfirmHint": "Tap “Confirm to Admin” first",
+    "confirmNote": "Confirmation: the details above are correct. Please process. 🙏"
   },
   "footer": {
     "cta": {
@@ -254,5 +271,16 @@
     "error": "Something went wrong"
   },
   "back": "Back",
-  "gallery": "Gallery"
+  "gallery": "Gallery",
+  "checkout.success": {
+    "title": "Order received!",
+    "body": "Our admin will process it shortly.",
+    "code": "Order Code",
+    "total": "Total",
+    "contactAdmin": "Confirm to Admin",
+    "goHome": "Go to Home",
+    "mustConfirm": "Please tap “Confirm to Admin” first before going home.",
+    "mustConfirmHint": "Tap “Confirm to Admin” first",
+    "confirmNote": "Confirmation: the details above are correct. Please process. 🙏"
+  }
 }

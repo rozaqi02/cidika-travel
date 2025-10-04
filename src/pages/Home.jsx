@@ -13,7 +13,7 @@ import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
 import usePageSections from "../hooks/usePageSections";
 
-/* ================== Gambar hero lokal (hanya aset, bukan teks) ================== */
+/* ================== Assets untuk hero ================== */
 const HERO_IMAGES_LOCAL = ["/hero1.jpg","/hero2.jpg","/hero3.jpg","/hero4.jpg","/hero5.jpg","/hero6.jpg"];
 
 /* ================== Utils kecil ================== */
@@ -36,7 +36,157 @@ function getPkgImage(p){
 const reveal = { hidden:{opacity:0,y:14}, show:{opacity:1,y:0,transition:{duration:.55,ease:"easeOut"}} };
 const stagger = { hidden:{}, show:{ transition:{ staggerChildren:.08, delayChildren:.05 } } };
 
-/* ================== HERO ================== */
+/* =====================================================================================
+   React Bits–style mini components (no external deps, semua in-file)
+===================================================================================== */
+
+/** SpotlightOverlay — gradient glow mengikuti pointer (dipakai di hero) */
+function SpotlightOverlay({ className = "" }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onMove = (e) => {
+      const r = el.getBoundingClientRect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      el.style.setProperty("--spot-x", `${x}px`);
+      el.style.setProperty("--spot-y", `${y}px`);
+    };
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className={`pointer-events-none absolute inset-0 ${className}`}
+      style={{
+        background:
+          "radial-gradient(600px circle at var(--spot-x,50%) var(--spot-y,50%), rgba(56,189,248,.25), transparent 45%)",
+        mixBlendMode: "screen",
+      }}
+    />
+  );
+}
+
+/** ShimmerButton — tombol dengan efek shine (dipakai di hero) */
+function ShimmerButton({ as:Comp="a", className="", children, ...props }){
+  return (
+    <Comp
+      {...props}
+      className={`relative overflow-hidden group btn btn-outline glass ${className}`}
+    >
+      <span className="relative z-10">{children}</span>
+      <motion.span
+        aria-hidden
+        initial={{ x: "-120%" }}
+        animate={{ x: "120%" }}
+        transition={{ repeat: Infinity, duration: 2.8, ease: "linear" }}
+        className="absolute inset-y-0 -left-1 w-40 rotate-12 opacity-40"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent)",
+        }}
+      />
+    </Comp>
+  );
+}
+
+/** Marquee — auto scroll horizontal konten (chips/testimonials) */
+function Marquee({ speed = 24, className = "", children }) {
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      <motion.div
+        className="flex gap-2 will-change-transform"
+        initial={{ x: 0 }}
+        animate={{ x: "-50%" }}
+        transition={{ repeat: Infinity, ease: "linear", duration: speed }}
+      >
+        <div className="flex gap-2">{children}</div>
+        <div className="flex gap-2" aria-hidden>{children}</div>
+      </motion.div>
+    </div>
+  );
+}
+
+/** TiltCard — kartu dengan tilt mengikuti pointer (dipakai di Popular) */
+function TiltCard({ children, className = "" }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const on = (e) => {
+      const r = el.getBoundingClientRect();
+      const px = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+      const py = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+      el.style.transform = `rotateX(${(-py * 4).toFixed(2)}deg) rotateY(${(px * 6).toFixed(2)}deg) translateZ(0)`;
+    };
+    const off = () => { el.style.transform = "rotateX(0deg) rotateY(0deg)"; };
+    el.addEventListener("mousemove", on);
+    el.addEventListener("mouseleave", off);
+    return () => { el.removeEventListener("mousemove", on); el.removeEventListener("mouseleave", off); };
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className={`transition-transform duration-200 [transform-style:preserve-3d] ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** HoverBorderGradient — border pelangi halus saat hover (dipakai di Popular) */
+function HoverBorderGradient({ children, className = "" }) {
+  return (
+    <div
+      className={`relative rounded-2xl p-[1px] bg-gradient-to-r from-sky-400/40 via-indigo-400/40 to-sky-400/40 hover:from-sky-400 hover:via-indigo-400 hover:to-sky-400 transition-colors ${className}`}
+    >
+      <div className="rounded-[15px] bg-white/90 dark:bg-slate-900/90">{children}</div>
+    </div>
+  );
+}
+
+/** Timeline — versi vertical untuk "How it works" */
+function Timeline({ steps=[] }) {
+  return (
+    <ol className="relative border-l border-slate-200 dark:border-slate-700 pl-5">
+      {steps.map((s,i)=>(
+        <li key={i} className="mb-6 last:mb-0">
+          <span className="absolute -left-[11px] mt-1 flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-[11px] font-bold">
+            {i+1}
+          </span>
+          <div className="font-semibold">{s.title}</div>
+          <div className="text-sm text-slate-600 dark:text-slate-300">{s.text}</div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** AuroraBeams — latar bergerak lembut untuk Big CTA */
+function AuroraBeams({ className="" }){
+  return (
+    <div className={`absolute inset-0 -z-10 overflow-hidden rounded-2xl ${className}`}>
+      <motion.div
+        className="absolute -inset-[30%] opacity-60 blur-2xl"
+        initial={{ backgroundPosition: "0% 50%" }}
+        animate={{ backgroundPosition: "100% 50%" }}
+        transition={{ repeat: Infinity, duration: 16, ease: "linear" }}
+        style={{
+          backgroundImage:
+            "radial-gradient(40% 30% at 20% 20%, rgba(56,189,248,.20), transparent 60%), radial-gradient(40% 30% at 80% 30%, rgba(99,102,241,.22), transparent 60%), radial-gradient(50% 40% at 40% 80%, rgba(14,165,233,.18), transparent 60%)",
+          backgroundSize: "200% 200%",
+        }}
+      />
+    </div>
+  );
+}
+
+/* =====================================================================================
+   HERO (tetap versi baru)
+===================================================================================== */
+
 function Hero({ images=[], subtitle, title, desc, chips=[], onSearch, ctaContactLabel }) {
   const reduced = usePrefersReducedMotion();
   const [idx, setIdx] = useState(0);
@@ -73,6 +223,7 @@ function Hero({ images=[], subtitle, title, desc, chips=[], onSearch, ctaContact
           loading={i===0?"eager":"lazy"} fetchpriority={i===0?"high":"auto"} />
       ))}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-900/20 to-white/75 dark:to-slate-950/85" />
+      <SpotlightOverlay />
 
       {/* COPY (mid align) */}
       <div className="relative z-10 container h-full flex flex-col justify-center items-center text-center">
@@ -85,6 +236,7 @@ function Hero({ images=[], subtitle, title, desc, chips=[], onSearch, ctaContact
           <motion.h1
             variants={reveal} initial="hidden" animate="show"
             className="mt-2 font-extrabold text-white leading-[1.05] text-4xl md:text-6xl drop-shadow-[0_8px_24px_rgba(0,0,0,.35)]"
+            /* ⚠️ tetap pakai font-mu */
             style={{ fontFamily:'var(--font-hero, "Cinzel", "EB Garamond", ui-serif, Georgia, serif)', letterSpacing:".01em" }}
           >
             {title}
@@ -96,21 +248,25 @@ function Hero({ images=[], subtitle, title, desc, chips=[], onSearch, ctaContact
           </motion.p>
         )}
 
-        {/* Chips hanya jika memang ada di DB */}
-        {!!chips?.length && (
-          <motion.div variants={stagger} initial="hidden" animate="show" className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            {chips.map((c,i)=>(
-              <motion.button key={i} variants={reveal} onClick={()=>onSearch?.(c.q)} className="btn glass !py-2 !px-3 text-sm">
-                <Search size={14} className="mr-1.5" /> {c.label}
-              </motion.button>
-            ))}
+        {/* CTA shimmering */}
+        {ctaContactLabel && (
+          <motion.div variants={reveal} initial="hidden" animate="show" className="mt-6 flex justify-center">
+            <ShimmerButton as={Link} to="/contact" className="!px-5 !py-2.5">
+              {ctaContactLabel}
+            </ShimmerButton>
           </motion.div>
         )}
 
-        {/* Hanya tombol Hubungi kami (label dari DB) */}
-        {ctaContactLabel && (
-          <motion.div variants={reveal} initial="hidden" animate="show" className="mt-6 flex justify-center">
-            <Link to="/contact" className="btn btn-outline glass">{ctaContactLabel}</Link>
+        {/* Chips → Marquee */}
+        {!!chips?.length && (
+          <motion.div variants={stagger} initial="hidden" animate="show" className="mt-6 w-full">
+            <Marquee speed={28} className="max-w-3xl mx-auto">
+              {chips.map((c,i)=>(
+                <button key={i} onClick={()=>onSearch?.(c.q)} className="btn glass !py-2 !px-3 text-sm">
+                  <Search size={14} className="mr-1.5" /> {c.label}
+                </button>
+              ))}
+            </Marquee>
           </motion.div>
         )}
       </div>
@@ -118,7 +274,10 @@ function Hero({ images=[], subtitle, title, desc, chips=[], onSearch, ctaContact
   );
 }
 
-/* ================== WHY US / FEATURES ================== */
+/* =====================================================================================
+   WHY CHOOSE US — REVERT ke versi kamu sebelumnya
+===================================================================================== */
+
 function FeatureCard({ iconName, title, text }) {
   const Icon = { "badge-check":BadgeCheck, "users":Users, "calendar":Calendar, "map-pin":MapPin }[iconName] || BadgeCheck;
   return (
@@ -156,7 +315,9 @@ function WhyUs({ title, subtitle, items=[] }) {
   );
 }
 
-/* ================== STATS ================== */
+/* =====================================================================================
+   STATS (tetap)
+===================================================================================== */
 function useCountUp({ from=0, to=100, duration=1200, start=false }){
   const [v,setV]=useState(from); const r=useRef();
   useEffect(()=>{ if(!start) return; const t0=performance.now();
@@ -198,7 +359,9 @@ function Stats({ trips=0, photos=0, rating=4.9 }) {
   );
 }
 
-/* ================== Popular (paket dari DB paket) ================== */
+/* =====================================================================================
+   Popular (paket) — Tilt + Hover Border Gradient (tetap)
+===================================================================================== */
 function PopularCard({ pkg, price, pax, currency, fx, locale }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -207,35 +370,39 @@ function PopularCard({ pkg, price, pax, currency, fx, locale }) {
   const spots = (pkg?.locale?.spots || []).slice(0,4).join(" • ");
   const priceLabel = formatMoneyFromIDR(price, currency, fx, locale);
   return (
-    <div className="border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 rounded-2xl shadow-smooth overflow-hidden hover-lift">
-      <div className="relative aspect-[16/10] overflow-hidden">
-        <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-[1.04]" loading="lazy"/>
-        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/65 to-transparent" />
-        <div className="absolute left-3 bottom-3 right-3 text-white drop-shadow">
-          <h3 className="font-semibold text-lg line-clamp-1">{title}</h3>
-          <p className="text-[13px] opacity-90 line-clamp-1">{spots}</p>
-        </div>
-      </div>
-      <div className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="text-sky-700 dark:text-sky-300 font-extrabold">
-            {priceLabel} <span className="text-sm font-normal text-slate-600 dark:text-slate-400">/ {t("home.perPax", { defaultValue: "pax" })}</span>
+    <TiltCard>
+      <HoverBorderGradient>
+        <div className="overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800/60">
+          <div className="relative aspect-[16/10] overflow-hidden">
+            <img src={cover} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-[1.06]" loading="lazy"/>
+            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/70 to-transparent" />
+            <div className="absolute left-3 bottom-3 right-3 text-white drop-shadow">
+              <h3 className="font-semibold text-lg line-clamp-1">{title}</h3>
+              <p className="text-[13px] opacity-90 line-clamp-1">{spots}</p>
+            </div>
           </div>
-          <div className="text-xs text-slate-500 flex items-center gap-1"><Calendar size={14}/> {t("home.flexible", { defaultValue: "Flexible" })}</div>
+          <div className="p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+            <div className="flex items-center justify-between">
+              <div className="text-sky-700 dark:text-sky-300 font-extrabold">
+                {priceLabel} <span className="text-sm font-normal text-slate-600 dark:text-slate-400">/ {t("home.perPax", { defaultValue: "pax" })}</span>
+              </div>
+              <div className="text-xs text-slate-500 flex items-center gap-1"><Calendar size={14}/> {t("home.flexible", { defaultValue: "Flexible" })}</div>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <button className="btn glass" onClick={()=>navigate(`/explore?pkg=${pkg.id}`, { state:{ openId:pkg.id, pax } })}>
+                {t("home.viewDetails", { defaultValue: "Lihat Detail" })} <ChevronRight size={16} className="ml-1"/>
+              </button>
+              <a
+                href={`https://wa.me/6289523949667?text=Halo%20Admin,%20saya%20minat%20paket%20${encodeURIComponent(title)}%20untuk%20${pax}%20${t("home.pax", { defaultValue: "pax" })}`}
+                target="_blank" rel="noreferrer" className="btn btn-primary glass"
+              >
+                {t("home.orderViaWA", { defaultValue: "Pesan via WA" })} <ArrowRight size={16} className="ml-1"/>
+              </a>
+            </div>
+          </div>
         </div>
-        <div className="mt-3 flex gap-2">
-          <button className="btn glass" onClick={()=>navigate(`/explore?pkg=${pkg.id}`, { state:{ openId:pkg.id, pax } })}>
-            {t("home.viewDetails", { defaultValue: "Lihat Detail" })} <ChevronRight size={16} className="ml-1"/>
-          </button>
-          <a
-            href={`https://wa.me/6289523949667?text=Halo%20Admin,%20saya%20minat%20paket%20${encodeURIComponent(title)}%20untuk%20${pax}%20${t("home.pax", { defaultValue: "pax" })}`}
-            target="_blank" rel="noreferrer" className="btn btn-primary glass"
-          >
-            {t("home.orderViaWA", { defaultValue: "Pesan via WA" })} <ArrowRight size={16} className="ml-1"/>
-          </a>
-        </div>
-      </div>
-    </div>
+      </HoverBorderGradient>
+    </TiltCard>
   );
 }
 function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
@@ -281,17 +448,17 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
   );
 }
 
-/* ================== How it works ================== */
-function StepCard({ iconName, title, text }) {
-  const Icon = { "search":Search, "message":MessageCircle, "calendar":Calendar, "badge-check":BadgeCheck }[iconName] || BadgeCheck;
-  return (
-    <div className="card p-4 flex items-start gap-3 hover-lift">
-      <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800"><Icon size={18}/></div>
-      <div><div className="font-semibold">{title}</div><p className="text-sm text-slate-600 dark:text-slate-300">{text}</p></div>
-    </div>
-  );
-}
+/* =====================================================================================
+   How it works — Timeline (tetap)
+===================================================================================== */
 function HowItWorks({ title, subtitle, steps=[] }) {
+  const fallback = [
+    { icon:"search",       title:"Pilih Paket",  text:"Bandingkan & sesuaikan pax." },
+    { icon:"message",      title:"Chat Admin",  text:"Klik WhatsApp, kami balas cepat." },
+    { icon:"calendar",     title:"Atur Jadwal", text:"Tentukan tanggal & meeting point." },
+    { icon:"badge-check",  title:"Berangkat!",  text:"Nikmati trip." },
+  ];
+  const list = steps.length ? steps : fallback;
   return (
     <section className="container mt-16">
       {(title||subtitle) && (
@@ -300,62 +467,67 @@ function HowItWorks({ title, subtitle, steps=[] }) {
           {subtitle && <p className="text-slate-600 dark:text-slate-300 mt-1">{subtitle}</p>}
         </motion.div>
       )}
-      <motion.div variants={stagger} initial="hidden" whileInView="show" viewport={{ once:true, amount:.3 }}
-        className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {steps.map((s,i)=>(
-          <motion.div key={i} variants={reveal}><StepCard iconName={s.icon} title={s.title} text={s.text}/></motion.div>
-        ))}
-      </motion.div>
+      <div className="mt-6 card p-5">
+        <Timeline steps={list}/>
+      </div>
     </section>
   );
 }
 
-/* ================== Testimonials ================== */
+/* =====================================================================================
+   Testimonials — Marquee (tetap)
+===================================================================================== */
 function Testimonials({ title, items=[] }) {
   if(!items.length) return null;
   return (
     <section className="container mt-16">
       {title && <motion.h2 variants={reveal} initial="hidden" whileInView="show" viewport={{ once:true }} className="text-2xl md:text-3xl font-bold">{title}</motion.h2>}
-      <div className="mt-4 overflow-x-auto snap-x">
-        <div className="flex gap-4 min-w-max">
+      <div className="mt-4">
+        <Marquee speed={38} className="py-2">
           {items.map((tItem,i)=>(
-            <motion.blockquote key={i} variants={reveal} initial="hidden" whileInView="show"
-              viewport={{ once:true, amount:.3 }} className="snap-start w-[320px] card p-4">
+            <blockquote key={i} className="w-[340px] shrink-0 mr-3 last:mr-0 card p-4">
               <div className="flex items-center gap-2 text-amber-500 mb-1">{[...Array(5)].map((_,s)=><Star key={s} size={16}/>)}</div>
-              <p className="text-slate-700 dark:text-slate-200">{tItem.text}</p>
+              <p className="text-slate-700 dark:text-slate-200 line-clamp-5">{tItem.text}</p>
               <footer className="mt-3 text-sm text-slate-500">— {tItem.name}{tItem.city?`, ${tItem.city}`:""}</footer>
-            </motion.blockquote>
+            </blockquote>
           ))}
-        </div>
+        </Marquee>
       </div>
     </section>
   );
 }
 
-/* ================== CTA besar ================== */
+/* =====================================================================================
+   Big CTA — dengan Aurora Beams (tetap)
+===================================================================================== */
 function BigCTA({ title, desc, whatsapp="+6289523949667" }) {
   const { t } = useTranslation();
   return (
     <section className="container mt-16 mb-20">
-      <div className="card p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center gap-5 hover-lift">
-        <div className="flex-1">
-          {title && <h3 className="text-xl md:text-2xl font-bold">{title}</h3>}
-          {desc && <p className="text-slate-600 dark:text-slate-300">{desc}</p>}
-        </div>
-        <div className="flex gap-3">
-          <a href={`https://wa.me/${whatsapp.replace(/\D/g,"")}`} className="btn btn-primary glass" target="_blank" rel="noreferrer">
-            <Phone size={16} className="mr-1" /> WhatsApp
-          </a>
-          <Link to="/explore" className="btn btn-outline glass">
-            {t("home.viewAllPackages", { defaultValue: "Lihat Semua Paket" })}
-          </Link>
+      <div className="relative card p-6 md:p-8 overflow-hidden">
+        <AuroraBeams />
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-5">
+          <div className="flex-1">
+            {title && <h3 className="text-xl md:text-2xl font-bold">{title}</h3>}
+            {desc && <p className="text-slate-600 dark:text-slate-300">{desc}</p>}
+          </div>
+          <div className="flex gap-3">
+            <a href={`https://wa.me/${whatsapp.replace(/\D/g,"")}`} className="btn btn-primary glass" target="_blank" rel="noreferrer">
+              <Phone size={16} className="mr-1" /> WhatsApp
+            </a>
+            <Link to="/explore" className="btn btn-outline glass">
+              {t("home.viewAllPackages", { defaultValue: "Lihat Semua Paket" })}
+            </Link>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-/* ================== Sticky CTA ================== */
+/* =====================================================================================
+   Sticky CTA (tetap)
+===================================================================================== */
 function StickyHelpCTA() {
   const { t } = useTranslation();
   const [show,setShow]=useState(false);
@@ -376,7 +548,9 @@ function StickyHelpCTA() {
   );
 }
 
-/* ================== HOME ================== */
+/* =====================================================================================
+   HOME
+===================================================================================== */
 export default function Home(){
   const { rows:packages=[] } = usePackages();
   const { fx, currency, locale } = useCurrency();
@@ -407,6 +581,7 @@ export default function Home(){
         ctaContactLabel={heroCTA}
       />
 
+      {/* REVERTED: Why Choose Us pakai komponen lama */}
       <WhyUs
         title={S.whyus?.locale?.title || t("home.whyTitle", { defaultValue: "Kenapa pilih kami?" })}
         subtitle={S.whyus?.locale?.body_md || t("home.whySubtitle", { defaultValue: "Keunggulan yang bikin trip kamu lebih tenang." })}

@@ -15,14 +15,14 @@ import { Mail, Lock, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
  * 6) Glass/backdrop blur pada kartu
  * 7) Hover lift + micro spring
  * 8) Fokus glow di input (ring + glow)
- * 9) Floating label (tetap naik saat terisi atau fokus)
- * 10) CapsLock indicator
- * 11) Remember email (localStorage)
- * 12) Forgot password (Supabase)
- * 13) Button ripple ringan (via CSS global .btn)
- * 14) Spinner halus saat login
- * 15) Validasi email + hint
- * 16) Reduced-motion aware
+ * 9) CapsLock indicator
+ * 10) Remember email (localStorage)
+ * 11) Forgot password (Supabase)
+ * 12) Button ripple ringan (via CSS global .btn)
+ * 13) Spinner halus saat login
+ * 14) Validasi email + hint
+ * 15) Reduced-motion aware
+ * 16) Right-hint placeholder (tidak menimpa teks user)
  */
 
 function useReduced() {
@@ -219,14 +219,18 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onKeyUp={(e) => setCapsOn(e.getModifierState && e.getModifierState("CapsLock"))}
-                    className="peer w-full rounded-xl bg-white/70 dark:bg-white/10 text-slate-900 dark:text-white placeholder-transparent pl-9 pr-3 py-3 border border-slate-300 dark:border-white/10 focus:ring-4 focus:ring-sky-500/25 focus:border-sky-500/70 outline-none transition"
-                    placeholder="Email"
+                    className="peer w-full rounded-xl bg-white/70 dark:bg-white/10 text-slate-900 dark:text-white pl-9 pr-20 py-3 border border-slate-300 dark:border-white/10 focus:ring-4 focus:ring-sky-500/25 focus:border-sky-500/70 outline-none transition"
+                    placeholder="" // kosong agar tidak menimpa teks
+                    aria-label={t("admin.login.email", { defaultValue: "Email" })}
                     autoComplete="username"
                     required
                   />
-                  <label htmlFor="email" className="floating-label">
-                    {t("admin.login.email", { defaultValue: "Email" })}
-                  </label>
+                  {/* Right hint (placeholder) */}
+                  {!email && (
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-white/50">
+                      {t("admin.login.email", { defaultValue: "Email" })}
+                    </span>
+                  )}
                 </div>
                 {!emailValid && email.length > 0 && (
                   <p className="text-[11px] text-amber-700 dark:text-amber-300 -mt-1">
@@ -246,18 +250,23 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPass(e.target.value)}
                     onKeyUp={(e) => setCapsOn(e.getModifierState && e.getModifierState("CapsLock"))}
-                    className="peer w-full rounded-xl bg-white/70 dark:bg-white/10 text-slate-900 dark:text-white placeholder-transparent pl-9 pr-10 py-3 border border-slate-300 dark:border-white/10 focus:ring-4 focus:ring-sky-500/25 focus:border-sky-500/70 outline-none transition"
-                    placeholder="Password"
+                    className="peer w-full rounded-xl bg-white/70 dark:bg-white/10 text-slate-900 dark:text-white pl-9 pr-20 py-3 border border-slate-300 dark:border-white/10 focus:ring-4 focus:ring-sky-500/25 focus:border-sky-500/70 outline-none transition"
+                    placeholder=""
+                    aria-label={t("admin.login.password", { defaultValue: "Password" })}
                     autoComplete="current-password"
                     required
                   />
-                  <label htmlFor="password" className="floating-label">
-                    {t("admin.login.password", { defaultValue: "Password" })}
-                  </label>
+                  {/* Right hint (placeholder) */}
+                  {!password && (
+                    <span className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-white/50">
+                      {t("admin.login.password", { defaultValue: "Password" })}
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => setShowPass((v) => !v)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-white/70"
+                    aria-label={showPass ? t("admin.login.hidePassword", { defaultValue: "Sembunyikan password" }) : t("admin.login.showPassword", { defaultValue: "Tampilkan password" })}
                   >
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>

@@ -1,3 +1,4 @@
+// src/pages/Checkout.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCart } from "../context/CartContext";
@@ -5,10 +6,14 @@ import { supabase } from "../lib/supabaseClient.js";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+
+const WA_NUMBER = "6289523949667"; // ganti jika perlu
+const SNAP_KEY = "order:justPlaced";
+const SNAP_TTL_MS = 1000 * 60 * 30; // 30 menit
 
 export default function Checkout() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { items, clear, setAll } = useCart();
   const location = useLocation();
   const nav = useNavigate();
@@ -19,7 +24,6 @@ export default function Checkout() {
     const fromState = location.state?.items;
     if (Array.isArray(fromState) && fromState.length) {
       setAll(fromState);
-      // bersihkan history state biar refresh nggak masukin item dua kali
       window.history.replaceState({}, document.title);
     }
   }, [location.state, setAll]);
@@ -28,6 +32,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
+  // ===== Helpers =====
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const n = (v, f = 0) => { const x = Number(v); return Number.isFinite(x) ? x : f; };
 
@@ -46,6 +51,12 @@ export default function Checkout() {
       ? t("checkout.audienceForeign", { defaultValue: "Foreign" })
       : t("checkout.audienceDomestic", { defaultValue: "Domestik" });
 
+  const labelForAudience = (aud) =>
+    aud === "foreign"
+      ? t("checkout.audienceForeign", { defaultValue: "Foreign" })
+      : t("checkout.audienceDomestic", { defaultValue: "Domestik" });
+
+  // ===== Build text WA (multi-bahasa) =====
   const buildWAMessage = (summary) => {
     const lines = [];
     lines.push(t("checkout.wa.header", { defaultValue: "Halo Admin CIDIKA, saya ingin booking." }));
@@ -54,7 +65,7 @@ export default function Checkout() {
     if (summary.phone) lines.push(`${t("checkout.wa.phone", { defaultValue: "WA" })}: ${summary.phone}`);
     if (summary.email) lines.push(`${t("checkout.wa.email", { defaultValue: "Email" })}: ${summary.email}`);
     lines.push(`${t("checkout.wa.date", { defaultValue: "Tanggal" })}: ${summary.date}`);
-    lines.push(`${t("checkout.wa.audience", { defaultValue: "Tipe" })}: ${summary.audience === "foreign" ? "Foreign" : "Domestik"}`);
+    lines.push(`${t("checkout.wa.audience", { defaultValue: "Tipe" })}: ${labelForAudience(summary.audience)}`);
     lines.push("");
     lines.push(t("checkout.wa.items", { defaultValue: "Detail Item:" }));
     items.forEach((it) => {
@@ -62,8 +73,12 @@ export default function Checkout() {
       const qty = Math.max(1, n(it.qty, 1));
       const price = n(it.price);
       const subtotal = price * pax * qty;
-      const tag = it.audience === "foreign" ? "Foreign" : "Domestik";
-      lines.push(`• ${it.title} (${tag}) — ${pax} ${t("home.pax", { defaultValue: "pax" })} × ${qty} = ${formatMoneyFromIDR(subtotal, currency, fx, locale)}`);
+      const tag = labelForAudience(it.audience === "foreign" ? "foreign" : "domestic");
+      lines.push(
+        `• ${it.title} (${tag}) — ${pax} ${t("home.pax", { defaultValue: "pax" })} × ${qty} = ${formatMoneyFromIDR(
+          subtotal, currency, fx, locale
+        )}`
+      );
     });
     lines.push("");
     lines.push(`${t("checkout.wa.total", { defaultValue: "Total" })}: ${formatMoneyFromIDR(summary.grandTotal, currency, fx, locale)}`);
@@ -73,9 +88,77 @@ export default function Checkout() {
     return encodeURIComponent(lines.join("\n"));
   };
 
+  // ===== Snapshot untuk popup =====
+  const snapshotFromCurrent = ({ public_code, p_date }) => ({
+    _ts: Date.now(),
+    code: public_code || null,
+    lang: i18n.language?.slice(0, 2) || "id",
+    audience,
+    form: { name: form.name, email: form.email, phone: form.phone, date: p_date, notes: form.notes || "" },
+    items: items.map((it) => ({
+      title: it.title,
+      audience: it.audience || "domestic",
+      pax: Math.max(1, n(it.pax, 1)),
+      qty: Math.max(1, n(it.qty, 1)),
+      price: n(it.price)
+    })),
+    totals: { grand: grandTotal }
+  });
+
+  const saveSnapshot = (snap) => {
+    try { localStorage.setItem(SNAP_KEY, JSON.stringify(snap)); } catch {}
+  };
+  const readFreshSnapshot = () => {
+    try {
+      const raw = localStorage.getItem(SNAP_KEY);
+      if (!raw) return null;
+      const snap = JSON.parse(raw);
+      if (!snap?._ts || Date.now() - snap._ts > SNAP_TTL_MS) {
+        localStorage.removeItem(SNAP_KEY);
+        return null;
+      }
+      return snap;
+    } catch {
+      localStorage.removeItem(SNAP_KEY);
+      return null;
+    }
+  };
+
+  // ===== Popup sukses (ditampilkan segera setelah order sukses) =====
+  const [justPlaced, setJustPlaced] = useState(() => readFreshSnapshot());
+  const [confirmSent, setConfirmSent] = useState(false);
+
+  const tryLoadSnapshot = () => {
+    const fresh = readFreshSnapshot();
+    if (fresh) {
+      setJustPlaced(fresh);
+      setLoading(false); // hentikan loading bila popup muncul
+    }
+  };
+
+  // load saat halaman pertama kali dirender / saat kembali fokus
+  useEffect(() => { tryLoadSnapshot(); }, []);
+  useEffect(() => {
+    const onVisibility = () => { if (document.visibilityState === "visible") tryLoadSnapshot(); };
+    window.addEventListener("focus", tryLoadSnapshot);
+    window.addEventListener("pageshow", tryLoadSnapshot);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", tryLoadSnapshot);
+      window.removeEventListener("pageshow", tryLoadSnapshot);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
+  // ===== Submit =====
   const onSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     if (!items.length) { setMsg(t("checkout.cartEmpty", { defaultValue: "Keranjang kosong." })); return; }
+
+    // Pre-open tab WA agar tidak diblokir (masih dalam user gesture)
+    let waTab = null;
+    try { waTab = window.open("about:blank", "_blank"); } catch {}
 
     setLoading(true);
     setMsg(t("checkout.creating", { defaultValue: "Membuat order..." }));
@@ -104,6 +187,8 @@ export default function Checkout() {
       const row = Array.isArray(data) ? data[0] : data;
       const public_code = row?.public_code || null;
 
+      // siapkan snapshot & WA text
+      const snap = snapshotFromCurrent({ public_code, p_date });
       const text = buildWAMessage({
         public_code,
         date: p_date,
@@ -114,17 +199,61 @@ export default function Checkout() {
         phone: form.phone,
         audience,
       });
+      const waUrl = `https://wa.me/${WA_NUMBER}?text=${text}`;
 
+      // tampilkan popup segera + simpan snapshot
+      saveSnapshot(snap);
+      setJustPlaced(snap);
+      setConfirmSent(false);
+      setLoading(false);
+      setMsg("");
+
+      // buka WA di tab yang sudah dipre-open; fallback: redirect halaman ini
+      if (waTab && !waTab.closed) {
+        try { waTab.location = waUrl; waTab.focus?.(); } catch { window.location.href = waUrl; }
+      } else {
+        window.location.href = waUrl;
+      }
+
+      // bersihkan cart (snapshot sudah menyimpan ringkasannya)
       clear();
-      window.location.href = `https://wa.me/6289523949667?text=${text}`;
     } catch (e2) {
       console.error(e2);
       setMsg(e2.message || t("checkout.failed", { defaultValue: "Gagal membuat order" }));
-    } finally {
       setLoading(false);
     }
   };
 
+  // Build text WA dari snapshot (untuk tombol "Konfirmasi Admin" di popup)
+  const buildWAFromSnapshot = (snap) => {
+    const lines = [];
+    lines.push(t("checkout.wa.header", { defaultValue: "Halo Admin CIDIKA, saya ingin booking." }));
+    lines.push("");
+    lines.push(`${t("checkout.wa.name", { defaultValue: "Nama" })}: ${snap.form.name}`);
+    if (snap.form.phone) lines.push(`${t("checkout.wa.phone", { defaultValue: "WA" })}: ${snap.form.phone}`);
+    if (snap.form.email) lines.push(`${t("checkout.wa.email", { defaultValue: "Email" })}: ${snap.form.email}`);
+    lines.push(`${t("checkout.wa.date", { defaultValue: "Tanggal" })}: ${snap.form.date}`);
+    lines.push(`${t("checkout.wa.audience", { defaultValue: "Tipe" })}: ${labelForAudience(snap.audience)}`);
+    lines.push("");
+    lines.push(t("checkout.wa.items", { defaultValue: "Detail Item:" }));
+    (snap.items || []).forEach((it) => {
+      const subtotal = n(it.price) * Math.max(1, n(it.pax, 1)) * Math.max(1, n(it.qty, 1));
+      const tag = labelForAudience(it.audience === "foreign" ? "foreign" : "domestic");
+      lines.push(
+        `• ${it.title} (${tag}) — ${it.pax} ${t("home.pax", { defaultValue: "pax" })} × ${it.qty} = ${formatMoneyFromIDR(
+          subtotal, currency, fx, locale
+        )}`
+      );
+    });
+    lines.push("");
+    lines.push(`${t("checkout.wa.total", { defaultValue: "Total" })}: ${formatMoneyFromIDR(n(snap.totals?.grand), currency, fx, locale)}`);
+    if (snap.code) lines.push(`${t("checkout.wa.code", { defaultValue: "Kode" })}: ${snap.code}`);
+    lines.push("");
+    lines.push(t("checkout.success.confirmNote", { defaultValue: "Konfirmasi: data di atas benar. Mohon diproses, ya 🙏" }));
+    return encodeURIComponent(lines.join("\n"));
+  };
+
+  // ===== UI =====
   return (
     <div className="container mt-4 space-y-4">
       {/* toolbar */}
@@ -190,7 +319,7 @@ export default function Checkout() {
                   const qty = Math.max(1, n(it.qty, 1));
                   const price = n(it.price);
                   const subtotal = price * pax * qty;
-                  const aud = it.audience === "foreign" ? "Foreign" : "Domestik";
+                  const aud = labelForAudience(it.audience === "foreign" ? "foreign" : "domestic");
                   return (
                     <li key={`${it.id}-${pax}-${it.audience || "domestic"}`} className="flex items-start justify-between gap-2">
                       <span className="text-sm">
@@ -223,6 +352,80 @@ export default function Checkout() {
           )}
         </motion.aside>
       </div>
+
+      {/* ===== SUCCESS MODAL ===== */}
+      <AnimatePresence>
+        {justPlaced && (
+          <motion.div
+            key="success-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center"
+          >
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => {}} />
+            <motion.div
+              initial={{ scale: 0.96, y: 8, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.96, y: 8, opacity: 0 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="relative z-[61] w-[92vw] max-w-lg card p-6 text-center"
+            >
+              <h3 className="text-xl font-bold">
+                {t("checkout.success.title", { defaultValue: "Pesanan diterima!" })}
+              </h3>
+              <p className="mt-2 text-slate-600 dark:text-slate-300">
+                {t("checkout.success.body", { defaultValue: "Admin kami akan segera memproses pesananmu." })}
+              </p>
+
+              <div className="mt-3 text-sm text-slate-500 space-y-1">
+                {justPlaced.code && (
+                  <div>
+                    {t("checkout.success.code", { defaultValue: "Kode Pesanan" })}:{" "}
+                    <span className="font-semibold">{justPlaced.code}</span>
+                  </div>
+                )}
+                {Number.isFinite(justPlaced?.totals?.grand) && (
+                  <div>
+                    {t("checkout.success.total", { defaultValue: "Total" })}:{" "}
+                    {formatMoneyFromIDR(justPlaced.totals.grand, currency, fx, locale)}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-5 flex flex-col sm:flex-row gap-2 justify-center">
+                <a
+                  href={`https://wa.me/${WA_NUMBER}?text=${buildWAFromSnapshot(justPlaced)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-primary"
+                  onClick={() => setConfirmSent(true)}
+                >
+                  {t("checkout.success.contactAdmin", { defaultValue: "Konfirmasi Admin" })}
+                </a>
+
+                <button
+                  className="btn btn-outline disabled:opacity-50"
+                  disabled={!confirmSent}
+                  onClick={() => {
+                    try { localStorage.removeItem(SNAP_KEY); } catch {}
+                    nav("/");
+                  }}
+                  title={!confirmSent ? t("checkout.success.mustConfirmHint", { defaultValue: "Tekan 'Konfirmasi Admin' dulu" }) : undefined}
+                >
+                  {t("checkout.success.goHome", { defaultValue: "Ke Beranda" })}
+                </button>
+              </div>
+
+              {!confirmSent && (
+                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  {t("checkout.success.mustConfirm", { defaultValue: "Silakan tekan 'Konfirmasi Admin' terlebih dahulu sebelum kembali ke beranda." })}
+                </p>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

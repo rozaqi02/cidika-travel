@@ -124,24 +124,41 @@
     "date": "旅行日 (YYYY-MM-DD)",
     "notes": "備考",
     "submit": "注文を確定",
-    "next": "次へ",
-    "goToWA": "WhatsAppへ進む",
-    "redirectingWA": "WhatsAppを開いています...",
     "processing": "処理中...",
     "summary": "サマリー",
     "cartEmptyShort": "カートは空です",
     "cartEmpty": "カートは空です。",
     "creating": "注文を作成中...",
-    "success": "注文が作成されました！公開コード: {{code}}",
     "failed": "注文の作成に失敗しました",
     "noteForeign": "海外旅行者向けの調整込み。",
     "noteDomestic": "国内旅行者向けの特別料金。",
+    "audienceDomestic": "国内",
+    "audienceForeign": "海外",
     "wa": {
-      "header": "CIDIKA管理者さま、質問があります。",
-      "footer": "詳しい情報をお願いします 🙏"
+      "header": "CIDIKA管理者さま、予約を希望します。",
+      "name": "名前",
+      "phone": "WA",
+      "email": "メール",
+      "date": "日付",
+      "audience": "区分",
+      "items": "内容:",
+      "total": "合計",
+      "code": "コード",
+      "footer": "ご確認をお願いします 🙏"
     }
   },
-  "footer": {
+  "checkout.success": {
+    "title": "ご注文を受け付けました！",
+    "body": "まもなく担当者が対応します。",
+    "code": "注文コード",
+    "total": "合計",
+    "contactAdmin": "管理者に確認する",
+    "goHome": "ホームへ戻る",
+    "mustConfirm": "ホームへ戻る前に「管理者に確認する」をタップしてください。",
+    "mustConfirmHint": "先に「管理者に確認する」をタップ",
+    "confirmNote": "確認：上記内容で問題ありません。手配をお願いします。🙏"
+  },
+    "footer": {
     "cta": {
       "kicker": "準備はいい？",
       "title": "ヌサ・ペニダの旅、手配は私たちにお任せ。",

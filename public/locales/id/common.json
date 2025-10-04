@@ -124,22 +124,39 @@
     "date": "Tanggal Trip (YYYY-MM-DD)",
     "notes": "Catatan",
     "submit": "Buat Pesanan",
-    "next": "Lanjut",
-    "goToWA": "Lanjut ke WhatsApp",
-    "redirectingWA": "Membuka WhatsApp...",
     "processing": "Memproses...",
     "summary": "Ringkasan",
     "cartEmptyShort": "Keranjang kosong",
     "cartEmpty": "Keranjang kosong.",
     "creating": "Membuat order...",
-    "success": "Order dibuat! Kode publik: {{code}}",
     "failed": "Gagal membuat order",
     "noteForeign": "Termasuk penyesuaian untuk wisatawan mancanegara.",
     "noteDomestic": "Harga khusus wisatawan domestik.",
+    "audienceDomestic": "Domestik",
+    "audienceForeign": "Mancanegara",
     "wa": {
-      "header": "Halo Admin CIDIKA, saya ingin bertanya.",
-      "footer": "Mohon info lebih lanjut ya 🙏"
+      "header": "Halo Admin CIDIKA, saya ingin booking.",
+      "name": "Nama",
+      "phone": "WA",
+      "email": "Email",
+      "date": "Tanggal",
+      "audience": "Tipe",
+      "items": "Detail Item:",
+      "total": "Total",
+      "code": "Kode",
+      "footer": "Mohon konfirmasinya ya 🙏"
     }
+  },
+  "checkout.success": {
+    "title": "Pesanan diterima!",
+    "body": "Admin kami akan segera memproses pesananmu.",
+    "code": "Kode Pesanan",
+    "total": "Total",
+    "contactAdmin": "Konfirmasi Admin",
+    "goHome": "Ke Beranda",
+    "mustConfirm": "Silakan tekan “Konfirmasi Admin” terlebih dahulu sebelum kembali ke beranda.",
+    "mustConfirmHint": "Tekan “Konfirmasi Admin” dulu",
+    "confirmNote": "Konfirmasi: data di atas benar. Mohon diproses, ya 🙏"
   },
   "footer": {
     "cta": {
