@@ -13,10 +13,9 @@ import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
 import usePageSections from "../hooks/usePageSections";
 
-/* ================== Assets untuk hero ================== */
-const HERO_IMAGES_LOCAL = ["/hero1.jpg","/hero2.jpg","/hero3.jpg","/hero4.jpg","/hero5.jpg","/hero6.jpg"];
+/* ================== Fallback assets (jika DB kosong) ================== */
+const FALLBACK_HERO_IMAGES = ["/hero1.jpg","/hero2.jpg","/hero3.jpg","/hero4.jpg","/hero5.jpg","/hero6.jpg"];
 
-/* ================== Utils kecil ================== */
 function usePreload(images){ useEffect(()=>{ images?.forEach(src=>{ const img=new Image(); img.src=src; }); },[images]); }
 function usePrefersReducedMotion(){
   const [reduced, setReduced] = useState(false);
@@ -26,21 +25,21 @@ function usePrefersReducedMotion(){
   },[]);
   return reduced;
 }
+function normalizeUrl(raw){
+  if(!raw) return "";
+  if(/^https?:\/\//i.test(raw)) return raw;
+  return raw.startsWith("/") ? raw : `/${raw}`;
+}
 function getPkgImage(p){
   const raw = p?.default_image || p?.cover_url || p?.thumbnail || p?.thumb_url || p?.image_url ||
     (Array.isArray(p?.images)&&p.images[0]) || (p?.data?.images && p.data.images[0]) || "";
-  if(!raw) return "/23.jpg";
-  if(/^https?:\/\//i.test(raw)) return raw;
-  return raw.startsWith("/") ? raw : `/${raw}`;
+  const url = normalizeUrl(raw);
+  return url || "/23.jpg";
 }
 const reveal = { hidden:{opacity:0,y:14}, show:{opacity:1,y:0,transition:{duration:.55,ease:"easeOut"}} };
 const stagger = { hidden:{}, show:{ transition:{ staggerChildren:.08, delayChildren:.05 } } };
 
-/* =====================================================================================
-   React Bits–style mini components (no external deps, semua in-file)
-===================================================================================== */
-
-/** SpotlightOverlay — gradient glow mengikuti pointer (dipakai di hero) */
+/** SpotlightOverlay — glow mengikuti pointer */
 function SpotlightOverlay({ className = "" }) {
   const ref = useRef(null);
   useEffect(() => {
@@ -68,53 +67,35 @@ function SpotlightOverlay({ className = "" }) {
     />
   );
 }
-
-/** ShimmerButton — tombol dengan efek shine (dipakai di hero) */
 function ShimmerButton({ as:Comp="a", className="", children, ...props }){
   return (
-    <Comp
-      {...props}
-      className={`relative overflow-hidden group btn btn-outline glass ${className}`}
-    >
+    <Comp {...props} className={`relative overflow-hidden group btn btn-outline glass ${className}`}>
       <span className="relative z-10">{children}</span>
       <motion.span
-        aria-hidden
-        initial={{ x: "-120%" }}
-        animate={{ x: "120%" }}
+        aria-hidden initial={{ x: "-120%" }} animate={{ x: "120%" }}
         transition={{ repeat: Infinity, duration: 2.8, ease: "linear" }}
         className="absolute inset-y-0 -left-1 w-40 rotate-12 opacity-40"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent)",
-        }}
+        style={{ background:"linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent)" }}
       />
     </Comp>
   );
 }
-
-/** Marquee — auto scroll horizontal konten (chips/testimonials) */
 function Marquee({ speed = 24, className = "", children }) {
   return (
     <div className={`relative overflow-hidden ${className}`}>
-      <motion.div
-        className="flex gap-2 will-change-transform"
-        initial={{ x: 0 }}
-        animate={{ x: "-50%" }}
-        transition={{ repeat: Infinity, ease: "linear", duration: speed }}
-      >
+      <motion.div className="flex gap-2 will-change-transform"
+        initial={{ x: 0 }} animate={{ x: "-50%" }}
+        transition={{ repeat: Infinity, ease: "linear", duration: speed }}>
         <div className="flex gap-2">{children}</div>
         <div className="flex gap-2" aria-hidden>{children}</div>
       </motion.div>
     </div>
   );
 }
-
-/** TiltCard — kartu dengan tilt mengikuti pointer (dipakai di Popular) */
 function TiltCard({ children, className = "" }) {
   const ref = useRef(null);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const el = ref.current; if (!el) return;
     const on = (e) => {
       const r = el.getBoundingClientRect();
       const px = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
@@ -122,40 +103,24 @@ function TiltCard({ children, className = "" }) {
       el.style.transform = `rotateX(${(-py * 4).toFixed(2)}deg) rotateY(${(px * 6).toFixed(2)}deg) translateZ(0)`;
     };
     const off = () => { el.style.transform = "rotateX(0deg) rotateY(0deg)"; };
-    el.addEventListener("mousemove", on);
-    el.addEventListener("mouseleave", off);
+    el.addEventListener("mousemove", on); el.addEventListener("mouseleave", off);
     return () => { el.removeEventListener("mousemove", on); el.removeEventListener("mouseleave", off); };
   }, []);
-  return (
-    <div
-      ref={ref}
-      className={`transition-transform duration-200 [transform-style:preserve-3d] ${className}`}
-    >
-      {children}
-    </div>
-  );
+  return <div ref={ref} className={`transition-transform duration-200 [transform-style:preserve-3d] ${className}`}>{children}</div>;
 }
-
-/** HoverBorderGradient — border pelangi halus saat hover (dipakai di Popular) */
 function HoverBorderGradient({ children, className = "" }) {
   return (
-    <div
-      className={`relative rounded-2xl p-[1px] bg-gradient-to-r from-sky-400/40 via-indigo-400/40 to-sky-400/40 hover:from-sky-400 hover:via-indigo-400 hover:to-sky-400 transition-colors ${className}`}
-    >
+    <div className={`relative rounded-2xl p-[1px] bg-gradient-to-r from-sky-400/40 via-indigo-400/40 to-sky-400/40 hover:from-sky-400 hover:via-indigo-400 hover:to-sky-400 transition-colors ${className}`}>
       <div className="rounded-[15px] bg-white/90 dark:bg-slate-900/90">{children}</div>
     </div>
   );
 }
-
-/** Timeline — versi vertical untuk "How it works" */
 function Timeline({ steps=[] }) {
   return (
     <ol className="relative border-l border-slate-200 dark:border-slate-700 pl-5">
       {steps.map((s,i)=>(
         <li key={i} className="mb-6 last:mb-0">
-          <span className="absolute -left-[11px] mt-1 flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-[11px] font-bold">
-            {i+1}
-          </span>
+          <span className="absolute -left-[11px] mt-1 flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-[11px] font-bold">{i+1}</span>
           <div className="font-semibold">{s.title}</div>
           <div className="text-sm text-slate-600 dark:text-slate-300">{s.text}</div>
         </li>
@@ -163,15 +128,11 @@ function Timeline({ steps=[] }) {
     </ol>
   );
 }
-
-/** AuroraBeams — latar bergerak lembut untuk Big CTA */
 function AuroraBeams({ className="" }){
   return (
     <div className={`absolute inset-0 -z-10 overflow-hidden rounded-2xl ${className}`}>
-      <motion.div
-        className="absolute -inset-[30%] opacity-60 blur-2xl"
-        initial={{ backgroundPosition: "0% 50%" }}
-        animate={{ backgroundPosition: "100% 50%" }}
+      <motion.div className="absolute -inset-[30%] opacity-60 blur-2xl"
+        initial={{ backgroundPosition: "0% 50%" }} animate={{ backgroundPosition: "100% 50%" }}
         transition={{ repeat: Infinity, duration: 16, ease: "linear" }}
         style={{
           backgroundImage:
@@ -183,26 +144,19 @@ function AuroraBeams({ className="" }){
   );
 }
 
-/* =====================================================================================
-   HERO (tetap versi baru)
-===================================================================================== */
-
+/* ================== HERO ================== */
 function Hero({ images=[], subtitle, title, desc, chips=[], onSearch, ctaContactLabel }) {
   const reduced = usePrefersReducedMotion();
   const [idx, setIdx] = useState(0);
   const par = useRef(null);
 
   usePreload(images);
-
   useEffect(()=>{ if(reduced||images.length<=1) return;
     const id=setInterval(()=>setIdx(i=>(i+1)%images.length), 5200);
     return ()=>clearInterval(id);
   },[reduced, images.length]);
-
-  // Parallax halus (mouse)
   useEffect(()=>{
-    const el = par.current;
-    if(!el) return;
+    const el = par.current; if(!el) return;
     const on = (e)=>{
       const r = el.getBoundingClientRect();
       const cx = (e.clientX - (r.left + r.width/2)) / r.width;
@@ -216,48 +170,32 @@ function Hero({ images=[], subtitle, title, desc, chips=[], onSearch, ctaContact
 
   return (
     <section ref={par} className="relative h-[78vh] md:h-[88vh] overflow-hidden grain">
-      {images.map((src,i)=>(
-        <img key={src} src={src} alt=""
-          className={`hero-img absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ${i===idx?"opacity-100 kenburns":"opacity-0"}`}
-          style={{ transform:`translate3d(calc(var(--parx,0px)), calc(var(--pary,0px)), 0)` }}
-          loading={i===0?"eager":"lazy"} fetchpriority={i===0?"high":"auto"} />
-      ))}
+      {images.map((raw,i)=> {
+        const src = normalizeUrl(raw);
+        return (
+          <img key={src||i} src={src} alt=""
+            className={`hero-img absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ${i===idx?"opacity-100 kenburns":"opacity-0"}`}
+            style={{ transform:`translate3d(calc(var(--parx,0px)), calc(var(--pary,0px)), 0)` }}
+            loading={i===0?"eager":"lazy"} fetchpriority={i===0?"high":"auto"} />
+        );
+      })}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-900/20 to-white/75 dark:to-slate-950/85" />
       <SpotlightOverlay />
-
-      {/* COPY (mid align) */}
       <div className="relative z-10 container h-full flex flex-col justify-center items-center text-center">
-        {subtitle && (
-          <motion.p variants={reveal} initial="hidden" animate="show" className="tracking-[0.28em] text-xs md:text-sm text-white/80">
-            {subtitle}
-          </motion.p>
-        )}
+        {subtitle && <motion.p variants={reveal} initial="hidden" animate="show" className="tracking-[0.28em] text-xs md:text-sm text-white/80">{subtitle}</motion.p>}
         {title && (
-          <motion.h1
-            variants={reveal} initial="hidden" animate="show"
+          <motion.h1 variants={reveal} initial="hidden" animate="show"
             className="mt-2 font-extrabold text-white leading-[1.05] text-4xl md:text-6xl drop-shadow-[0_8px_24px_rgba(0,0,0,.35)]"
-            /* ⚠️ tetap pakai font-mu */
-            style={{ fontFamily:'var(--font-hero, "Cinzel", "EB Garamond", ui-serif, Georgia, serif)', letterSpacing:".01em" }}
-          >
+            style={{ fontFamily:'var(--font-hero, "Cinzel", "EB Garamond", ui-serif, Georgia, serif)', letterSpacing:".01em" }}>
             {title}
           </motion.h1>
         )}
-        {desc && (
-          <motion.p variants={reveal} initial="hidden" animate="show" className="mt-4 max-w-2xl mx-auto text-[15px] md:text-base leading-relaxed text-white/90">
-            {desc}
-          </motion.p>
-        )}
-
-        {/* CTA shimmering */}
+        {desc && <motion.p variants={reveal} initial="hidden" animate="show" className="mt-4 max-w-2xl mx-auto text-[15px] md:text-base leading-relaxed text-white/90">{desc}</motion.p>}
         {ctaContactLabel && (
           <motion.div variants={reveal} initial="hidden" animate="show" className="mt-6 flex justify-center">
-            <ShimmerButton as={Link} to="/contact" className="!px-5 !py-2.5">
-              {ctaContactLabel}
-            </ShimmerButton>
+            <ShimmerButton as={Link} to="/contact" className="!px-5 !py-2.5">{ctaContactLabel}</ShimmerButton>
           </motion.div>
         )}
-
-        {/* Chips → Marquee */}
         {!!chips?.length && (
           <motion.div variants={stagger} initial="hidden" animate="show" className="mt-6 w-full">
             <Marquee speed={28} className="max-w-3xl mx-auto">
@@ -274,22 +212,15 @@ function Hero({ images=[], subtitle, title, desc, chips=[], onSearch, ctaContact
   );
 }
 
-/* =====================================================================================
-   WHY CHOOSE US — REVERT ke versi kamu sebelumnya
-===================================================================================== */
+/* ================== WHY / STATS / POPULAR / HOW / TESTIMONIALS / CTA (sama seperti versi-mu) ================== */
 
 function FeatureCard({ iconName, title, text }) {
   const Icon = { "badge-check":BadgeCheck, "users":Users, "calendar":Calendar, "map-pin":MapPin }[iconName] || BadgeCheck;
   return (
     <div className="card p-4 hover-lift">
       <div className="flex items-start gap-3 relative">
-        <div className="shrink-0 p-2 rounded-xl bg-slate-100 dark:bg-slate-800">
-          <Icon className="text-sky-500" size={18}/>
-        </div>
-        <div>
-          <div className="font-semibold">{title}</div>
-          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{text}</p>
-        </div>
+        <div className="shrink-0 p-2 rounded-xl bg-slate-100 dark:bg-slate-800"><Icon className="text-sky-500" size={18}/></div>
+        <div><div className="font-semibold">{title}</div><p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{text}</p></div>
       </div>
     </div>
   );
@@ -306,67 +237,41 @@ function WhyUs({ title, subtitle, items=[] }) {
       <motion.div variants={stagger} initial="hidden" whileInView="show" viewport={{ once:true, amount:.3 }}
         className="mt-6 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {items.map((it,i)=>(
-          <motion.div key={i} variants={reveal}>
-            <FeatureCard iconName={it.icon || "badge-check"} title={it.title} text={it.text}/>
-          </motion.div>
+          <motion.div key={i} variants={reveal}><FeatureCard iconName={it.icon || "badge-check"} title={it.title} text={it.text}/></motion.div>
         ))}
       </motion.div>
     </section>
   );
 }
-
-/* =====================================================================================
-   STATS (tetap)
-===================================================================================== */
 function useCountUp({ from=0, to=100, duration=1200, start=false }){
   const [v,setV]=useState(from); const r=useRef();
   useEffect(()=>{ if(!start) return; const t0=performance.now();
     const step=(t)=>{ const p=Math.min(1,(t-t0)/duration); setV(Math.round(from+(to-from)*p)); if(p<1) r.current=requestAnimationFrame(step); };
     r.current=requestAnimationFrame(step); return ()=>cancelAnimationFrame(r.current);
-  },[from,to,duration,start]);
-  return v;
+  },[from,to,duration,start]); return v;
 }
 function Stats({ trips=0, photos=0, rating=4.9 }) {
-  const { t } = useTranslation();
-  const [start,setStart]=useState(false); const ref=useRef(null);
+  const { t } = useTranslation(); const [start,setStart]=useState(false); const ref=useRef(null);
   useEffect(()=>{ const io=new IntersectionObserver((es)=>es.forEach(e=>e.isIntersecting&&setStart(true)),{threshold:.4});
-    if(ref.current) io.observe(ref.current); return ()=>io.disconnect();
-  },[]);
+    if(ref.current) io.observe(ref.current); return ()=>io.disconnect(); },[]);
   const tv=useCountUp({ to:trips,  duration:1200, start });
   const pv=useCountUp({ to:photos, duration:1400, start });
-  const rv=useCountUp({ to:Math.round(rating*10), duration:900, start }); // 49 → 4.9
+  const rv=useCountUp({ to:Math.round(rating*10), duration:900, start });
   return (
     <section ref={ref} className="container mt-14">
       <div className="card p-5 md:p-7">
         <div className="grid sm:grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="text-3xl font-extrabold">{tv.toLocaleString()}+</div>
-            <div className="text-sm text-slate-500">{t("home.stats.travelers", { defaultValue: "Traveler puas" })}</div>
-          </div>
-          <div>
-            <div className="text-3xl font-extrabold">{pv.toLocaleString()}+</div>
-            <div className="text-sm text-slate-500">{t("home.stats.media", { defaultValue: "Foto & video" })}</div>
-          </div>
-          <div>
-            <div className="text-3xl font-extrabold flex items-center justify-center">
-              {(rv/10).toFixed(1)} <Star size={18} className="ml-1 text-amber-500"/>
-            </div>
-            <div className="text-sm text-slate-500">{t("home.stats.rating", { defaultValue: "Rating" })}</div>
-          </div>
+          <div><div className="text-3xl font-extrabold">{tv.toLocaleString()}+</div><div className="text-sm text-slate-500">{t("home.stats.travelers", { defaultValue: "Traveler puas" })}</div></div>
+          <div><div className="text-3xl font-extrabold">{pv.toLocaleString()}+</div><div className="text-sm text-slate-500">{t("home.stats.media", { defaultValue: "Foto & video" })}</div></div>
+          <div><div className="text-3xl font-extrabold flex items-center justify-center">{(rv/10).toFixed(1)} <Star size={18} className="ml-1 text-amber-500"/></div><div className="text-sm text-slate-500">{t("home.stats.rating", { defaultValue: "Rating" })}</div></div>
         </div>
       </div>
     </section>
   );
 }
-
-/* =====================================================================================
-   Popular (paket) — Tilt + Hover Border Gradient (tetap)
-===================================================================================== */
 function PopularCard({ pkg, price, pax, currency, fx, locale }) {
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-  const cover = getPkgImage(pkg);
-  const title = pkg?.locale?.title || pkg.slug || "Open Trip";
+  const navigate = useNavigate(); const { t } = useTranslation();
+  const cover = getPkgImage(pkg); const title = pkg?.locale?.title || pkg.slug || "Open Trip";
   const spots = (pkg?.locale?.spots || []).slice(0,4).join(" • ");
   const priceLabel = formatMoneyFromIDR(price, currency, fx, locale);
   return (
@@ -392,10 +297,8 @@ function PopularCard({ pkg, price, pax, currency, fx, locale }) {
               <button className="btn glass" onClick={()=>navigate(`/explore?pkg=${pkg.id}`, { state:{ openId:pkg.id, pax } })}>
                 {t("home.viewDetails", { defaultValue: "Lihat Detail" })} <ChevronRight size={16} className="ml-1"/>
               </button>
-              <a
-                href={`https://wa.me/6289523949667?text=Halo%20Admin,%20saya%20minat%20paket%20${encodeURIComponent(title)}%20untuk%20${pax}%20${t("home.pax", { defaultValue: "pax" })}`}
-                target="_blank" rel="noreferrer" className="btn btn-primary glass"
-              >
+              <a href={`https://wa.me/6289523949667?text=Halo%20Admin,%20saya%20minat%20paket%20${encodeURIComponent(title)}%20untuk%20${pax}%20${t("home.pax", { defaultValue: "pax" })}`}
+                 target="_blank" rel="noreferrer" className="btn btn-primary glass">
                 {t("home.orderViaWA", { defaultValue: "Pesan via WA" })} <ArrowRight size={16} className="ml-1"/>
               </a>
             </div>
@@ -406,8 +309,7 @@ function PopularCard({ pkg, price, pax, currency, fx, locale }) {
   );
 }
 function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
-  const { t } = useTranslation();
-  const [pax,setPax]=useState(1);
+  const { t } = useTranslation(); const [pax,setPax]=useState(1);
   const items = useMemo(()=>{
     const priced=(data||[]).map(p=>{
       const tTier=(p.price_tiers||[]).find(x=>x.pax===pax)||(p.price_tiers||[])[0];
@@ -434,9 +336,7 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
       <motion.div variants={stagger} initial="hidden" whileInView="show" viewport={{ once:true, amount:.2 }}
         className="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map(({p,price})=>(
-          <motion.div key={p.id} variants={reveal}>
-            <PopularCard pkg={p} price={price} pax={pax} currency={currency} fx={fx} locale={locale}/>
-          </motion.div>
+          <motion.div key={p.id} variants={reveal}><PopularCard pkg={p} price={price} pax={pax} currency={currency} fx={fx} locale={locale}/></motion.div>
         ))}
       </motion.div>
       <div className="mt-5 text-right">
@@ -447,10 +347,6 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
     </section>
   );
 }
-
-/* =====================================================================================
-   How it works — Timeline (tetap)
-===================================================================================== */
 function HowItWorks({ title, subtitle, steps=[] }) {
   const fallback = [
     { icon:"search",       title:"Pilih Paket",  text:"Bandingkan & sesuaikan pax." },
@@ -467,18 +363,16 @@ function HowItWorks({ title, subtitle, steps=[] }) {
           {subtitle && <p className="text-slate-600 dark:text-slate-300 mt-1">{subtitle}</p>}
         </motion.div>
       )}
-      <div className="mt-6 card p-5">
-        <Timeline steps={list}/>
-      </div>
+      <div className="mt-6 card p-5"><Timeline steps={list}/></div>
     </section>
   );
 }
-
-/* =====================================================================================
-   Testimonials — Marquee (tetap)
-===================================================================================== */
 function Testimonials({ title, items=[] }) {
   if(!items.length) return null;
+  const getStars = (n)=> {
+    const s = Math.max(1, Math.min(5, Number(n||5)));
+    return Array.from({length:s}, (_,i)=><Star key={i} size={16} />);
+  };
   return (
     <section className="container mt-16">
       {title && <motion.h2 variants={reveal} initial="hidden" whileInView="show" viewport={{ once:true }} className="text-2xl md:text-3xl font-bold">{title}</motion.h2>}
@@ -486,7 +380,7 @@ function Testimonials({ title, items=[] }) {
         <Marquee speed={38} className="py-2">
           {items.map((tItem,i)=>(
             <blockquote key={i} className="w-[340px] shrink-0 mr-3 last:mr-0 card p-4">
-              <div className="flex items-center gap-2 text-amber-500 mb-1">{[...Array(5)].map((_,s)=><Star key={s} size={16}/>)}</div>
+              <div className="flex items-center gap-2 text-amber-500 mb-1">{getStars(tItem.stars)}</div>
               <p className="text-slate-700 dark:text-slate-200 line-clamp-5">{tItem.text}</p>
               <footer className="mt-3 text-sm text-slate-500">— {tItem.name}{tItem.city?`, ${tItem.city}`:""}</footer>
             </blockquote>
@@ -496,10 +390,6 @@ function Testimonials({ title, items=[] }) {
     </section>
   );
 }
-
-/* =====================================================================================
-   Big CTA — dengan Aurora Beams (tetap)
-===================================================================================== */
 function BigCTA({ title, desc, whatsapp="+6289523949667" }) {
   const { t } = useTranslation();
   return (
@@ -524,13 +414,8 @@ function BigCTA({ title, desc, whatsapp="+6289523949667" }) {
     </section>
   );
 }
-
-/* =====================================================================================
-   Sticky CTA (tetap)
-===================================================================================== */
 function StickyHelpCTA() {
-  const { t } = useTranslation();
-  const [show,setShow]=useState(false);
+  const { t } = useTranslation(); const [show,setShow]=useState(false);
   useEffect(()=>{ const on=()=>setShow((window.scrollY||0)>520); window.addEventListener("scroll",on,{passive:true}); on(); return ()=>window.removeEventListener("scroll",on); },[]);
   return (
     <AnimatePresence>
@@ -548,21 +433,21 @@ function StickyHelpCTA() {
   );
 }
 
-/* =====================================================================================
-   HOME
-===================================================================================== */
 export default function Home(){
   const { rows:packages=[] } = usePackages();
   const { fx, currency, locale } = useCurrency();
   const { t } = useTranslation();
   const navigate = useNavigate();
-
   const { sections } = usePageSections("home");
   const S = useMemo(()=>Object.fromEntries((sections||[]).map(s=>[s.section_key,s])),[sections]);
 
   const onQuickSearch = (q)=> navigate(`/explore?tag=${encodeURIComponent(q)}`);
 
-  // Hero hanya pakai teks dari DB
+  // Ambil gambar HERO dari DB, fallback lokal
+  const heroImages = Array.isArray(S.hero?.data?.images) && S.hero.data.images.length
+    ? S.hero.data.images
+    : FALLBACK_HERO_IMAGES;
+
   const heroTitle = S.hero?.locale?.body_md || "";
   const heroDesc  = S.hero?.locale?.extra?.desc || "";
   const heroSub   = S.hero?.locale?.title || "";
@@ -572,7 +457,7 @@ export default function Home(){
   return (
     <>
       <Hero
-        images={HERO_IMAGES_LOCAL}
+        images={heroImages}
         subtitle={heroSub}
         title={heroTitle}
         desc={heroDesc}
@@ -581,7 +466,6 @@ export default function Home(){
         ctaContactLabel={heroCTA}
       />
 
-      {/* REVERTED: Why Choose Us pakai komponen lama */}
       <WhyUs
         title={S.whyus?.locale?.title || t("home.whyTitle", { defaultValue: "Kenapa pilih kami?" })}
         subtitle={S.whyus?.locale?.body_md || t("home.whySubtitle", { defaultValue: "Keunggulan yang bikin trip kamu lebih tenang." })}
@@ -608,12 +492,7 @@ export default function Home(){
       <HowItWorks
         title={S.how?.locale?.title || t("home.howTitle", { defaultValue: "Cara Kerja" })}
         subtitle={S.how?.locale?.body_md || t("home.howSubtitle", { defaultValue: "Simple dan cepat tanpa login." })}
-        steps={S.how?.data?.steps || [
-          { icon:"search",       title:t("home.how.0.title", { defaultValue:"Pilih Paket" }),  text:t("home.how.0.text", { defaultValue:"Bandingkan & sesuaikan pax." }) },
-          { icon:"message",      title:t("home.how.1.title", { defaultValue:"Chat Admin" }),  text:t("home.how.1.text", { defaultValue:"Klik WhatsApp, kami balas cepat." }) },
-          { icon:"calendar",     title:t("home.how.2.title", { defaultValue:"Atur Jadwal" }), text:t("home.how.2.text", { defaultValue:"Tentukan tanggal & meeting point." }) },
-          { icon:"badge-check",  title:t("home.how.3.title", { defaultValue:"Berangkat!" }),  text:t("home.how.3.text", { defaultValue:"Nikmati trip." }) },
-        ]}
+        steps={S.how?.data?.steps || []}
       />
 
       <Testimonials
