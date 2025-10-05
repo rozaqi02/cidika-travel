@@ -1,5 +1,5 @@
 // src/pages/admin/Kustomisasi.jsx
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef, useTransition, useDeferredValue, useCallback } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useTranslation } from "react-i18next";
 import {
@@ -21,11 +21,15 @@ export default function Kustomisasi() {
 const [mode, setMode] = useState("simple"); // simple | advanced
 const [compactToolbar, setCompactToolbar] = useState(false);
 const lastScrollYRef = useRef(0);
+const [hideToolbar, setHideToolbar] = useState(false);
 
 // state untuk Explore -> packages
 const [pkgList, setPkgList] = useState([]);
 const [pkgLoading, setPkgLoading] = useState(false);
 const [pkgSaving, setPkgSaving] = useState(false);   // NEW
+const [isPending, startTransition] = useTransition();
+const deferredQuery = useDeferredValue(query);
+const deferredSections = useDeferredValue(sections);
 
 
 useEffect(() => {
@@ -35,13 +39,10 @@ useEffect(() => {
     const down = y > last;
     const delta = Math.abs(y - last);
 
-    // Toggle hanya jika bergerak >18px agar tidak "flicker"
-    if (delta > 18) {
-      if (down && y > 80) {
-        setCompactToolbar(true);   // mengecil saat scroll-down
-      } else {
-        setCompactToolbar(false);  // kembali normal saat scroll-up
-      }
+    // threshold kecil biar smooth
+    if (delta > 14) {
+      setHideToolbar(down && y > 80);     // sembunyikan saat scroll turun
+      setCompactToolbar(y > 40);          // tetap kecilkan saat sudah agak turun
       lastScrollYRef.current = y;
     }
   };
@@ -335,35 +336,80 @@ const deletePackageRow = async (id) => {
   await loadPackages();
 };
 
-  const updateLocal = (sid, lang, field, value) => {
+// === UPDATE HELPERS (transisi prioritas rendah biar input gak lag) ===
+const updateLocal = (sid, lang, field, value) => {
+  startTransition(() => {
     setSections((prev) =>
       prev.map((s) =>
         s.id === sid
-          ? { ...s, _dirty: true, locales: { ...s.locales, [lang]: { ...s.locales[lang], [field]: value } } }
+          ? {
+              ...s,
+              _dirty: true,
+              locales: {
+                ...s.locales,
+                [lang]: { ...s.locales[lang], [field]: value },
+              },
+            }
           : s
       )
     );
-  };
-  const updateLocaleExtra = (sid, lang, nextExtra) => {
+  });
+};
+
+const updateLocaleExtra = (sid, lang, nextExtra) => {
+  startTransition(() => {
     setSections((prev) =>
       prev.map((s) =>
         s.id === sid
-          ? { ...s, _dirty: true, locales: { ...s.locales, [lang]: { ...s.locales[lang], extra: nextExtra } } }
+          ? {
+              ...s,
+              _dirty: true,
+              locales: {
+                ...s.locales,
+                [lang]: { ...s.locales[lang], extra: nextExtra },
+              },
+            }
           : s
       )
     );
-  };
-  const updateDataText = (sid, text) => {
+  });
+};
+
+// catatan: jangan parse JSON waktu onChange, biar textarea enteng
+const updateDataText = (sid, text) => {
+  startTransition(() => {
+    setSections((prev) =>
+      prev.map((s) => (s.id === sid ? { ...s, dataText: text, _dirty: true } : s))
+    );
+  });
+};
+
+// validasi JSON pas onBlur aja
+const validateDataText = (sid) => {
+  startTransition(() => {
     setSections((prev) =>
       prev.map((s) => {
         if (s.id !== sid) return s;
         let valid = true;
-        try { JSON.parse(text || "{}"); } catch { valid = false; }
-        return { ...s, dataText: text, dataValid: valid, _dirty: true };
+        try {
+          JSON.parse(s.dataText || "{}");
+        } catch {
+          valid = false;
+        }
+        return { ...s, dataValid: valid };
       })
     );
-  };
-  const commitDataJSON = (s) => { try { return JSON.parse(s.dataText || "{}"); } catch { return s.data || {}; } };
+  });
+};
+
+// (biarin ini tetap di bawah helpers)
+const commitDataJSON = (s) => {
+  try {
+    return JSON.parse(s.dataText || "{}");
+  } catch {
+    return s.data || {};
+  }
+};
 
   const addSection = async () => {
     const section_key = prompt("Section key (mis: hero, whyus, stats, how, popular, testimonials, cta, faq_list, categories, categories_banner, banner1, quotes_banner)?");
@@ -501,35 +547,45 @@ const deletePackageRow = async (id) => {
   };
 
   // === FILTERED ===
-  const sorted = useMemo(
-    () =>
-      sections.slice()
-        .sort((a, b) => a.sort_index - b.sort_index)
-        .filter((s) => {
-          const q = query.trim().toLowerCase();
-          if (!q) return true;
-          const title = (s.locales?.[activeLang]?.title || "").toLowerCase();
-          return (s.section_key || "").toLowerCase().includes(q) || title.includes(q);
-        }),
-    [sections, query, activeLang]
-  );
+const sorted = useMemo(
+  () =>
+    deferredSections.slice()
+      .sort((a, b) => a.sort_index - b.sort_index)
+      .filter((s) => {
+        const q = deferredQuery.trim().toLowerCase();
+        if (!q) return true;
+        const title = (s.locales?.[activeLang]?.title || "").toLowerCase();
+        return (s.section_key || "").toLowerCase().includes(q) || title.includes(q);
+      }),
+  [deferredSections, deferredQuery, activeLang]
+);
+
 
   // === SIMPLE EDITORS ===
-  const DataTextArea = ({ s }) => (
-    <textarea
-      rows="14"
-      className={`w-full border rounded-xl px-3 py-2 dark:bg-slate-900 font-mono text-xs ${s.dataValid ? "" : "border-red-500"}`}
-      value={s.dataText}
-      onChange={(e) => updateDataText(s.id, e.target.value)}
-    />
-  );
+const DataTextArea = React.memo(({ s }) => (
+  <textarea
+    rows="14"
+    className={`w-full border rounded-xl px-3 py-2 dark:bg-slate-900 font-mono text-xs ${s.dataValid ? "" : "border-red-500"}`}
+    value={s.dataText}
+    onChange={(e) => updateDataText(s.id, e.target.value)}
+    onBlur={() => validateDataText(s.id)}
+  />
+));
 
-  const Labeled = ({ label, children }) => (
-    <label className="block text-sm mb-1">
-      <span className="text-slate-600 dark:text-slate-300">{label}</span>
-      <div className="mt-1">{children}</div>
-    </label>
-  );
+
+
+// BENAR — wrapper div biasa, optional <label htmlFor=...>
+const Labeled = ({ label, htmlFor, children }) => (
+  <div className="block text-sm mb-1">
+    {label && (
+      <label htmlFor={htmlFor} className="text-slate-600 dark:text-slate-300">
+        {label}
+      </label>
+    )}
+    <div className="mt-1">{children}</div>
+  </div>
+);
+
 
   // Helpers to read/write JSON path in dataText
   const readData = (s) => { try { return JSON.parse(s.dataText || "{}"); } catch { return {}; } };
@@ -765,6 +821,114 @@ const TestimonialsEditor = ({ s }) => {
   );
 };
 
+// FAQ Editor — locales[lang].extra.items: [{ q, a }]
+const FaqListEditor = ({ s }) => {
+  const ex = s.locales[activeLang].extra || {};
+  const items = Array.isArray(ex.items) ? ex.items : [];
+  const setItems = (arr) =>
+    updateLocaleExtra(s.id, activeLang, { ...ex, items: arr });
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="font-medium">
+          FAQ Items — {activeLang.toUpperCase()}
+        </div>
+        <button
+          className="btn btn-outline !py-1 !px-3"
+          onClick={() => setItems([...(items || []), { q: "", a: "" }])}
+        >
+          <Plus size={14} /> Tambah
+        </button>
+      </div>
+
+      {(items || []).length === 0 ? (
+        <div className="text-sm text-slate-500">
+          Belum ada FAQ untuk bahasa ini.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((it, idx) => (
+            <div key={idx} className="p-3 rounded-xl border dark:border-slate-700">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 text-slate-500">
+                  <GripVertical size={16} /> <span className="text-xs">#{idx + 1}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    className="p-1 rounded-lg border"
+                    onClick={() => {
+                      if (idx > 0) {
+                        const arr = items.slice();
+                        [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+                        setItems(arr);
+                      }
+                    }}
+                    title="Naik"
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  <button
+                    className="p-1 rounded-lg border"
+                    onClick={() => {
+                      if (idx < items.length - 1) {
+                        const arr = items.slice();
+                        [arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]];
+                        setItems(arr);
+                      }
+                    }}
+                    title="Turun"
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                  <button
+                    className="p-1 rounded-lg border hover:bg-red-50 dark:hover:bg-slate-800"
+                    onClick={() => {
+                      const arr = items.slice();
+                      arr.splice(idx, 1);
+                      setItems(arr);
+                    }}
+                    title="Hapus"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <input
+                className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-2"
+                placeholder="Pertanyaan (q)"
+                value={it.q || ""}
+                onChange={(e) => {
+                  const arr = items.slice();
+                  arr[idx] = { ...it, q: e.target.value };
+                  setItems(arr);
+                }}
+              />
+              <textarea
+                rows="3"
+                className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+                placeholder="Jawaban (a)"
+                value={it.a || ""}
+                onChange={(e) => {
+                  const arr = items.slice();
+                  arr[idx] = { ...it, a: e.target.value };
+                  setItems(arr);
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-2 text-xs text-slate-500">
+        *Data disimpan ke <code>page_section_locales.extra.items</code> untuk bahasa aktif.
+      </div>
+    </div>
+  );
+};
+
+
   // STATS Editor — data: { trips, photos, rating }
   const StatsEditor = ({ s }) => {
     const d = readData(s);
@@ -844,6 +1008,156 @@ const TestimonialsEditor = ({ s }) => {
     );
   };
 
+  // CARDS Editor — locales[lang].extra.items: [{ key, title, desc, image }]
+const CardsEditor = ({ s }) => {
+  const ex = s.locales[activeLang].extra || {};
+  const items = Array.isArray(ex.items) ? ex.items : [];
+
+  // helper: set items per-bahasa
+  const setItems = (arr) =>
+    updateLocaleExtra(s.id, activeLang, { ...ex, items: arr });
+
+
+  const addItem = () => {
+    const next = [
+      ...(items || []),
+      {
+        __id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
+        key: "",
+        title: "",
+        desc: "",
+        image: ""
+      }
+    ];
+    setItems(next);
+  };
+
+  const setAt = (idx, patch) => {
+    const arr = (items || []).slice();
+    arr[idx] = { ...(arr[idx] || {}), ...patch };
+    setItems(arr);
+  };
+
+  const moveAt = (idx, dir) => {
+    const arr = (items || []).slice();
+    const t = idx + dir;
+    if (t < 0 || t >= arr.length) return;
+    [arr[idx], arr[t]] = [arr[t], arr[idx]];
+    setItems(arr);
+  };
+
+  const removeAt = (idx) => {
+    const arr = (items || []).slice();
+    arr.splice(idx, 1);
+    setItems(arr);
+  };
+
+  const uploadImg = async (idx, file) => {
+    if (!file) return;
+    const ext = file.name.split(".").pop();
+    const path = `pages/${page}/${s.id}-card-${idx}-${Date.now()}.${ext}`;
+    try {
+      const url = await uploadToBucket(file, path);
+      setAt(idx, { image: url });
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="font-medium">Cards — {activeLang.toUpperCase()}</div>
+        <button className="btn btn-outline !py-1 !px-3" onClick={addItem}>
+          <Plus size={14}/> Tambah
+        </button>
+      </div>
+
+      {(items || []).length === 0 ? (
+        <div className="text-sm text-slate-500">Belum ada card untuk bahasa ini.</div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((it, idx) => (
+  <div
+    key={`${s.id}-${activeLang}-card-${idx}`}
+    className="p-3 rounded-xl border dark:border-slate-700"
+  >
+              <div className="flex items-center gap-1 justify-between mb-2">
+                <div className="text-xs text-slate-500">#{idx + 1}</div>
+                <div className="flex items-center gap-1">
+                  <button className="p-1 rounded-lg border" title="Naik" onClick={()=>moveAt(idx,-1)}>
+                    <ArrowUp size={14}/>
+                  </button>
+                  <button className="p-1 rounded-lg border" title="Turun" onClick={()=>moveAt(idx,1)}>
+                    <ArrowDown size={14}/>
+                  </button>
+                  <button className="p-1 rounded-lg border hover:bg-red-50 dark:hover:bg-slate-800" title="Hapus" onClick={()=>removeAt(idx)}>
+                    <Trash2 size={14}/>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-2">
+                <Labeled label="Key (slug)">
+                  <input
+                    className="border rounded-xl px-3 py-2 dark:bg-slate-900"
+                    placeholder="contoh: nusa-penida"
+                    value={it.key || ""}
+                    onChange={(e)=>setAt(idx, { key: e.target.value })}
+                  />
+                </Labeled>
+                <Labeled label="Judul">
+                  <input
+                    className="border rounded-xl px-3 py-2 dark:bg-slate-900"
+                    placeholder="Judul"
+                    value={it.title || ""}
+                    onChange={(e)=>setAt(idx, { title: e.target.value })}
+                  />
+                </Labeled>
+              </div>
+
+              <Labeled label="Deskripsi">
+                <textarea
+                  rows="3"
+                  className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+                  placeholder="Deskripsi singkat"
+                  value={it.desc || ""}
+                  onChange={(e)=>setAt(idx, { desc: e.target.value })}
+                />
+              </Labeled>
+
+              <Labeled label="Gambar">
+                <div className="flex items-center gap-2">
+                  <input
+                    className="flex-1 border rounded-xl px-3 py-2 dark:bg-slate-900"
+                    placeholder="URL gambar atau upload di kanan"
+                    value={it.image || ""}
+                    onChange={(e)=>setAt(idx, { image: e.target.value })}
+                  />
+                  <label className="btn btn-outline !py-1 !px-3 cursor-pointer">
+                    <Upload size={14}/>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e)=> uploadImg(idx, e.target.files?.[0])}
+                    />
+                  </label>
+                </div>
+              </Labeled>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-2 text-xs text-slate-500">
+        *Data tersimpan ke <code>page_section_locales.extra.items</code> untuk bahasa aktif.
+      </div>
+    </div>
+  );
+};
+
+
   // CATEGORIES Editor — data.items: [{tag,title,image}]
   const CategoriesEditor = ({ s }) => {
     const d = readData(s);
@@ -867,8 +1181,8 @@ const TestimonialsEditor = ({ s }) => {
         </div>
         {(items||[]).length===0 ? <div className="text-sm text-slate-500">Belum ada item.</div> : (
           <div className="space-y-3">
-            {items.map((it,idx)=>(
-              <div key={idx} className="p-3 rounded-xl border dark:border-slate-700">
+            {items.map((it, idx) => (
+   <div key={`${s.id}-${activeLang}-testi-${idx}`} className="p-3 rounded-xl border dark:border-slate-700">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs text-slate-500">#{idx+1}</span>
                   <button className="p-1 rounded-lg border" onClick={()=>{ if(idx>0){ const arr=items.slice(); [arr[idx-1],arr[idx]]=[arr[idx],arr[idx-1]]; setItems(arr);} }} title="Naik"><ArrowUp size={14}/></button>
@@ -920,8 +1234,8 @@ const TestimonialsEditor = ({ s }) => {
             </div>
             {(items||[]).length===0 ? <div className="text-sm text-slate-500">Belum ada quotes.</div> : (
               <div className="space-y-3">
-                {items.map((it,idx)=>(
-                  <div key={idx} className="p-3 rounded-xl border dark:border-slate-700">
+                {items.map((it, idx) => (
+   <div key={`${s.id}-${activeLang}-faq-${idx}`} className="p-3 rounded-xl border dark:border-slate-700">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-xs text-slate-500">#{idx+1}</span>
                       <button className="p-1 rounded-lg border" onClick={()=>{ const arr=items.slice(); if(idx>0){ [arr[idx-1],arr[idx]]=[arr[idx],arr[idx-1]]; } set({ ...d, items: arr }); }}><ArrowUp size={14}/></button>
@@ -962,7 +1276,7 @@ const TestimonialsEditor = ({ s }) => {
   return (
     <div className="container mt-3 space-y-4">
 {/* STICKY TOOLBAR */}
-<div className="sticky top-16 z-[5]">
+<div className={`sticky top-16 z-[5] transition-transform duration-200 ${hideToolbar ? "-translate-y-[120%]" : "translate-y-0"}`}>
   <div
     className={`rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 ${
       compactToolbar ? "py-1.5" : "py-3"
@@ -1254,9 +1568,6 @@ const TestimonialsEditor = ({ s }) => {
 
 <div className="space-y-6">
   {sorted.map((s) => {
-    const dataObj = readData(s);
-    const images = Array.isArray(dataObj.images) ? dataObj.images : [];
-
     // Header bar per section
     const HeaderBar = () => (
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1305,27 +1616,20 @@ const TestimonialsEditor = ({ s }) => {
       </div>
     );
 
-    // Simple switcher
+    // SIMPLE editors
     const renderSimple = () => {
       switch (s.section_key) {
-        case "hero":
-          return <HeroEditor s={s} />;
-        case "testimonials":
-          return <TestimonialsEditor s={s} />;
-        case "stats":
-          return <StatsEditor s={s} />;
-        case "how":
-          return <HowEditor s={s} />;
-        case "cta":
-          return <CTAEditor s={s} />;
-        case "categories":
-          return <CategoriesEditor s={s} />;
+        case "hero":            return <HeroEditor s={s} />;
+        case "testimonials":    return <TestimonialsEditor s={s} />;
+        case "stats":           return <StatsEditor s={s} />;
+        case "how":             return <HowEditor s={s} />;
+        case "cta":             return <CTAEditor s={s} />;
+        case "categories":      return <CategoriesEditor s={s} />;
         case "categories_banner":
-          return <BannerEditor s={s} />;
-        case "banner1":
-          return <BannerEditor s={s} />;
-        case "quotes_banner":
-          return <BannerEditor s={s} withQuotes />;
+        case "banner1":         return <BannerEditor s={s} />;
+        case "quotes_banner":   return <BannerEditor s={s} withQuotes />;
+        case "faq_list":        return <FaqListEditor s={s} />;
+        case "cards":           return <CardsEditor s={s} />;
         case "popular":
         case "about":
         case "destinations_intro":
@@ -1334,139 +1638,143 @@ const TestimonialsEditor = ({ s }) => {
       }
     };
 
-    // Advanced JSON area
-    const renderAdvanced = () => (
-      <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-4 mt-4">
-        <div>
-          <div className="flex items-center justify-between">
-            <label className="text-sm">Data JSON</label>
-            {s.section_key === "hero" && (
-              <label className="inline-flex items-center gap-2 text-xs cursor-pointer">
-                <Upload size={14} /> Upload Gambar → data.images
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) =>
-                    e.target.files?.[0] && onUploadToImages(s.id, e.target.files[0])
-                  }
-                />
-              </label>
-            )}
-          </div>
-          <DataTextArea s={s} />
-          {!s.dataValid && <div className="text-xs text-red-600 mt-1">JSON tidak valid</div>}
-          <div className="mt-2 p-2 rounded-xl border text-xs text-slate-600 dark:text-slate-300">
-            <div className="flex items-center gap-2 mb-1">
-              <Eye size={14} /> Pratinjau kunci
+    // ADVANCED JSON editor
+    const renderAdvanced = () => {
+      const obj = readData(s);
+      const images = Array.isArray(obj.images) ? obj.images : [];
+      return (
+        <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-4 mt-4">
+          {/* Data JSON */}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-sm">Data JSON</label>
+              {s.section_key === "hero" && (
+                <label className="inline-flex items-center gap-2 text-xs cursor-pointer">
+                  <Upload size={14} /> Upload Gambar → data.images
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) =>
+                      e.target.files?.[0] && onUploadToImages(s.id, e.target.files[0])
+                    }
+                  />
+                </label>
+              )}
             </div>
-            <pre className="whitespace-pre-wrap break-words">
-              {(() => {
-                try {
-                  const obj = JSON.parse(s.dataText || "{}");
-                  const keys = Object.keys(obj);
-                  return keys.length
-                    ? JSON.stringify(
-                        keys.reduce((a, k) => {
-                          a[k] =
-                            Array.isArray(obj[k])
-                              ? `[${obj[k].length}]`
-                              : typeof obj[k] === "object" && obj[k]
-                              ? "{…}"
-                              : obj[k];
-                          return a;
-                        }, {}),
-                        null,
-                        2
-                      )
-                    : "{}";
-                } catch {
-                  return "{}";
-                }
-              })()}
-            </pre>
+            <DataTextArea s={s} />
+            {!s.dataValid && <div className="text-xs text-red-600 mt-1">JSON tidak valid</div>}
+
+            <div className="mt-2 p-2 rounded-xl border text-xs text-slate-600 dark:text-slate-300">
+              <div className="flex items-center gap-2 mb-1">
+                <Eye size={14} /> Pratinjau kunci
+              </div>
+              <pre className="whitespace-pre-wrap break-words">
+                {(() => {
+                  try {
+                    const obj2 = JSON.parse(s.dataText || "{}");
+                    const keys = Object.keys(obj2);
+                    return keys.length
+                      ? JSON.stringify(
+                          keys.reduce((a, k) => {
+                            a[k] =
+                              Array.isArray(obj2[k])
+                                ? `[${obj2[k].length}]`
+                                : typeof obj2[k] === "object" && obj2[k]
+                                ? "{…}"
+                                : obj2[k];
+                            return a;
+                          }, {}),
+                          null,
+                          2
+                        )
+                      : "{}";
+                  } catch {
+                    return "{}";
+                  }
+                })()}
+              </pre>
+            </div>
           </div>
-        </div>
-        {/* Localized title/body */}
-        <div className="space-y-2">
-          <div className="font-medium uppercase">{activeLang}</div>
-          <label className="text-sm">Title</label>
-          <input
-            className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-2"
-            value={s.locales[activeLang].title}
-            onChange={(e) => updateLocal(s.id, activeLang, "title", e.target.value)}
-          />
-          <label className="text-sm">Body</label>
-          <textarea
-            rows="8"
-            className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
-            value={s.locales[activeLang].body_md}
-            onChange={(e) => updateLocal(s.id, activeLang, "body_md", e.target.value)}
-          />
-        </div>
-        {/* Gallery quick controls if images exist */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Images size={16} /> <span className="font-medium">Galeri (jika ada data.images)</span>
-            <span className="text-xs text-slate-400">({images.length})</span>
+
+          {/* Localized title/body */}
+          <div className="space-y-2">
+            <div className="font-medium uppercase">{activeLang}</div>
+            <label className="text-sm">Title</label>
+            <input
+              className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-2"
+              value={s.locales[activeLang].title}
+              onChange={(e) => updateLocal(s.id, activeLang, "title", e.target.value)}
+            />
+            <label className="text-sm">Body</label>
+            <textarea
+              rows="8"
+              className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+              value={s.locales[activeLang].body_md}
+              onChange={(e) => updateLocal(s.id, activeLang, "body_md", e.target.value)}
+            />
           </div>
-          {images.length === 0 ? (
-            <div className="text-sm text-slate-500">Belum ada gambar.</div>
-          ) : (
-            <div className="grid grid-cols-3 gap-2">
-              {images.map((url, idx) => (
-                <div key={idx} className="relative group">
-                  <img src={url} alt="" className="w-full h-24 object-cover rounded-lg border" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 rounded-lg transition" />
-                  <div className="absolute top-1 left-1 flex gap-1">
+
+          {/* Gallery quick controls */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Images size={16} /> <span className="font-medium">Galeri (jika ada data.images)</span>
+              <span className="text-xs text-slate-400">({images.length})</span>
+            </div>
+            {images.length === 0 ? (
+              <div className="text-sm text-slate-500">Belum ada gambar.</div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {images.map((url, idx) => (
+                  <div key={idx} className="relative group">
+                    <img src={url} alt="" className="w-full h-24 object-cover rounded-lg border" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 rounded-lg transition" />
+                    <div className="absolute top-1 left-1 flex gap-1">
+                      <button
+                        className="p-1 rounded bg-white/90 text-slate-700"
+                        onClick={() => {
+                          const cur = readData(s);
+                          const arr = Array.isArray(cur.images) ? cur.images.slice() : [];
+                          if (idx > 0) [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+                          writeData(s, { ...cur, images: arr });
+                        }}
+                        title="Naik"
+                      >
+                        <ArrowUp size={12} />
+                      </button>
+                      <button
+                        className="p-1 rounded bg-white/90 text-slate-700"
+                        onClick={() => {
+                          const cur = readData(s);
+                          const arr = Array.isArray(cur.images) ? cur.images.slice() : [];
+                          if (idx < arr.length - 1) [arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]];
+                          writeData(s, { ...cur, images: arr });
+                        }}
+                        title="Turun"
+                      >
+                        <ArrowDown size={12} />
+                      </button>
+                    </div>
                     <button
-                      className="p-1 rounded bg-white/90 text-slate-700"
+                      className="absolute top-1 right-1 p-1 rounded bg-white/90 text-rose-600"
                       onClick={() => {
-                        const obj = readData(s);
-                        const arr = Array.isArray(obj.images) ? obj.images.slice() : [];
-                        if (idx > 0) {
-                          [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
-                        }
-                        writeData(s, { ...obj, images: arr });
+                        const cur = readData(s);
+                        const arr = Array.isArray(cur.images) ? cur.images.slice() : [];
+                        arr.splice(idx, 1);
+                        writeData(s, { ...cur, images: arr });
                       }}
-                      title="Naik"
+                      title="Hapus"
                     >
-                      <ArrowUp size={12} />
-                    </button>
-                    <button
-                      className="p-1 rounded bg-white/90 text-slate-700"
-                      onClick={() => {
-                        const obj = readData(s);
-                        const arr = Array.isArray(obj.images) ? obj.images.slice() : [];
-                        if (idx < arr.length - 1) {
-                          [arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]];
-                        }
-                        writeData(s, { ...obj, images: arr });
-                      }}
-                      title="Turun"
-                    >
-                      <ArrowDown size={12} />
+                      <Trash2 size={12} />
                     </button>
                   </div>
-                  <button
-                    className="absolute top-1 right-1 p-1 rounded bg-white/90 text-rose-600"
-                    onClick={() => {
-                      const obj = readData(s);
-                      const arr = Array.isArray(obj.images) ? obj.images.slice() : [];
-                      arr.splice(idx, 1);
-                      writeData(s, { ...obj, images: arr });
-                    }}
-                    title="Hapus"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    );
+      );
+    };
 
     return (
       <div key={s.id} className="card p-4">
@@ -1475,11 +1783,10 @@ const TestimonialsEditor = ({ s }) => {
           {mode === "simple" ? renderSimple() : renderAdvanced()}
         </div>
 
-        {/* Editor FAQ khusus (tetap di Advanced agar struktur sama) */}
+        {/* Editor FAQ (Advanced) */}
         {mode === "advanced" && s.section_key === "faq_list" && (
-          <div className="mt-4 text-sm text-slate-500">
-            *Untuk FAQ, gunakan field <code>locales[lang].extra.items</code> dengan format{" "}
-            <code>[{{"q":"","a":""}}]</code>.
+          <div className="mt-4">
+            <FaqListEditor s={s} />
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import usePackages from "../hooks/usePackages";
+import usePageSections from "../hooks/usePageSections";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
 
@@ -178,10 +179,12 @@ export default function Explore() {
   const { t, i18n } = useTranslation();
   const { rows: data = [] } = usePackages();
   const { fx, currency, locale } = useCurrency();
+  const { sections: destSections = [] } = usePageSections("destinations");
 
   const location = useLocation();
   const qs = new URLSearchParams(location.search);
   const qsId = qs.get("pkg");
+  const qsDest = qs.get("dest");
   const initialPax = Number(location.state?.pax) || 1;
 
   const [pax, setPax] = useState(initialPax);
@@ -189,11 +192,57 @@ export default function Explore() {
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("price");
   const [compact, setCompact] = useState(false);
+  const [dest, setDest] = useState(qsDest || "all"); // default SEMUA
+
+  // Ambil opsi destinasi dari DB (section_key "cards": extra.items/data.items). Fallback: Nusa Penida.
+  const S = useMemo(
+    () => Object.fromEntries((destSections || []).map((s) => [s.section_key, s])),
+    [destSections]
+  );
+  const destinationOptions = useMemo(() => {
+    const items =
+      S.cards?.locale?.extra?.items ||
+      S.cards?.data?.items ||
+      [];
+    const opts = (items || []).map((it) => ({
+      key:
+        it.key ||
+        it.slug ||
+        it.id ||
+        (it.title || it.name || "dest").toLowerCase().replace(/\s+/g, "-"),
+      label: it.title || it.name || it.key,
+    }));
+    // Pastikan minimal ada Nusa Penida agar aman saat awal.
+    if (!opts.find((o) => o.key === "nusa-penida")) {
+      opts.push({
+        key: "nusa-penida",
+        label: t("dest.penidaTitle", { defaultValue: "Nusa Penida" }),
+      });
+    }
+    return [{ key: "all", label: t("explore.all", { defaultValue: "Semua" }) }, ...opts];
+  }, [S, t]);
 
   // theme reactive
   const [isDark, setIsDark] = useState(() =>
     typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : false
   );
+  // hide-on-scroll
+  const lastScrollYRef = useRef(0);
+  const [hideToolbar, setHideToolbar] = useState(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || 0;
+      const last = lastScrollYRef.current;
+      const down = y > last;
+      const delta = Math.abs(y - last);
+      if (delta > 14) {
+        setHideToolbar(down && y > 80);
+        lastScrollYRef.current = y;
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   useEffect(() => {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
@@ -227,10 +276,26 @@ export default function Explore() {
   // filter + sort
   const filtered = useMemo(() => {
     const q = (query || "").trim().toLowerCase();
-    const list = data.map((p) => {
+    const list0 = data.map((p) => {
       const loc = normalizeLocale(p, locale?.slice(0, 2));
       return { ...p, _loc: loc };
     });
+    // Terapkan filter destinasi
+    const list =
+      dest === "all"
+        ? list0
+        : list0.filter((p) => {
+            // dukung beberapa kemungkinan field — ke depan bisa set p.destination_key atau p.data.destination
+            const k =
+              p.destination_key ||
+              p.destination ||
+              p.data?.destination ||
+              p.data?.dest ||
+              // fallback heuristik (sementara semua paket dianggap Nusa Penida)
+              (dest === "nusa-penida" ? "nusa-penida" : null);
+            return k === dest;
+          });
+
     const searched = q
       ? list.filter((p) => {
           const hay =
@@ -265,8 +330,10 @@ export default function Explore() {
       {/* Sticky glass toolbar */}
       <motion.div
         style={{ minHeight: barH, boxShadow: barShadow, background: barBg }}
-        className="sticky top-[4.75rem] z-[5] rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 py-3 sm:py-4 flex items-center"
-      >
+        className={`sticky top-[4.75rem] z-[5] rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 py-3 sm:py-4 flex items-center transition-transform duration-200 ${
+          hideToolbar ? "-translate-y-[120%]" : "translate-y-0"
+        }`}
+        >
         <div className="w-full flex flex-col gap-2">
           <div className="flex items-center gap-2 justify-between">
             <h1 className="text-base sm:text-xl font-bold text-slate-900 dark:text-slate-100 pr-2">
@@ -294,6 +361,26 @@ export default function Explore() {
                   className="w-full pl-9 pr-3 py-2 rounded-2xl border-slate-200 dark:border-slate-700"
                 />
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔎</span>
+              </div>
+            </div>
+
+            {/* Destinations */}
+            <div className="col-span-12 sm:col-span-4">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+                  {t("explore.destinations", { defaultValue: "Destinations" })}
+                </label>
+                <select
+                  value={dest}
+                  onChange={(e) => setDest(e.target.value)}
+                  className="px-3 py-2 rounded-2xl w-full"
+                >
+                  {destinationOptions.map((o) => (
+                    <option key={o.key} value={o.key}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

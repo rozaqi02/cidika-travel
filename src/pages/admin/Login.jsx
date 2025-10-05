@@ -176,7 +176,7 @@ export default function Login() {
                     {t("admin.login.title", { defaultValue: "Admin Login" })}
                   </h1>
                 </div>
-                <span className="text-[11px] text-slate-500 dark:text-white/60">CIDIKA CMS</span>
+                <span className="text-[11px] text-slate-500 dark:text-white/60">CIDIKA TRAVEL</span>
               </div>
 
               {/* Alerts */}
