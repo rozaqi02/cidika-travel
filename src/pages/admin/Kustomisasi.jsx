@@ -18,9 +18,15 @@ export default function Kustomisasi() {
   const [saving, setSaving] = useState(false);
   const [activeLang, setActiveLang] = useState(LANGS[0]);
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState("simple"); // simple | advanced
+const [mode, setMode] = useState("simple"); // simple | advanced
 const [compactToolbar, setCompactToolbar] = useState(false);
 const lastScrollYRef = useRef(0);
+
+// state untuk Explore -> packages
+const [pkgList, setPkgList] = useState([]);
+const [pkgLoading, setPkgLoading] = useState(false);
+const [pkgSaving, setPkgSaving] = useState(false);   // NEW
+
 
 useEffect(() => {
   const onScroll = () => {
@@ -68,23 +74,266 @@ useEffect(() => {
       _dirty: false,
     }));
 
-  const load = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("page_sections")
-      .select("id,page,section_key,sort_index,data,page_section_locales(*)")
-      .eq("page", page)
-      .order("sort_index", { ascending: true });
+const load = async () => {
+  setLoading(true);
+  const { data, error } = await supabase
+    .from("page_sections")
+    .select("id,page,section_key,sort_index,data,page_section_locales(*)")
+    .eq("page", page)
+    .order("sort_index", { ascending: true });
 
-    if (error) {
-      console.error(error);
-      setSections([]); setOriginal([]); setLoading(false); return;
+  if (error) {
+    console.error(error);
+    setSections([]); setOriginal([]); setLoading(false);
+    return;
+  }
+  const mapped = mapFromDb(data);
+  setSections(mapped);
+  setOriginal(mapped);
+  setLoading(false);
+};
+
+const loadPackages = async () => {
+  setPkgLoading(true);
+  const { data, error } = await supabase
+    .from("packages")
+    .select("id, slug, is_active, default_image, created_at, package_locales(*), price_tiers(*)")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    setPkgList([]); setPkgLoading(false);
+    return;
+  }
+
+  const mapped = (data || []).map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    is_active: p.is_active,
+    default_image: p.default_image,
+    locales: LANGS.reduce((acc, l) => {
+      const r = p.package_locales?.find((x) => x.lang === l) || {};
+      acc[l] = { title: r.title || "", summary: r.summary || "" };
+      return acc;
+    }, {}),
+    tiers: (p.price_tiers || [])
+      .slice()
+      .sort((a, b) =>
+        a.audience === b.audience ? a.pax - b.pax : a.audience.localeCompare(b.audience)
+      )
+      .map((t) => ({
+        id: t.id,
+        pax: t.pax,
+        price_idr: t.price_idr,
+        audience: t.audience, // 'domestic' | 'foreign'
+        _new: false,
+        _dirty: false,
+        _deleted: false,
+      })),
+  }));
+  setPkgList(mapped);
+  setPkgLoading(false);
+};
+
+
+useEffect(() => {
+  load();
+  if (page === "explore") loadPackages();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [page]);
+
+// mark dirty field paket
+const updatePkgField = (id, key, value) => {
+  setPkgList(prev => prev.map(p => p.id === id ? ({ ...p, [key]: value, _dirty: true }) : p));
+};
+
+// mark dirty field lokal
+const updatePkgLocale = (id, lang, key, value) => {
+  setPkgList(prev => prev.map(p => p.id === id ? ({
+    ...p,
+    _dirty: true,
+    locales: { ...p.locales, [lang]: { ...(p.locales[lang]||{}), [key]: value } },
+  }) : p));
+};
+
+// upload gambar default paket
+const onUploadPkgImage = async (p, file) => {
+  if (!file) return;
+  const ext = file.name.split(".").pop();
+  const path = `packages/${p.id}-default-${Date.now()}.${ext}`;
+  try {
+    const url = await uploadToBucket(file, path);
+    updatePkgField(p.id, "default_image", url);
+  } catch (e) { alert(e.message); }
+};
+
+// ===== Price Tiers helpers =====
+const updateTier = (pkgId, idx, patch) => {
+  setPkgList((prev) =>
+    prev.map((p) =>
+      p.id === pkgId
+        ? {
+            ...p,
+            _dirty: true,
+            tiers: (p.tiers || []).map((t, i) =>
+              i === idx ? { ...t, ...patch, _dirty: true } : t
+            ),
+          }
+        : p
+    )
+  );
+};
+
+const addTier = (pkgId, audience = "domestic") => {
+  setPkgList((prev) =>
+    prev.map((p) => {
+      if (p.id !== pkgId) return p;
+      const existing = (p.tiers || []).filter((t) => t.audience === audience && !t._deleted);
+      const suggestedPax =
+        Math.max(0, ...existing.map((t) => Number(t.pax) || 0)) + 1; // next number
+      const newTier = {
+        id: null,
+        pax: Math.min(suggestedPax, 6),
+        price_idr: 0,
+        audience,
+        _new: true,
+        _dirty: true,
+        _deleted: false,
+      };
+      return { ...p, _dirty: true, tiers: [...(p.tiers || []), newTier] };
+    })
+  );
+};
+
+const removeTier = (pkgId, idx) => {
+  setPkgList((prev) =>
+    prev.map((p) => {
+      if (p.id !== pkgId) return p;
+      const tiers = (p.tiers || []).slice();
+      const t = tiers[idx];
+      if (!t) return p;
+      if (t.id == null) {
+        // belum tersimpan di DB -> buang saja
+        tiers.splice(idx, 1);
+      } else {
+        tiers[idx] = { ...t, _deleted: true, _dirty: true };
+      }
+      return { ...p, _dirty: true, tiers };
+    })
+  );
+};
+
+
+const savePackages = async () => {
+  setPkgSaving(true);
+  try {
+    // Validasi sederhana: kombinasi (audience,pax) tidak boleh duplikat per paket
+    for (const p of pkgList) {
+      const seen = new Set();
+      for (const t of p.tiers || []) {
+        if (t._deleted) continue;
+        const k = `${t.audience}:${t.pax}`;
+        if (seen.has(k)) {
+          throw new Error(`Duplikat tier ${k} pada paket "${p.slug}".`);
+        }
+        seen.add(k);
+      }
     }
-    const mapped = mapFromDb(data);
-    setSections(mapped); setOriginal(mapped); setLoading(false);
-  };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [page]);
+    for (const p of pkgList) {
+      // update meta paket bila kotor
+      if (p._dirty) {
+        const { error: e1 } = await supabase
+          .from("packages")
+          .update({ slug: p.slug, is_active: p.is_active, default_image: p.default_image })
+          .eq("id", p.id);
+        if (e1) throw e1;
+
+        for (const lang of LANGS) {
+          const payload = {
+            package_id: p.id,
+            lang,
+            title: p.locales[lang]?.title || "",
+            summary: p.locales[lang]?.summary || null,
+          };
+          const { error: e2 } = await supabase
+            .from("package_locales")
+            .upsert(payload, { onConflict: "package_id,lang" });
+          if (e2) throw e2;
+        }
+      }
+
+      // simpan perubahan tiers
+      for (const t of p.tiers || []) {
+        // hapus
+        if (t._deleted && t.id) {
+          const { error: delErr } = await supabase.from("price_tiers").delete().eq("id", t.id);
+          if (delErr) throw delErr;
+          continue;
+        }
+        if (t._deleted) continue; // tier baru yang dibatalkan
+
+        const payloadTier = {
+          package_id: p.id,
+          pax: Number(t.pax || 1),
+          price_idr: Number(t.price_idr || 0),
+          audience: t.audience || "domestic",
+        };
+
+        if (t.id) {
+          if (t._dirty) {
+            const { error: upErr } = await supabase
+              .from("price_tiers")
+              .update(payloadTier)
+              .eq("id", t.id);
+            if (upErr) throw upErr;
+          }
+        } else {
+          const { error: insErr } = await supabase
+            .from("price_tiers")
+            .insert(payloadTier);
+          if (insErr) throw insErr;
+        }
+      }
+    }
+
+    alert("Packages + Price Tiers tersimpan");
+    await loadPackages();
+  } catch (e) {
+    console.error(e);
+    alert(e.message || "Gagal simpan packages/tiers");
+  } finally {
+    setPkgSaving(false);
+  }
+};
+
+
+// buat paket baru
+const addPackage = async () => {
+  const slug = prompt("Slug paket (tanpa spasi, unik):");
+  if (!slug) return;
+  const { data, error } = await supabase
+    .from("packages")
+    .insert({ slug, is_active: true, default_image: "" })
+    .select()
+    .single();
+  if (error) { alert(error.message); return; }
+
+  // seed locales kosong
+  for (const lang of LANGS) {
+    await supabase.from("package_locales")
+      .upsert({ package_id: data.id, lang, title: "", summary: null }, { onConflict: "package_id,lang" });
+  }
+  await loadPackages();
+};
+
+// hapus paket
+const deletePackageRow = async (id) => {
+  if (!confirm("Hapus paket ini?")) return;
+  const { error } = await supabase.from("packages").delete().eq("id", id);
+  if (error) { alert(error.message); return; }
+  await loadPackages();
+};
 
   const updateLocal = (sid, lang, field, value) => {
     setSections((prev) =>
@@ -377,50 +626,144 @@ useEffect(() => {
     );
   };
 
-  // TESTIMONIALS Editor — data.items: [{ name, city, text, stars }]
-  const TestimonialsEditor = ({ s }) => {
-    const d = readData(s);
-    const items = Array.isArray(d.items) ? d.items : [];
-    const setItems = (arr) => writeData(s, { ...d, items: arr });
+// TESTIMONIALS Editor — locales[lang].extra.items: [{ name, city, text, stars }]
+const TestimonialsEditor = ({ s }) => {
+  // ambil & tulis ke per-bahasa (locales[activeLang].extra.items)
+  const ex = s.locales[activeLang].extra || {};
+  const items = Array.isArray(ex.items) ? ex.items : [];
+  const setItems = (arr) =>
+    updateLocaleExtra(s.id, activeLang, { ...ex, items: arr });
 
-    return (
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <div className="font-medium">Testimonial Items</div>
-          <button className="btn btn-outline !py-1 !px-3" onClick={()=> setItems([...(items||[]), { name:"", city:"", text:"", stars:5 }])}><Plus size={14}/> Tambah</button>
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="font-medium">
+          Testimonial Items — {activeLang.toUpperCase()}
         </div>
-        {(items||[]).length===0 ? <div className="text-sm text-slate-500">Belum ada testimonial.</div> : (
-          <div className="space-y-3">
-            {items.map((it,idx)=>(
-              <div key={idx} className="p-3 rounded-xl border dark:border-slate-700">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2 text-slate-500"><GripVertical size={16}/> <span className="text-xs">#{idx+1}</span></div>
-                  <div className="flex items-center gap-1">
-                    <button className="p-1 rounded-lg border" onClick={()=>{ if(idx>0){ const arr=items.slice(); [arr[idx-1],arr[idx]]=[arr[idx],arr[idx-1]]; setItems(arr); } }} title="Naik"><ArrowUp size={14}/></button>
-                    <button className="p-1 rounded-lg border" onClick={()=>{ if(idx<items.length-1){ const arr=items.slice(); [arr[idx+1],arr[idx]]=[arr[idx],arr[idx+1]]; setItems(arr); } }} title="Turun"><ArrowDown size={14}/></button>
-                    <button className="p-1 rounded-lg border hover:bg-red-50 dark:hover:bg-slate-800" onClick={()=>{ const arr=items.slice(); arr.splice(idx,1); setItems(arr); }} title="Hapus"><Trash2 size={14}/></button>
-                  </div>
-                </div>
+        <button
+          className="btn btn-outline !py-1 !px-3"
+          onClick={() =>
+            setItems([...(items || []), { name: "", city: "", text: "", stars: 5 }])
+          }
+        >
+          <Plus size={14} /> Tambah
+        </button>
+      </div>
 
-                <div className="grid md:grid-cols-2 gap-2">
-                  <input className="border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Nama" value={it.name||""} onChange={(e)=>{ const arr=items.slice(); arr[idx]={...it,name:e.target.value}; setItems(arr);} } />
-                  <input className="border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Kota (opsional)" value={it.city||""} onChange={(e)=>{ const arr=items.slice(); arr[idx]={...it,city:e.target.value}; setItems(arr);} } />
+      {(items || []).length === 0 ? (
+        <div className="text-sm text-slate-500">
+          Belum ada testimonial untuk bahasa ini.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((it, idx) => (
+            <div key={idx} className="p-3 rounded-xl border dark:border-slate-700">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 text-slate-500">
+                  <GripVertical size={16} /> <span className="text-xs">#{idx + 1}</span>
                 </div>
-                <textarea rows="3" className="mt-2 w-full border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Teks" value={it.text||""} onChange={(e)=>{ const arr=items.slice(); arr[idx]={...it,text:e.target.value}; setItems(arr);} } />
-
-                <div className="mt-2 flex items-center gap-2">
-                  <Star size={16} className="text-amber-500"/><span className="text-sm">Bintang:</span>
-                  <select className="px-3 py-2 rounded-2xl" value={Number(it.stars||5)} onChange={(e)=>{ const arr=items.slice(); arr[idx]={...it,stars:Number(e.target.value)}; setItems(arr);} }>
-                    {[1,2,3,4,5].map(n=><option key={n} value={n}>{n}</option>)}
-                  </select>
+                <div className="flex items-center gap-1">
+                  <button
+                    className="p-1 rounded-lg border"
+                    onClick={() => {
+                      if (idx > 0) {
+                        const arr = items.slice();
+                        [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+                        setItems(arr);
+                      }
+                    }}
+                    title="Naik"
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  <button
+                    className="p-1 rounded-lg border"
+                    onClick={() => {
+                      if (idx < items.length - 1) {
+                        const arr = items.slice();
+                        [arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]];
+                        setItems(arr);
+                      }
+                    }}
+                    title="Turun"
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                  <button
+                    className="p-1 rounded-lg border hover:bg-red-50 dark:hover:bg-slate-800"
+                    onClick={() => {
+                      const arr = items.slice();
+                      arr.splice(idx, 1);
+                      setItems(arr);
+                    }}
+                    title="Hapus"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
+
+              <div className="grid md:grid-cols-2 gap-2">
+                <input
+                  className="border rounded-xl px-3 py-2 dark:bg-slate-900"
+                  placeholder="Nama"
+                  value={it.name || ""}
+                  onChange={(e) => {
+                    const arr = items.slice();
+                    arr[idx] = { ...it, name: e.target.value };
+                    setItems(arr);
+                  }}
+                />
+                <input
+                  className="border rounded-xl px-3 py-2 dark:bg-slate-900"
+                  placeholder="Kota (opsional)"
+                  value={it.city || ""}
+                  onChange={(e) => {
+                    const arr = items.slice();
+                    arr[idx] = { ...it, city: e.target.value };
+                    setItems(arr);
+                  }}
+                />
+              </div>
+
+              <textarea
+                rows="3"
+                className="mt-2 w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+                placeholder="Teks"
+                value={it.text || ""}
+                onChange={(e) => {
+                  const arr = items.slice();
+                  arr[idx] = { ...it, text: e.target.value };
+                  setItems(arr);
+                }}
+              />
+
+              <div className="mt-2 flex items-center gap-2">
+                <Star size={16} className="text-amber-500" />
+                <span className="text-sm">Bintang:</span>
+                <select
+                  className="px-3 py-2 rounded-2xl"
+                  value={Number(it.stars || 5)}
+                  onChange={(e) => {
+                    const arr = items.slice();
+                    arr[idx] = { ...it, stars: Number(e.target.value) };
+                    setItems(arr);
+                  }}
+                >
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
   // STATS Editor — data: { trips, photos, rating }
   const StatsEditor = ({ s }) => {
@@ -735,145 +1078,415 @@ useEffect(() => {
   </div>
 </div>
 
-      {/* LIST SECTIONS */}
-      <div className="space-y-6">
-        {sorted.map((s) => {
-          const dataObj = readData(s);
-          const images = Array.isArray(dataObj.images) ? dataObj.images : [];
-
-          // Header bar per section
-          const HeaderBar = () => (
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold uppercase">[{s.section_key}]</span>
-                <input value={s.section_key} onChange={(e) => {
-                  setSections((prev) => prev.map((x) => (x.id === s.id ? { ...x, section_key: e.target.value, _dirty: true } : x)));
-                }} className="px-2 py-1 rounded-xl border dark:bg-slate-900" placeholder="section_key" />
-                {!s.dataValid && (
-                  <span className="ml-2 text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
-                    JSON invalid
-                  </span>
-                )}
-                {s._dirty && (<span className="ml-2 text-[11px] text-amber-600">• belum disimpan</span>)}
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="p-2 rounded-xl border" onClick={() => move(s.id, -1)} title="Naik"><ArrowUp size={16} /></button>
-                <button className="p-2 rounded-xl border" onClick={() => move(s.id, +1)} title="Turun"><ArrowDown size={16} /></button>
-                <button className="p-2 rounded-xl border" onClick={() => duplicateSection(s.id)} title="Duplikat"><Copy size={16} /></button>
-                <button className="p-2 rounded-xl border" onClick={() => revertSection(s.id)} title="Kembalikan"><RotateCcw size={16} /></button>
-                <button className="p-2 rounded-xl border hover:bg-red-50 dark:hover:bg-slate-800" onClick={() => deleteSection(s.id)} title="Hapus"><Trash2 size={16} /></button>
-              </div>
-            </div>
-          );
-
-          // Simple switcher
-          const renderSimple = () => {
-            switch (s.section_key) {
-              case "hero": return <HeroEditor s={s} />;
-              case "testimonials": return <TestimonialsEditor s={s} />;
-              case "stats": return <StatsEditor s={s} />;
-              case "how": return <HowEditor s={s} />;
-              case "cta": return <CTAEditor s={s} />;
-              case "categories": return <CategoriesEditor s={s} />;
-              case "categories_banner": return <BannerEditor s={s} />;
-              case "banner1": return <BannerEditor s={s} />;
-              case "quotes_banner": return <BannerEditor s={s} withQuotes />;
-              case "popular":
-              case "about":
-              case "destinations_intro":
-              default: return <SimpleTitleBody s={s} />;
-            }
-          };
-
-          // Advanced JSON area
-          const renderAdvanced = () => (
-            <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-4 mt-4">
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="text-sm">Data JSON</label>
-                  {(s.section_key==="hero") && (
-                    <label className="inline-flex items-center gap-2 text-xs cursor-pointer">
-                      <Upload size={14} /> Upload Gambar → data.images
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onUploadToImages(s.id, e.target.files[0])} />
-                    </label>
-                  )}
-                </div>
-                <DataTextArea s={s} />
-                {!s.dataValid && <div className="text-xs text-red-600 mt-1">JSON tidak valid</div>}
-                <div className="mt-2 p-2 rounded-xl border text-xs text-slate-600 dark:text-slate-300">
-                  <div className="flex items-center gap-2 mb-1"><Eye size={14} /> Pratinjau kunci</div>
-                  <pre className="whitespace-pre-wrap break-words">{(() => {
-                    try {
-                      const obj = JSON.parse(s.dataText || "{}");
-                      const keys = Object.keys(obj);
-                      return keys.length ? JSON.stringify(keys.reduce((a, k) => (a[k] = Array.isArray(obj[k]) ? `[${obj[k].length}]` : typeof obj[k] === "object" && obj[k] ? "{…}" : obj[k], a), {}), null, 2) : "{}";
-                    } catch { return "{}"; }
-                  })()}</pre>
-                </div>
-              </div>
-              {/* Localized title/body */}
-              <div className="space-y-2">
-                <div className="font-medium uppercase">{activeLang}</div>
-                <label className="text-sm">Title</label>
-                <input className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-2" value={s.locales[activeLang].title} onChange={(e)=>updateLocal(s.id, activeLang, "title", e.target.value)} />
-                <label className="text-sm">Body</label>
-                <textarea rows="8" className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900" value={s.locales[activeLang].body_md} onChange={(e)=>updateLocal(s.id, activeLang, "body_md", e.target.value)} />
-              </div>
-              {/* Gallery quick controls if images exist */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Images size={16} /> <span className="font-medium">Galeri (jika ada data.images)</span>
-                  <span className="text-xs text-slate-400">({images.length})</span>
-                </div>
-                {images.length === 0 ? (
-                  <div className="text-sm text-slate-500">Belum ada gambar.</div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2">
-                    {images.map((url, idx) => (
-                      <div key={idx} className="relative group">
-                        <img src={url} alt="" className="w-full h-24 object-cover rounded-lg border" />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 rounded-lg transition" />
-                        <div className="absolute top-1 left-1 flex gap-1">
-                          <button className="p-1 rounded bg-white/90 text-slate-700" onClick={()=>{
-                            const obj = readData(s); const arr = Array.isArray(obj.images) ? obj.images.slice() : [];
-                            if (idx > 0) { [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; }
-                            writeData(s, { ...obj, images: arr });
-                          }} title="Naik"><ArrowUp size={12} /></button>
-                          <button className="p-1 rounded bg-white/90 text-slate-700" onClick={()=>{
-                            const obj = readData(s); const arr = Array.isArray(obj.images) ? obj.images.slice() : [];
-                            if (idx < arr.length - 1) { [arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]]; }
-                            writeData(s, { ...obj, images: arr });
-                          }} title="Turun"><ArrowDown size={12} /></button>
-                        </div>
-                        <button className="absolute top-1 right-1 p-1 rounded bg-white/90 text-rose-600" onClick={()=>{
-                          const obj = readData(s); const arr = Array.isArray(obj.images) ? obj.images.slice() : [];
-                          arr.splice(idx, 1); writeData(s, { ...obj, images: arr });
-                        }} title="Hapus"><Trash2 size={12} /></button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-
-          return (
-            <div key={s.id} className="card p-4">
-              <HeaderBar />
-              <div className="mt-4">
-                {mode === "simple" ? renderSimple() : renderAdvanced()}
-              </div>
-
-              {/* Editor FAQ khusus (tetap di Advanced agar struktur sama) */}
-              {mode === "advanced" && s.section_key === "faq_list" && (
-                <div className="mt-4 text-sm text-slate-500">
-                  *Untuk FAQ, gunakan field <code>locales[lang].extra.items</code> dengan format <code>[{{"q":"","a":""}}]</code>.
-                </div>
-              )}
-            </div>
-          );
-        })}
+{page === "explore" && (
+  <div className="card p-4">
+    <div className="flex items-center justify-between mb-3">
+      <div className="font-semibold">
+        Kelola Packages ({pkgList.length}) — {activeLang.toUpperCase()}
       </div>
+      <div className="flex items-center gap-2">
+        <button className="btn btn-outline !py-1.5 !px-3" onClick={addPackage}>
+          <Plus size={14}/> Tambah Paket
+        </button>
+        <button
+          className="btn btn-primary !py-1.5 !px-3"
+          onClick={savePackages}
+          disabled={pkgSaving}
+          title="Simpan perubahan packages"
+        >
+          <Save size={14}/> {pkgSaving ? "Menyimpan…" : "Simpan Packages"}
+        </button>
+      </div>
+    </div>
+
+    {pkgLoading ? (
+      <div className="text-sm text-slate-500">Loading…</div>
+    ) : pkgList.length === 0 ? (
+      <div className="text-sm text-slate-500">Belum ada paket.</div>
+    ) : (
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {pkgList.map((p) => (
+          <div key={p.id} className="rounded-xl border p-3 dark:border-slate-700 space-y-2">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span>{p.id.slice(0,8)}…</span>
+              <div className="flex items-center gap-2">
+                <label className="inline-flex items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={!!p.is_active}
+                    onChange={(e)=>updatePkgField(p.id,"is_active", e.target.checked)}
+                  />
+                  aktif
+                </label>
+                <button
+                  className="p-1 rounded-lg border hover:bg-red-50 dark:hover:bg-slate-800"
+                  onClick={()=>deletePackageRow(p.id)}
+                  title="Hapus paket"
+                >
+                  <Trash2 size={14}/>
+                </button>
+              </div>
+            </div>
+
+            <input
+              className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+              placeholder="slug"
+              value={p.slug||""}
+              onChange={(e)=>updatePkgField(p.id,"slug", e.target.value)}
+            />
+
+            {/* Default image */}
+            <div>
+              <div className="text-xs mb-1">Default Image</div>
+              {p.default_image && (
+                <img src={p.default_image} alt="" className="h-28 w-full object-cover rounded-lg border mb-2"/>
+              )}
+              <div className="flex items-center gap-2">
+                <input
+                  className="flex-1 border rounded-xl px-3 py-2 dark:bg-slate-900"
+                  placeholder="URL gambar"
+                  value={p.default_image||""}
+                  onChange={(e)=>updatePkgField(p.id,"default_image", e.target.value)}
+                />
+                <label className="btn btn-outline !py-1 !px-3 cursor-pointer">
+                  <Upload size={14}/>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e)=> onUploadPkgImage(p, e.target.files?.[0]) }
+                  />
+                </label>
+              </div>
+            </div>
+
+{/* Locale fields */}
+<div>
+  <div className="text-xs mb-1">Bahasa: {activeLang.toUpperCase()}</div>
+  <input
+    className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-2"
+    placeholder="Title"
+    value={p.locales?.[activeLang]?.title || ""}
+    onChange={(e)=>updatePkgLocale(p.id, activeLang, "title", e.target.value)}
+  />
+  <input
+    className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+    placeholder="Summary"
+    value={p.locales?.[activeLang]?.summary || ""}
+    onChange={(e)=>updatePkgLocale(p.id, activeLang, "summary", e.target.value)}
+  />
+</div>
+
+{/* Price Tiers */}
+<div className="mt-3">
+  <div className="flex items-center justify-between">
+    <div className="font-medium text-sm">Price Tiers</div>
+    <div className="flex gap-2">
+      <button className="btn btn-outline !py-1 !px-2" onClick={()=>addTier(p.id,"domestic")}>+ Domestik</button>
+      <button className="btn btn-outline !py-1 !px-2" onClick={()=>addTier(p.id,"foreign")}>+ Mancanegara</button>
+    </div>
+  </div>
+
+  <div className="grid gap-2 mt-2">
+    {["domestic","foreign"].map((aud) => {
+      const label = aud === "domestic" ? "Domestik" : "Mancanegara";
+      const list = (p.tiers || []).filter((t) => t.audience === aud && !t._deleted).sort((a,b)=>a.pax-b.pax);
+      return (
+        <div key={aud} className="p-2 rounded-xl border dark:border-slate-700">
+          <div className="text-xs mb-2">{label}</div>
+          {list.length === 0 ? (
+            <div className="text-xs text-slate-500">Belum ada tier.</div>
+          ) : (
+            <div className="space-y-1">
+              {list.map((t) => {
+                const idx = (p.tiers || []).findIndex((z) => z === t);
+                return (
+                  <div key={t.id || `new-${idx}`} className="grid grid-cols-12 gap-2 items-center">
+                    <input
+                      type="number"
+                      min={1}
+                      className="col-span-3 border rounded-xl px-3 py-1.5 dark:bg-slate-900"
+                      value={t.pax}
+                      onChange={(e)=>updateTier(p.id, idx, { pax: Number(e.target.value || 1) })}
+                      placeholder="Pax"
+                      title="Pax"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      className="col-span-7 border rounded-xl px-3 py-1.5 dark:bg-slate-900"
+                      value={t.price_idr}
+                      onChange={(e)=>updateTier(p.id, idx, { price_idr: Number(e.target.value || 0) })}
+                      placeholder="Harga IDR"
+                      title="Harga per pax (IDR)"
+                    />
+                    <button
+                      className="col-span-2 p-2 rounded-xl border hover:bg-red-50 dark:hover:bg-slate-800"
+                      onClick={()=>removeTier(p.id, idx)}
+                      title="Hapus tier"
+                    >
+                      <Trash2 size={14}/>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </div>
+</div>
+
+{/* penanda dirty */}
+{p._dirty && <div className="text-[11px] text-amber-600 mt-1">• belum disimpan</div>}
+          </div>
+        ))}
+      </div>
+    )}
+
+    <div className="mt-2 text-xs text-slate-500">
+      *Data tersimpan ke tabel <code>packages</code> & <code>package_locales</code>.
+    </div>
+  </div>
+)}
+
+
+<div className="space-y-6">
+  {sorted.map((s) => {
+    const dataObj = readData(s);
+    const images = Array.isArray(dataObj.images) ? dataObj.images : [];
+
+    // Header bar per section
+    const HeaderBar = () => (
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold uppercase">[{s.section_key}]</span>
+          <input
+            value={s.section_key}
+            onChange={(e) => {
+              setSections((prev) =>
+                prev.map((x) =>
+                  x.id === s.id ? { ...x, section_key: e.target.value, _dirty: true } : x
+                )
+              );
+            }}
+            className="px-2 py-1 rounded-xl border dark:bg-slate-900"
+            placeholder="section_key"
+          />
+          {!s.dataValid && (
+            <span className="ml-2 text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+              JSON invalid
+            </span>
+          )}
+          {s._dirty && <span className="ml-2 text-[11px] text-amber-600">• belum disimpan</span>}
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="p-2 rounded-xl border" onClick={() => move(s.id, -1)} title="Naik">
+            <ArrowUp size={16} />
+          </button>
+          <button className="p-2 rounded-xl border" onClick={() => move(s.id, +1)} title="Turun">
+            <ArrowDown size={16} />
+          </button>
+          <button className="p-2 rounded-xl border" onClick={() => duplicateSection(s.id)} title="Duplikat">
+            <Copy size={16} />
+          </button>
+          <button className="p-2 rounded-xl border" onClick={() => revertSection(s.id)} title="Kembalikan">
+            <RotateCcw size={16} />
+          </button>
+          <button
+            className="p-2 rounded-xl border hover:bg-red-50 dark:hover:bg-slate-800"
+            onClick={() => deleteSection(s.id)}
+            title="Hapus"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+    );
+
+    // Simple switcher
+    const renderSimple = () => {
+      switch (s.section_key) {
+        case "hero":
+          return <HeroEditor s={s} />;
+        case "testimonials":
+          return <TestimonialsEditor s={s} />;
+        case "stats":
+          return <StatsEditor s={s} />;
+        case "how":
+          return <HowEditor s={s} />;
+        case "cta":
+          return <CTAEditor s={s} />;
+        case "categories":
+          return <CategoriesEditor s={s} />;
+        case "categories_banner":
+          return <BannerEditor s={s} />;
+        case "banner1":
+          return <BannerEditor s={s} />;
+        case "quotes_banner":
+          return <BannerEditor s={s} withQuotes />;
+        case "popular":
+        case "about":
+        case "destinations_intro":
+        default:
+          return <SimpleTitleBody s={s} />;
+      }
+    };
+
+    // Advanced JSON area
+    const renderAdvanced = () => (
+      <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-4 mt-4">
+        <div>
+          <div className="flex items-center justify-between">
+            <label className="text-sm">Data JSON</label>
+            {s.section_key === "hero" && (
+              <label className="inline-flex items-center gap-2 text-xs cursor-pointer">
+                <Upload size={14} /> Upload Gambar → data.images
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) =>
+                    e.target.files?.[0] && onUploadToImages(s.id, e.target.files[0])
+                  }
+                />
+              </label>
+            )}
+          </div>
+          <DataTextArea s={s} />
+          {!s.dataValid && <div className="text-xs text-red-600 mt-1">JSON tidak valid</div>}
+          <div className="mt-2 p-2 rounded-xl border text-xs text-slate-600 dark:text-slate-300">
+            <div className="flex items-center gap-2 mb-1">
+              <Eye size={14} /> Pratinjau kunci
+            </div>
+            <pre className="whitespace-pre-wrap break-words">
+              {(() => {
+                try {
+                  const obj = JSON.parse(s.dataText || "{}");
+                  const keys = Object.keys(obj);
+                  return keys.length
+                    ? JSON.stringify(
+                        keys.reduce((a, k) => {
+                          a[k] =
+                            Array.isArray(obj[k])
+                              ? `[${obj[k].length}]`
+                              : typeof obj[k] === "object" && obj[k]
+                              ? "{…}"
+                              : obj[k];
+                          return a;
+                        }, {}),
+                        null,
+                        2
+                      )
+                    : "{}";
+                } catch {
+                  return "{}";
+                }
+              })()}
+            </pre>
+          </div>
+        </div>
+        {/* Localized title/body */}
+        <div className="space-y-2">
+          <div className="font-medium uppercase">{activeLang}</div>
+          <label className="text-sm">Title</label>
+          <input
+            className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-2"
+            value={s.locales[activeLang].title}
+            onChange={(e) => updateLocal(s.id, activeLang, "title", e.target.value)}
+          />
+          <label className="text-sm">Body</label>
+          <textarea
+            rows="8"
+            className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+            value={s.locales[activeLang].body_md}
+            onChange={(e) => updateLocal(s.id, activeLang, "body_md", e.target.value)}
+          />
+        </div>
+        {/* Gallery quick controls if images exist */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Images size={16} /> <span className="font-medium">Galeri (jika ada data.images)</span>
+            <span className="text-xs text-slate-400">({images.length})</span>
+          </div>
+          {images.length === 0 ? (
+            <div className="text-sm text-slate-500">Belum ada gambar.</div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {images.map((url, idx) => (
+                <div key={idx} className="relative group">
+                  <img src={url} alt="" className="w-full h-24 object-cover rounded-lg border" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 rounded-lg transition" />
+                  <div className="absolute top-1 left-1 flex gap-1">
+                    <button
+                      className="p-1 rounded bg-white/90 text-slate-700"
+                      onClick={() => {
+                        const obj = readData(s);
+                        const arr = Array.isArray(obj.images) ? obj.images.slice() : [];
+                        if (idx > 0) {
+                          [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+                        }
+                        writeData(s, { ...obj, images: arr });
+                      }}
+                      title="Naik"
+                    >
+                      <ArrowUp size={12} />
+                    </button>
+                    <button
+                      className="p-1 rounded bg-white/90 text-slate-700"
+                      onClick={() => {
+                        const obj = readData(s);
+                        const arr = Array.isArray(obj.images) ? obj.images.slice() : [];
+                        if (idx < arr.length - 1) {
+                          [arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]];
+                        }
+                        writeData(s, { ...obj, images: arr });
+                      }}
+                      title="Turun"
+                    >
+                      <ArrowDown size={12} />
+                    </button>
+                  </div>
+                  <button
+                    className="absolute top-1 right-1 p-1 rounded bg-white/90 text-rose-600"
+                    onClick={() => {
+                      const obj = readData(s);
+                      const arr = Array.isArray(obj.images) ? obj.images.slice() : [];
+                      arr.splice(idx, 1);
+                      writeData(s, { ...obj, images: arr });
+                    }}
+                    title="Hapus"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+
+    return (
+      <div key={s.id} className="card p-4">
+        <HeaderBar />
+        <div className="mt-4">
+          {mode === "simple" ? renderSimple() : renderAdvanced()}
+        </div>
+
+        {/* Editor FAQ khusus (tetap di Advanced agar struktur sama) */}
+        {mode === "advanced" && s.section_key === "faq_list" && (
+          <div className="mt-4 text-sm text-slate-500">
+            *Untuk FAQ, gunakan field <code>locales[lang].extra.items</code> dengan format{" "}
+            <code>[{{"q":"","a":""}}]</code>.
+          </div>
+        )}
+      </div>
+    );
+  })}
+</div>
+
     </div>
   );
 }
