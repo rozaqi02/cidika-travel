@@ -212,7 +212,7 @@ function Hero({ images=[], subtitle, title, desc, chips=[], onSearch, ctaContact
   );
 }
 
-/* ================== WHY / STATS / POPULAR / HOW / TESTIMONIALS / CTA (sama seperti versi-mu) ================== */
+/* ================== (SECTIONS LAINNYA) ================== */
 
 function FeatureCard({ iconName, title, text }) {
   const Icon = { "badge-check":BadgeCheck, "users":Users, "calendar":Calendar, "map-pin":MapPin }[iconName] || BadgeCheck;
@@ -229,7 +229,7 @@ function WhyUs({ title, subtitle, items=[] }) {
   return (
     <section className="container mt-16">
       {(title||subtitle) && (
-        <motion.div variants={reveal} initial="hidden" animate="show" viewport={{ once:true }}>
+        <motion.div variants={reveal} initial="hidden" whileInView="show" viewport={{ once:true }}>
           {title && <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>}
           {subtitle && <p className="text-slate-600 dark:text-slate-300 mt-1">{subtitle}</p>}
         </motion.div>
@@ -476,7 +476,7 @@ export default function Home(){
       <WhyUs
         title={S.whyus?.locale?.title || t("home.whyTitle", { defaultValue: "Kenapa pilih kami?" })}
         subtitle={S.whyus?.locale?.body_md || t("home.whySubtitle", { defaultValue: "Keunggulan yang bikin trip kamu lebih tenang." })}
-        items={S.whyus?.locale?.extra?.items || [
+        items={S.whyus?.data?.items || [
           { icon:"badge-check", title:t("home.whyItems.0.title", { defaultValue:"Operator Resmi & Berpengalaman" }), text:t("home.whyItems.0.text", { defaultValue:"Tim lokal paham spot & timing terbaik." }) },
           { icon:"users",       title:t("home.whyItems.1.title", { defaultValue:"Cocok untuk Semua" }),             text:t("home.whyItems.1.text", { defaultValue:"Solo, couple, family, rombongan kantor." }) },
           { icon:"calendar",    title:t("home.whyItems.2.title", { defaultValue:"Jadwal Fleksibel" }),              text:t("home.whyItems.2.text", { defaultValue:"Private charter / open trip." }) },
@@ -499,13 +499,12 @@ export default function Home(){
       <HowItWorks
         title={S.how?.locale?.title || t("home.howTitle", { defaultValue: "Cara Kerja" })}
         subtitle={S.how?.locale?.body_md || t("home.howSubtitle", { defaultValue: "Simple dan cepat tanpa login." })}
-        steps={S.how?.locale?.extra?.steps || []}
+        steps={S.how?.data?.steps || []}
       />
 
       <Testimonials
         title={S.testimonials?.locale?.title || t("home.testimonialsTitle", { defaultValue: "Kata Mereka" })}
-
-        items={S.testimonials?.locale?.extra?.items || []}
+        items={S.testimonials?.data?.items || []}
       />
 
       <BigCTA
@@ -517,4 +516,4 @@ export default function Home(){
       <StickyHelpCTA />
     </>
   );
-} 
+}

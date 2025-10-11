@@ -217,6 +217,84 @@ const FaqListEditor = ({ s, activeLang, updateLocaleExtra }) => {
   );
 };
 
+const StatsEditor = ({ s, readData, writeData }) => {
+  const d = readData(s);
+  const set = (k, v) => writeData(s, { ...d, [k]: v });
+  return (
+    <div className="grid md:grid-cols-3 gap-3">
+      <Labeled label="Total Trips (data.trips)">
+        <input type="number" className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900" value={Number(d.trips || 0)} onChange={(e) => set("trips", Number(e.target.value || 0))} />
+      </Labeled>
+      <Labeled label="Foto/Video (data.photos)">
+        <input type="number" className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900" value={Number(d.photos || 0)} onChange={(e) => set("photos", Number(e.target.value || 0))} />
+      </Labeled>
+      <Labeled label="Rating (data.rating, contoh: 4.9)">
+        <input type="number" step="0.1" className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900" value={Number(d.rating || 0)} onChange={(e) => set("rating", Number(e.target.value || 0))} />
+      </Labeled>
+    </div>
+  );
+};
+
+const WhyUsEditor = ({ s, activeLang, updateLocal, updateLocaleExtra }) => {
+  const ex = s.locales[activeLang].extra || {};
+  const items = Array.isArray(ex.items) ? ex.items : [];
+  const setItems = (arr) => updateLocaleExtra(s.id, activeLang, { ...ex, items: arr });
+
+  return (
+    <div>
+      <div className="font-medium mb-2">Konten Umum - Bahasa: {activeLang.toUpperCase()}</div>
+      <div className="grid md:grid-cols-2 gap-3">
+        <Labeled label="Judul (title)">
+          <input
+            className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+            value={s.locales[activeLang].title || ""}
+            onChange={(e) => updateLocal(s.id, activeLang, "title", e.target.value)}
+          />
+        </Labeled>
+        <Labeled label="Subjudul (body_md)">
+          <input
+            className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+            value={s.locales[activeLang].body_md || ""}
+            onChange={(e) => updateLocal(s.id, activeLang, "body_md", e.target.value)}
+          />
+        </Labeled>
+      </div>
+
+      <div className="flex items-center justify-between mt-4 mb-2">
+        <div className="font-medium">4 Kartu Keunggulan (extra.items)</div>
+        <button
+          className="btn btn-outline !py-1 !px-3"
+          onClick={() => setItems([...(items || []), { title: "", text: "", icon: "badge-check" }])}
+        >
+          <Plus size={14} /> Tambah Kartu
+        </button>
+      </div>
+
+      {(items || []).length === 0 ? (
+        <div className="text-sm text-slate-500">Belum ada kartu keunggulan untuk bahasa ini.</div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((it, idx) => (
+            <div key={idx} className="p-3 rounded-xl border dark:border-slate-700">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs text-slate-500">#{idx + 1}</span>
+                <button className="p-1 rounded-lg border" onClick={() => { if (idx > 0) { const arr = items.slice();[arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; setItems(arr); } }} title="Naik"><ArrowUp size={14} /></button>
+                <button className="p-1 rounded-lg border" onClick={() => { if (idx < items.length - 1) { const arr = items.slice();[arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]]; setItems(arr); } }} title="Turun"><ArrowDown size={14} /></button>
+                <button className="ml-auto p-1 rounded-lg border hover:bg-red-50 dark:hover:bg-slate-800" onClick={() => { const arr = items.slice(); arr.splice(idx, 1); setItems(arr); }} title="Hapus"><Trash2 size={14} /></button>
+              </div>
+              <div className="grid md:grid-cols-3 gap-2">
+                <input className="border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Judul Kartu" value={it.title || ""} onChange={(e) => { const arr = items.slice(); arr[idx] = { ...it, title: e.target.value }; setItems(arr); }} />
+                <input className="border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Teks Kartu" value={it.text || ""} onChange={(e) => { const arr = items.slice(); arr[idx] = { ...it, text: e.target.value }; setItems(arr); }} />
+                <input className="border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Icon (badge-check/users/calendar/map-pin)" value={it.icon || ""} onChange={(e) => { const arr = items.slice(); arr[idx] = { ...it, icon: e.target.value }; setItems(arr); }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const HowEditor = ({ s, activeLang, updateLocal, updateLocaleExtra }) => {
   const ex = s.locales[activeLang].extra || {};
   const steps = Array.isArray(ex.steps) ? ex.steps : [];
@@ -795,9 +873,6 @@ const SimpleTitleBody = ({ s, activeLang, updateLocal, titleLabel = "Judul", bod
     </Labeled>
   </div>
 );
-
-// Assuming StatsEditor is similar to SimpleTitleBody (since not provided in original code)
-const StatsEditor = SimpleTitleBody;  // Adjust if your StatsEditor is different
 
 export default function Kustomisasi() {
   const { t, i18n } = useTranslation();
@@ -1746,8 +1821,12 @@ export default function Kustomisasi() {
             switch (s.section_key) {
               case "hero":
                 return <HeroEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} readData={readData} writeData={writeData} onUploadToImages={onUploadToImages} />;
+              case "whyus":           
+              return <WhyUsEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} />;
               case "testimonials":
                 return <TestimonialsEditor s={s} activeLang={activeLang} updateLocaleExtra={updateLocaleExtra} />;
+              case "stats":           
+                return <StatsEditor s={s} readData={readData} writeData={writeData} />;
               case "stats":
                 return <StatsEditor s={s} activeLang={activeLang} updateLocal={updateLocal} />;
               case "how":
