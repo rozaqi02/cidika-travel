@@ -229,7 +229,7 @@ function WhyUs({ title, subtitle, items=[] }) {
   return (
     <section className="container mt-16">
       {(title||subtitle) && (
-        <motion.div variants={reveal} initial="hidden" whileInView="show" viewport={{ once:true }}>
+        <motion.div variants={reveal} initial="hidden" animate="show" viewport={{ once:true }}>
           {title && <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>}
           {subtitle && <p className="text-slate-600 dark:text-slate-300 mt-1">{subtitle}</p>}
         </motion.div>
@@ -368,6 +368,8 @@ function HowItWorks({ title, subtitle, steps=[] }) {
   );
 }
 function Testimonials({ title, items=[] }) {
+  const { i18n } = useTranslation();
+  const lang = i18n.language.slice(0,2);
   if(!items.length) return null;
   const getStars = (n)=> {
     const s = Math.max(1, Math.min(5, Number(n||5)));
@@ -382,6 +384,11 @@ function Testimonials({ title, items=[] }) {
             <blockquote key={i} className="w-[340px] shrink-0 mr-3 last:mr-0 card p-4">
               <div className="flex items-center gap-2 text-amber-500 mb-1">{getStars(tItem.stars)}</div>
               <p className="text-slate-700 dark:text-slate-200 line-clamp-5">{tItem.text}</p>
+              {lang !== 'id' && (
+                <a href={`https://translate.google.com/?sl=id&tl=${lang}&text=${encodeURIComponent(tItem.text)}&op=translate`} target="_blank" rel="noreferrer" className="text-xs text-sky-600 hover:underline mt-1 block">
+                  Translate to {lang.toUpperCase()}
+                </a>
+              )}
               <footer className="mt-3 text-sm text-slate-500">— {tItem.name}{tItem.city?`, ${tItem.city}`:""}</footer>
             </blockquote>
           ))}
@@ -469,7 +476,7 @@ export default function Home(){
       <WhyUs
         title={S.whyus?.locale?.title || t("home.whyTitle", { defaultValue: "Kenapa pilih kami?" })}
         subtitle={S.whyus?.locale?.body_md || t("home.whySubtitle", { defaultValue: "Keunggulan yang bikin trip kamu lebih tenang." })}
-        items={S.whyus?.data?.items || [
+        items={S.whyus?.locale?.extra?.items || [
           { icon:"badge-check", title:t("home.whyItems.0.title", { defaultValue:"Operator Resmi & Berpengalaman" }), text:t("home.whyItems.0.text", { defaultValue:"Tim lokal paham spot & timing terbaik." }) },
           { icon:"users",       title:t("home.whyItems.1.title", { defaultValue:"Cocok untuk Semua" }),             text:t("home.whyItems.1.text", { defaultValue:"Solo, couple, family, rombongan kantor." }) },
           { icon:"calendar",    title:t("home.whyItems.2.title", { defaultValue:"Jadwal Fleksibel" }),              text:t("home.whyItems.2.text", { defaultValue:"Private charter / open trip." }) },
@@ -492,7 +499,7 @@ export default function Home(){
       <HowItWorks
         title={S.how?.locale?.title || t("home.howTitle", { defaultValue: "Cara Kerja" })}
         subtitle={S.how?.locale?.body_md || t("home.howSubtitle", { defaultValue: "Simple dan cepat tanpa login." })}
-        steps={S.how?.data?.steps || []}
+        steps={S.how?.locale?.extra?.steps || []}
       />
 
       <Testimonials

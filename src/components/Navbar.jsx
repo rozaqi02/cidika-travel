@@ -11,7 +11,7 @@ import ReactCountryFlag from "react-country-flag";
 
 /* ====== Helpers ====== */
 const LANGS = [
-  { code: "en", label: "English",  country: "GB" },
+  { code: "en", label: "English",   country: "GB" },
   { code: "id", label: "Indonesia", country: "ID" },
   { code: "ja", label: "日本語",     country: "JP" },
 ];
@@ -118,12 +118,8 @@ export default function Navbar() {
     customize: t("admin.menu.customize", { defaultValue: "Customize" }),
   }), [t]);
 
-  const mobileVariants = {
-    hidden: { opacity: 0, y: -10 },
-    show:   { opacity: 1, y: 0, transition: { duration: reduced ? 0.01 : 0.18, ease: "easeOut" } },
-    exit:   { opacity: 0, y: -8,  transition: { duration: reduced ? 0.01 : 0.14, ease: "easeIn"  } },
-  };
-
+  // Objek mobileVariants tidak lagi digunakan
+  
   const headerBg = cx("bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors");
   const headerShadow = atTop ? "shadow-none" : "shadow-[0_6px_24px_rgba(2,6,23,.06)]";
 
@@ -245,16 +241,16 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* MOBILE PANEL (teks tetap rata kiri) */}
+        {/* ======================================================= */}
+        {/* == PERUBAHAN UTAMA ADA DI BAGIAN INI == */}
+        {/* ======================================================= */}
         <AnimatePresence>
           {open && (
             <motion.div
-              key="mobile-panel"
-              initial="hidden"
-              animate="show"
-              exit="exit"
-              variants={mobileVariants}
-              className="lg:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden overflow-hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
             >
               <div className="p-2 space-y-2 text-left">
                 <div className="flex flex-col font-medium">

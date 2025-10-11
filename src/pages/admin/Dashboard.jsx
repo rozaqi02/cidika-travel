@@ -8,8 +8,9 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   BarChart, Bar,
   PieChart, Pie, Cell,
+  AreaChart, Area,
 } from "recharts";
-import { Filter, RotateCcw } from "lucide-react";
+import { Filter, RotateCcw, DollarSign, Users, Calendar, TrendingUp, PieChart as PieIcon, BarChart as BarIcon } from "lucide-react";
 
 function fmtIDR(n) {
   try { return (n ?? 0).toLocaleString("id-ID"); } catch { return String(n ?? 0); }
@@ -26,6 +27,10 @@ function endOfDayISO(d) {
 }
 
 const COLORS = ["#0ea5e9", "#a78bfa", "#f59e0b", "#10b981", "#ef4444", "#22d3ee"];
+
+function Skeleton({ className = "" }) {
+  return <div className={`animate-pulse bg-slate-200 dark:bg-slate-700 rounded-xl ${className}`}></div>;
+}
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -49,10 +54,13 @@ export default function Dashboard() {
     revenueConfirm: 0,
     packages: 0,
     sections: 0,
+    avgRevenue: 0,
+    conversionRate: 0,
   });
   const [seriesDaily, setSeriesDaily] = useState([]);           // confirmed daily
   const [seriesDailyPending, setSeriesDailyPending] = useState([]); // pending daily (opsional overlay)
   const [statusCounts, setStatusCounts] = useState([]);         // distribusi status (mengikuti filter waktu & audience)
+  const [audienceDist, setAudienceDist] = useState([]);         // distribusi audience
   const [topPackages, setTopPackages] = useState([]);           // daftar paket top
   const [recent, setRecent] = useState([]);                     // tabel terbaru (ikut filter statusScope)
 
@@ -118,6 +126,7 @@ export default function Dashboard() {
       // Aggregations
       let confirmCount = 0, pendingCount = 0, confirmRevenue = 0;
       const statusMap = new Map();           // for pie
+      const audienceMap = new Map();         // for audience pie
       const pkgCountMap = new Map();         // top pkg by bookings
       const pkgRevenueMap = new Map();       // top pkg by revenue
 
@@ -126,8 +135,12 @@ export default function Dashboard() {
         const amt = b.total_idr || 0;
         const st = (b.status || "pending").toLowerCase();
 
-        // pie
+        // pie status
         statusMap.set(st, (statusMap.get(st) || 0) + 1);
+
+        // audience
+        const aud = b.audience || "unknown";
+        audienceMap.set(aud, (audienceMap.get(aud) || 0) + 1);
 
         // top packages counters (confirmed only for revenue & bookings by default)
         if (st === "confirmed") {
@@ -157,7 +170,8 @@ export default function Dashboard() {
       setSeriesDaily(Array.from(mapConfirm.values()));
       setSeriesDailyPending(Array.from(mapPending.values()));
       setStatusCounts(Array.from(statusMap.entries()).map(([status, count]) => ({ status, count })));
-      setStats((st) => ({ ...st, bookingsConfirm: confirmCount, bookingsPending: pendingCount, revenueConfirm: confirmRevenue }));
+      setAudienceDist(Array.from(audienceMap.entries()).map(([audience, count]) => ({ audience, count })));
+      setStats((st) => ({ ...st, bookingsConfirm: confirmCount, bookingsPending: pendingCount, revenueConfirm: confirmRevenue, avgRevenue: confirmCount > 0 ? Math.round(confirmRevenue / confirmCount) : 0, conversionRate: (confirmCount + pendingCount) > 0 ? Math.round((confirmCount / (confirmCount + pendingCount)) * 100) : 0 }));
 
       // resolve package titles (ID locale) for top 5
       const metricMap = (sortPkgBy === "revenue") ? pkgRevenueMap : pkgCountMap;
@@ -185,11 +199,11 @@ export default function Dashboard() {
       const scope = statusScope === "all" ? undefined : statusScope;
       const recentQ = supabase
         .from("bookings")
-        .select("id, created_at, customer_name, total_idr, status")
+        .select("id, created_at, customer_name, total_idr, status, package_id, audience")
         .gte("created_at", fromISO)
         .lte("created_at", toISO)
         .order("created_at", { ascending: false })
-        .limit(6);
+        .limit(10);
       if (audience) recentQ.eq("audience", audience);
       if (scope) recentQ.eq("status", scope);
       const { data: recData } = await recentQ;
@@ -219,200 +233,210 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container mt-6 space-y-6">
-      {/* FILTER BAR (sticky) */}
-      <div className="sticky top-16 z-[5]">
-        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 py-3 glass shadow-smooth">
-          <div className="flex flex-wrap items-center gap-2 justify-between">
-            <div className="flex items-center gap-2 font-semibold">
-              <Filter size={16} />
-              <span>Filter & Sort Dashboard</span>
+    <div className="container mt-3 space-y-4">
+      {/* STICKY TOOLBAR */}
+      <div
+        className="sticky top-16 z-[5] transition-transform duration-200 translate-y-0"
+      >
+        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 py-2 glass shadow-smooth">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl sm:text-2xl font-bold">{t("admin.dashboard.title", { defaultValue: "Dashboard" })}</h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <button className="btn btn-outline !py-1.5 !px-3" onClick={() => location.reload()} title="Refresh">
+                  <RotateCcw size={16} />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button className="btn btn-outline !py-1.5 !px-3" onClick={resetFilters} title="Reset">Reset</button>
-              <button className="btn btn-outline !py-1.5 !px-3" onClick={() => location.reload()} title="Refresh">
-                <RotateCcw size={16}/>
-              </button>
+
+            {/* FILTER BAR */}
+            <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
+              <select className="px-3 py-2 rounded-2xl border" value={statusScope} onChange={(e)=>setStatusScope(e.target.value)}>
+                <option value="confirmed">Confirmed only</option>
+                <option value="pending">Pending only</option>
+                <option value="all">All status</option>
+              </select>
+
+              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border">
+                <input type="checkbox" checked={includePendingOverlay} onChange={(e)=>setIncludePendingOverlay(e.target.checked)} />
+                <span className="text-sm">Show Pending overlay</span>
+              </label>
+
+              <select className="px-3 py-2 rounded-2xl border" value={audience} onChange={(e)=>setAudience(e.target.value)}>
+                <option value="">All Audience</option>
+                <option value="domestic">Domestic</option>
+                <option value="foreign">Foreign</option>
+              </select>
+
+              <select className="px-3 py-2 rounded-2xl border" value={String(daysPreset)} onChange={(e)=>setDaysPreset(Number(e.target.value))}>
+                <option value="7">7 days</option>
+                <option value="30">30 days</option>
+                <option value="90">90 days</option>
+                <option value="0">Custom</option>
+              </select>
+
+              <input type="date" disabled={daysPreset !== 0} value={dateFrom} onChange={(e)=>setDateFrom(e.target.value)} className="px-3 py-2 rounded-2xl border" />
+              <input type="date" disabled={daysPreset !== 0} value={dateTo} onChange={(e)=>setDateTo(e.target.value)} className="px-3 py-2 rounded-2xl border" />
             </div>
-          </div>
 
-          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            {/* Status scope */}
-            <select className="px-3 py-2 rounded-2xl border" value={statusScope} onChange={(e)=>setStatusScope(e.target.value)}>
-              <option value="confirmed">Confirmed only (disarankan)</option>
-              <option value="pending">Pending only</option>
-              <option value="all">Semua status</option>
-            </select>
-
-            {/* Pending overlay */}
-            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border">
-              <input type="checkbox" checked={includePendingOverlay} onChange={(e)=>setIncludePendingOverlay(e.target.checked)} />
-              <span className="text-sm">Tampilkan garis Pending di chart</span>
-            </label>
-
-            {/* Audience */}
-            <select className="px-3 py-2 rounded-2xl border" value={audience} onChange={(e)=>setAudience(e.target.value)}>
-              <option value="">Semua Audience</option>
-              <option value="domestic">Domestic</option>
-              <option value="foreign">Foreign</option>
-            </select>
-
-            {/* Preset range */}
-            <select className="px-3 py-2 rounded-2xl border" value={String(daysPreset)} onChange={(e)=>setDaysPreset(Number(e.target.value))}>
-              <option value="7">7 hari</option>
-              <option value="30">30 hari</option>
-              <option value="90">90 hari</option>
-              <option value="0">Custom</option>
-            </select>
-
-            {/* Custom range (aktif jika preset=0) */}
-            <input type="date" disabled={daysPreset !== 0} value={dateFrom} onChange={(e)=>setDateFrom(e.target.value)} className="px-3 py-2 rounded-2xl border" />
-            <input type="date" disabled={daysPreset !== 0} value={dateTo} onChange={(e)=>setDateTo(e.target.value)} className="px-3 py-2 rounded-2xl border" />
-          </div>
-
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-xs text-slate-500">Top Packages sort:</span>
-            <select className="px-2 py-1.5 rounded-xl border" value={sortPkgBy} onChange={(e)=>setSortPkgBy(e.target.value)}>
-              <option value="bookings">Bookings (confirmed)</option>
-              <option value="revenue">Revenue (confirmed)</option>
-            </select>
-            <select className="px-2 py-1.5 rounded-xl border" value={sortPkgDir} onChange={(e)=>setSortPkgDir(e.target.value)}>
-              <option value="desc">Desc</option>
-              <option value="asc">Asc</option>
-            </select>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm">
+                <button className="btn btn-outline !py-1 !px-3" onClick={resetFilters}>Reset</button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">Top Packages sort:</span>
+                <select className="px-2 py-1.5 rounded-xl border" value={sortPkgBy} onChange={(e)=>setSortPkgBy(e.target.value)}>
+                  <option value="bookings">Bookings</option>
+                  <option value="revenue">Revenue</option>
+                </select>
+                <select className="px-2 py-1.5 rounded-xl border" value={sortPkgDir} onChange={(e)=>setSortPkgDir(e.target.value)}>
+                  <option value="desc">Desc</option>
+                  <option value="asc">Asc</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* KPI */}
-      <div className="grid md:grid-cols-4 gap-4">
-        <div className="card p-4">
-          <p className="text-slate-500">{statLabels.bookings} (confirmed)</p>
-          <p className="text-3xl font-bold">{stats.bookingsConfirm}</p>
-          <p className="text-xs text-slate-500 mt-1">Rentang terpilih</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-slate-500">Revenue (confirmed)</p>
-          <p className="text-3xl font-bold">Rp {fmtIDR(stats.revenueConfirm)}</p>
-          <p className="text-xs text-slate-500 mt-1">Pending tidak dihitung</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-slate-500">Pending (info)</p>
-          <p className="text-3xl font-bold">{stats.bookingsPending}</p>
-          <p className="text-xs text-slate-500 mt-1">Bukan KPI</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-slate-500">{statLabels.packages} / {statLabels.sections}</p>
-          <p className="text-3xl font-bold">{stats.packages} / {stats.sections}</p>
-        </div>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {loading ? Array.from({length:4}).map((_,i)=><Skeleton key={i} className="h-28" />) : (
+          <>
+            <div className="card p-4 flex flex-col justify-between">
+              <div className="flex items-center gap-2 text-slate-500"><TrendingUp size={20} /> Confirmed Bookings</div>
+              <div className="text-3xl font-bold">{stats.bookingsConfirm}</div>
+            </div>
+            <div className="card p-4 flex flex-col justify-between">
+              <div className="flex items-center gap-2 text-slate-500"><DollarSign size={20} /> Revenue (Confirmed)</div>
+              <div className="text-3xl font-bold">Rp {fmtIDR(stats.revenueConfirm)}</div>
+            </div>
+            <div className="card p-4 flex flex-col justify-between">
+              <div className="flex items-center gap-2 text-slate-500"><Users size={20} /> Avg Revenue / Booking</div>
+              <div className="text-3xl font-bold">Rp {fmtIDR(stats.avgRevenue)}</div>
+            </div>
+            <div className="card p-4 flex flex-col justify-between">
+              <div className="flex items-center gap-2 text-slate-500"><PieIcon size={20} /> Conversion Rate</div>
+              <div className="text-3xl font-bold">{stats.conversionRate}%</div>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Charts */}
-      <div className="grid lg:grid-cols-3 gap-4">
-        <div className="card p-4 lg:col-span-2">
-          <h2 className="font-semibold mb-2">Bookings per Day (confirmed)</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={seriesDaily}>
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="card p-4">
+          <h2 className="font-semibold mb-2 flex items-center gap-2"><BarIcon size={18} /> Daily Trends</h2>
+          {loading ? <Skeleton className="h-64" /> : (
+            <ResponsiveContainer width="100%" height={256}>
+              <AreaChart data={seriesDaily}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="label" />
                 <YAxis yAxisId="left" />
                 <YAxis yAxisId="right" orientation="right" />
                 <Tooltip formatter={(v, n) => (n === "revenue" ? [`Rp ${fmtIDR(v)}`, "Revenue"] : [v, "Bookings"])} />
                 <Legend />
-                <Line yAxisId="left" type="monotone" dataKey="count" name="Bookings (Confirmed)" stroke="#0ea5e9" dot={false} />
-                <Line yAxisId="right" type="monotone" dataKey="revenue" name="Revenue (Confirmed)" stroke="#a78bfa" dot={false} />
+                <Area yAxisId="left" type="monotone" dataKey="count" name="Bookings (Confirmed)" stroke="#0ea5e9" fill="#0ea5e9" fillOpacity={0.3} />
+                <Area yAxisId="right" type="monotone" dataKey="revenue" name="Revenue (Confirmed)" stroke="#a78bfa" fill="#a78bfa" fillOpacity={0.3} />
                 {includePendingOverlay && (
-                  <Line yAxisId="left" type="monotone" data={seriesDailyPending} dataKey="count" name="Bookings (Pending)" stroke="#ef4444" dot={false} strokeDasharray="4 4" />
+                  <Area yAxisId="left" type="monotone" data={seriesDailyPending} dataKey="count" name="Bookings (Pending)" stroke="#ef4444" fill="#ef4444" fillOpacity={0.1} strokeDasharray="4 4" />
                 )}
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
-          </div>
-          <p className="text-xs text-slate-500 mt-2">Catatan: garis merah putus-putus adalah pending (opsional).</p>
+          )}
         </div>
 
         <div className="card p-4">
-          <h2 className="font-semibold mb-2">Status Distribution</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <h2 className="font-semibold mb-2 flex items-center gap-2"><PieIcon size={18} /> Status Distribution</h2>
+          {loading ? <Skeleton className="h-64" /> : (
+            <ResponsiveContainer width="100%" height={256}>
               <PieChart>
-                <Pie
-                  data={statusCounts}
-                  dataKey="count"
-                  nameKey="status"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={2}
-                >
+                <Pie data={statusCounts} dataKey="count" nameKey="status" innerRadius={60} outerRadius={100} paddingAngle={2}>
                   {statusCounts.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
-          </div>
-          <p className="text-xs text-slate-500 mt-2">Mengikuti filter waktu & audience. Revenue tetap dihitung hanya untuk confirmed.</p>
+          )}
         </div>
 
-        <div className="card p-4 lg:col-span-3">
-          <h2 className="font-semibold mb-2">
-            Top Packages by {sortPkgBy === "bookings" ? "Bookings" : "Revenue"} (confirmed)
-          </h2>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topPackages} layout="vertical" margin={{ left: 40 }}>
+        <div className="card p-4">
+          <h2 className="font-semibold mb-2 flex items-center gap-2"><Users size={18} /> Audience Distribution</h2>
+          {loading ? <Skeleton className="h-64" /> : (
+            <ResponsiveContainer width="100%" height={256}>
+              <PieChart>
+                <Pie data={audienceDist} dataKey="count" nameKey="audience" innerRadius={60} outerRadius={100} paddingAngle={2}>
+                  {audienceDist.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="card p-4">
+          <h2 className="font-semibold mb-2 flex items-center gap-2"><TrendingUp size={18} /> Top Packages</h2>
+          {loading ? <Skeleton className="h-64" /> : (
+            <ResponsiveContainer width="100%" height={256}>
+              <BarChart data={topPackages} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" allowDecimals={false} />
-                <YAxis type="category" dataKey="name" width={180} />
+                <YAxis type="category" dataKey="name" width={120} />
                 <Tooltip formatter={(v)=> sortPkgBy==="revenue" ? [`Rp ${fmtIDR(v)}`, "Revenue"] : [v, "Bookings"]} />
-                <Bar dataKey="value" name={sortPkgBy==="revenue" ? "Revenue" : "Bookings"} fill="#10b981" />
+                <Bar dataKey="value" name={sortPkgBy==="revenue" ? "Revenue" : "Bookings"} fill="#10b981" radius={[4, 4, 4, 4]} />
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Latest bookings table (honors statusScope) */}
+      {/* Recent Bookings */}
       <div className="card p-4">
-        <h2 className="font-semibold mb-2">
-          {t("admin.dashboard.latestOrders") || "Latest Bookings"} — {statusScope === "all" ? "Semua" : statusScope}
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="text-left">
-                <th className="p-2">Waktu</th>
-                <th>Nama</th>
-                <th>Status</th>
-                <th>Total (IDR)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recent.map(r => (
-                <tr key={r.id} className="border-t border-slate-100 dark:border-slate-800">
-                  <td className="p-2">{new Date(r.created_at).toLocaleString("id-ID")}</td>
-                  <td>{r.customer_name}</td>
-                  <td>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      r.status === "confirmed" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200" :
-                      r.status === "cancelled" ? "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200" :
-                      "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200"
-                    }`}>{r.status}</span>
-                  </td>
-                  <td>Rp {fmtIDR(r.total_idr)}</td>
+        <h2 className="font-semibold mb-2 flex items-center gap-2"><Calendar size={18} /> Recent Bookings</h2>
+        {loading ? <Skeleton className="h-48" /> : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-slate-100 dark:bg-slate-800 text-left">
+                  <th className="p-3">Date</th>
+                  <th className="p-3">Customer</th>
+                  <th className="p-3">Package</th>
+                  <th className="p-3">Audience</th>
+                  <th className="p-3">Total</th>
+                  <th className="p-3">Status</th>
                 </tr>
-              ))}
-              {recent.length === 0 && (
-                <tr>
-                  <td className="p-2 text-slate-500" colSpan={4}>{t("admin.common.empty") || "Tidak ada data."}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {recent.map(r => (
+                  <tr key={r.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td className="p-3">{new Date(r.created_at).toLocaleDateString()}</td>
+                    <td className="p-3">{r.customer_name}</td>
+                    <td className="p-3">{r.package_id.slice(0,8)}...</td>
+                    <td className="p-3 capitalize">{r.audience}</td>
+                    <td className="p-3">Rp {fmtIDR(r.total_idr)}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        r.status === "confirmed" ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200" :
+                        r.status === "pending" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200" :
+                        "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200"
+                      }`}>{r.status}</span>
+                    </td>
+                  </tr>
+                ))}
+                {recent.length === 0 && (
+                  <tr>
+                    <td className="p-3 text-center text-slate-500" colSpan={6}>No recent bookings</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-
-      {loading && <div className="text-sm text-slate-500">Loading…</div>}
     </div>
   );
 }
