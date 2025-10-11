@@ -97,7 +97,7 @@ function Calendar({ value, onSelect, startOnMonday = false }) {
     </div>
   );
 }
-function DatePicker({ label, onChange, value }) {
+function DatePicker({ label, value, onChange }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -150,7 +150,7 @@ function DatePicker({ label, onChange, value }) {
 /* =========================
    Main page
    ========================= */
-const STATUS_OPTIONS = ["pending", "confirmed"];
+const STATUS_OPTIONS = ["pending", "confirmed", "cancelled"];
 
 export default function Orderan() {
   const { t, i18n } = useTranslation();
@@ -191,7 +191,11 @@ export default function Orderan() {
     setLoading(true);
     const { data, error } = await supabase
       .from("orders")
-      .select("id, created_at, status, invoice, booking_id, package_id, name, email, phone, pax, bookings:booking_id ( total_idr, customer_name, date, notes, invoice_no, invoice_pdf_url, status as booking_status )")
+      .select(`
+        id, created_at, status, invoice,
+        booking_id, package_id, name, email, phone, pax,
+        bookings:booking_id ( total_idr, customer_name, date, notes, invoice_no, invoice_pdf_url )
+      `)
       .order("created_at", { ascending: false });
 
     if (!error) setRows(data || []);
@@ -285,17 +289,11 @@ export default function Orderan() {
   const saveRow = async (r) => {
     setSavingId(r.id);
     try {
-      const { error: orderError } = await supabase
+      const { error } = await supabase
         .from("orders")
         .update({ status: r.status, invoice: r.invoice || r.bookings?.invoice_pdf_url || null })
         .eq("id", r.id);
-      if (orderError) throw orderError;
-
-      const { error: bookingError } = await supabase
-        .from("bookings")
-        .update({ status: r.status })
-        .eq("id", r.booking_id);
-      if (bookingError) throw bookingError;
+      if (error) throw error;
 
       const noPdfYet = !(r.bookings?.invoice_pdf_url || r.invoice);
       if (r.status === "confirmed" && noPdfYet) {
@@ -446,34 +444,22 @@ export default function Orderan() {
     }
   };
 
-  // bulk actions (tetap ada ada)
+  // bulk actions (tetap ada)
   const bulkConfirm = async () => {
     if (selected.size === 0) return;
     const ids = Array.from(selected);
-    try {
-      const { data: selOrders } = await supabase.from("orders").select("booking_id").in("id", ids);
-      const bookingIds = selOrders.map(x => x.booking_id);
-      await supabase.from("orders").update({ status: "confirmed" }).in("id", ids);
-      await supabase.from("bookings").update({ status: "confirmed" }).in("id", bookingIds);
-      const target = rows.filter((r) => ids.includes(r.id) && !(r.bookings?.invoice_pdf_url || r.invoice));
-      for (const r of target) await generateAndAttachInvoice({ ...r, status: "confirmed" });
-      await load();
-    } catch (e) {
-      alert("Gagal update status.");
-    }
+    const { error } = await supabase.from("orders").update({ status: "confirmed" }).in("id", ids);
+    if (error) { alert("Gagal update status."); return; }
+    const target = rows.filter((r) => ids.includes(r.id) && !(r.bookings?.invoice_pdf_url || r.invoice));
+    for (const r of target) await generateAndAttachInvoice({ ...r, status: "confirmed" });
+    await load();
   };
   const bulkCancel = async () => {
     if (selected.size === 0) return;
     const ids = Array.from(selected);
-    try {
-      const { data: selOrders } = await supabase.from("orders").select("booking_id").in("id", ids);
-      const bookingIds = selOrders.map(x => x.booking_id);
-      await supabase.from("orders").update({ status: "cancelled" }).in("id", ids);
-      await supabase.from("bookings").update({ status: "cancelled" }).in("id", bookingIds);
-      await load();
-    } catch (e) {
-      alert("Gagal update status.");
-    }
+    const { error } = await supabase.from("orders").update({ status: "cancelled" }).in("id", ids);
+    if (error) { alert("Gagal update status."); return; }
+    await load();
   };
 
   const exportCsv = () => {
@@ -503,11 +489,9 @@ export default function Orderan() {
 
   // ====== RENDER ======
   return (
-    <div className="container mt-3 space-y-4">
+    <div className="container mt-6 space-y-4">
       {/* STICKY TOOLBAR */}
-      <div
-        className="sticky top-16 z-[5] transition-transform duration-200 translate-y-0"
-      >
+      <div className="sticky top-16 z-[5]">
         <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 py-2 glass shadow-smooth">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -672,26 +656,26 @@ export default function Orderan() {
                       key={r.id}
                       className="odd:bg-slate-50 even:bg-white dark:odd:bg-slate-900/30 dark:even:bg-slate-900/10 border-b border-slate-200 dark:border-slate-800"
                     >
-                      <td className="p-2 w-10">
+                      <td className="p-3 w-10">
                         <button className="inline-flex items-center" onClick={() => toggleSelect(r.id)}>
                           {selected.has(r.id) ? <CheckSquare size={16}/> : <Square size={16}/>}
                         </button>
                       </td>
-                      {visibleCols.time && <td className="p-2">{createdAt}</td>}
-                      {visibleCols.tourDate && <td className="p-2">{tourDate}</td>}
-                      {visibleCols.package && <td className="p-2 break-words">{r.package_id}</td>}
-                      {visibleCols.name && <td className="p-2 font-medium">{r.name || r.bookings?.customer_name || "-"}</td>}
+                      {visibleCols.time && <td className="p-3">{createdAt}</td>}
+                      {visibleCols.tourDate && <td className="p-3">{tourDate}</td>}
+                      {visibleCols.package && <td className="p-3 break-words">{r.package_id}</td>}
+                      {visibleCols.name && <td className="p-3 font-medium">{r.name || r.bookings?.customer_name || "-"}</td>}
                       {visibleCols.contact && (
-                        <td className="p-2">
+                        <td className="p-3">
                           <div>{r.phone || "-"}</div>
                           <div className="text-[12px] text-slate-500 dark:text-slate-400">{r.email || "-"}</div>
                         </td>
                       )}
-                      {visibleCols.pax && <td className="p-2">{r.pax || 1}</td>}
-                      {visibleCols.total && <td className="p-2">{fmtIDR(total)}</td>}
+                      {visibleCols.pax && <td className="p-3">{r.pax || 1}</td>}
+                      {visibleCols.total && <td className="p-3">{fmtIDR(total)}</td>}
 
                       {visibleCols.status && (
-                        <td className="p-2">
+                        <td className="p-3">
                           <div className="flex items-center gap-2">
                             <StatusBadge />
                             <select
@@ -706,7 +690,7 @@ export default function Orderan() {
                       )}
 
                       {visibleCols.invoice && (
-                        <td className="p-2 min-w-[260px]">
+                        <td className="p-3 min-w-[260px]">
                           <div className="flex items-center gap-2">
                             <input
                               className="flex-1 border rounded-xl px-2 py-1 bg-white dark:bg-slate-900"
@@ -754,7 +738,7 @@ export default function Orderan() {
                       )}
 
                       {visibleCols.actions && (
-                        <td className="p-2">
+                        <td className="p-3">
                           <div className="flex flex-wrap gap-2">
                             <button
                               className="btn btn-primary !py-1.5 !px-3"
@@ -764,6 +748,7 @@ export default function Orderan() {
                             >
                               {savingId === r.id ? columnLabel.saving : (<><Save size={16} className="mr-1"/>{columnLabel.save}</>)}
                             </button>
+                            {/* Tombol set confirmed/cancelled di kolom actions DIHAPUS sesuai permintaan */}
                           </div>
                         </td>
                       )}
