@@ -150,7 +150,7 @@ function DatePicker({ label, value, onChange }) {
 /* =========================
    Main page
    ========================= */
-const STATUS_OPTIONS = ["pending", "confirmed", "cancelled"];
+const STATUS_OPTIONS = ["pending", "confirmed"];
 
 export default function Orderan() {
   const { t, i18n } = useTranslation();
@@ -190,12 +190,8 @@ export default function Orderan() {
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("orders")
-      .select(`
-        id, created_at, status, invoice,
-        booking_id, package_id, name, email, phone, pax,
-        bookings:booking_id ( total_idr, customer_name, date, notes, invoice_no, invoice_pdf_url )
-      `)
+      .from("bookings")
+      .select("id, created_at, status, invoice:invoice_pdf_url, package_id, name:customer_name, email, phone, pax, total_idr, date, notes, invoice_no, invoice_pdf_url")
       .order("created_at", { ascending: false });
 
     if (!error) setRows(data || []);
@@ -235,10 +231,10 @@ export default function Orderan() {
       const inStatus = statusFilter ? r.status === statusFilter : true;
       const inText =
         !text ||
-        [r.name, r.email, r.phone, r.package_id, r.bookings?.customer_name, r.bookings?.invoice_no]
+        [r.name, r.email, r.phone, r.package_id, r.invoice_no]
           .filter(Boolean)
           .some((v) => String(v).toLowerCase().includes(text));
-      const inRange = insideDateRange(r.bookings?.date);
+      const inRange = insideDateRange(r.date);
       return inStatus && inText && inRange;
     });
 
@@ -247,9 +243,9 @@ export default function Orderan() {
       const val = (row, by) => {
         switch (by) {
           case "created_at": return new Date(row.created_at).getTime();
-          case "date":       return new Date(row.bookings?.date || row.created_at).getTime();
-          case "total":      return (row.bookings?.total_idr || 0);
-          case "name":       return (row.name || row.bookings?.customer_name || "");
+          case "date":       return new Date(row.date || row.created_at).getTime();
+          case "total_idr":      return (row.total_idr || 0);
+          case "name":       return (row.name || "");
           case "status":     return row.status || "";
           default:           return row[by] ?? "";
         }
@@ -290,12 +286,12 @@ export default function Orderan() {
     setSavingId(r.id);
     try {
       const { error } = await supabase
-        .from("orders")
-        .update({ status: r.status, invoice: r.invoice || r.bookings?.invoice_pdf_url || null })
+        .from("bookings")
+        .update({ status: r.status, invoice_pdf_url: r.invoice || r.invoice_pdf_url || null })
         .eq("id", r.id);
       if (error) throw error;
 
-      const noPdfYet = !(r.bookings?.invoice_pdf_url || r.invoice);
+      const noPdfYet = !(r.invoice_pdf_url || r.invoice);
       if (r.status === "confirmed" && noPdfYet) {
         await generateAndAttachInvoice(r);
       }
@@ -311,12 +307,12 @@ export default function Orderan() {
   };
 
   const makeInvoiceNo = (r) => {
-    if (r?.bookings?.invoice_no) return r.bookings.invoice_no;
+    if (r?.invoice_no) return r.invoice_no;
     const d = new Date(r.created_at);
     const y = d.getFullYear();
     const m = `${d.getMonth() + 1}`.padStart(2, "0");
     const day = `${d.getDate()}`.padStart(2, "0");
-    const tail = String(r.booking_id || r.id).replace(/-/g, "").slice(0, 8).toUpperCase();
+    const tail = String(r.id).replace(/-/g, "").slice(0, 8).toUpperCase();
     return `INV/${y}${m}${day}/${tail}`;
   };
 
@@ -330,76 +326,118 @@ export default function Orderan() {
     return data || [];
   };
 
-  const buildInvoicePdfBlob = async (orderRow, items) => {
+    const buildInvoicePdfBlob = async (orderRow, items) => {
     const { jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
 
+    // 1. Ambil dan konversi logo ke base64
+    let logoBase64 = null;
+    try {
+      const response = await fetch('/biru.png');
+      const blob = await response.blob();
+      logoBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Gagal memuat logo:", error);
+    }
+    
     const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const left = 48;
-    let y = 60;
+    
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 40;
+    let y = 0;
 
+    // --- HEADER ---
+    doc.setFillColor(248, 250, 252); // Warna latar F8FAFC (slate-50)
+    doc.rect(0, 0, pageWidth, 120, 'F');
+    
+    if (logoBase64) {
+      doc.addImage(logoBase64, 'PNG', margin, 30, 100, 50); // Sesuaikan ukuran logo jika perlu
+    }
+
+    doc.setFontSize(24);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42); // slate-900
+    doc.text("INVOICE", pageWidth - margin, 60, { align: "right" });
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(71, 85, 105); // slate-600
     const invoiceNo = makeInvoiceNo(orderRow);
-    const booking = orderRow.bookings || {};
-    const total = Number(booking.total_idr || 0);
-
-    // Header
-    doc.setFontSize(18);
-    doc.text("INVOICE", left, y);
-    doc.setFontSize(11);
-    doc.text(`No: ${invoiceNo}`, left, (y += 18));
-    doc.text(`Tanggal: ${new Date(orderRow.created_at).toLocaleString()}`, left, (y += 16));
-
-    // Bill To
-    y += 18;
+    doc.text(invoiceNo, pageWidth - margin, 80, { align: "right" });
+    
+    // --- INFORMASI PEMESANAN & PELANGGAN ---
+    y = 150;
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.text("DITERBITKAN UNTUK", margin, y);
+    doc.text("TANGGAL INVOICE", pageWidth / 2, y);
+    
     doc.setFontSize(12);
-    doc.text("Kepada:", left, y);
-    doc.setFontSize(11);
-    doc.text(`${orderRow.name || booking.customer_name || "-"}`, left, (y += 16));
-    if (orderRow.email) doc.text(`${orderRow.email}`, left, (y += 14));
-    if (orderRow.phone) doc.text(`${orderRow.phone}`, left, (y += 14));
-    doc.text(`Tanggal Tour: ${booking.date || "-"}`, left, (y += 16));
-    doc.text(`Pax: ${orderRow.pax || 1}`, left, (y += 16));
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(15, 23, 42); // slate-900
+    doc.text(orderRow.name || "-", margin, y + 15);
+    doc.text(new Date(orderRow.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }), pageWidth / 2, y + 15);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(71, 85, 105); // slate-600
+    doc.text(orderRow.email || "-", margin, y + 30);
+    if(orderRow.phone) doc.text(orderRow.phone, margin, y + 42);
 
-    // Items
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.text("TANGGAL TOUR", pageWidth / 2, y + 30);
+    doc.setTextColor(15, 23, 42); // slate-900
+    doc.setFont("helvetica", "bold");
+    doc.text(new Date(orderRow.date || "").toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }), pageWidth / 2, y + 45);
+
+    y += 80;
+
+    // --- TABEL ITEM ---
     const fmt = (n) => (Number(n || 0)).toLocaleString("id-ID");
-    y += 14;
-
     autoTable(doc, {
       startY: y,
-      head: [["Deskripsi", "Qty", "Harga", "Subtotal"]],
-      body: (items?.length ? items : [{ item_name: "-", qty: 1, price_idr: 0, total_idr: 0 }]).map((it) => [
+      head: [["Deskripsi", "Kuantitas", "Harga Satuan (IDR)", "Subtotal (IDR)"]],
+      body: (items?.length ? items : [{ item_name: "Paket Perjalanan", qty: orderRow.pax, price_idr: orderRow.total_idr / orderRow.pax, total_idr: orderRow.total_idr }]).map((it) => [
         String(it.item_name || "-"),
         String(it.qty || 1),
         fmt(it.price_idr),
         fmt(it.total_idr),
       ]),
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [241, 245, 249], textColor: 30 },
-      columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" } },
-      margin: { left, right: 48 },
-      theme: "striped",
+      theme: 'grid',
+      styles: { fontSize: 10, cellPadding: 8 },
+      headStyles: { fillColor: [241, 245, 249], textColor: 30, fontStyle: 'bold' }, // slate-100
+      columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" } },
+      margin: { left: margin, right: margin },
     });
 
-    const after = doc.lastAutoTable.finalY || (y + 120);
-
-    // Total
-    const labelX = 360, totalX = 500;
-    doc.setLineWidth(0.5);
-    doc.line(labelX, after + 8, 547, after + 8);
+    let finalY = doc.lastAutoTable.finalY;
+    
+    // --- TOTAL ---
+    const total = Number(orderRow.total_idr || 0);
     doc.setFontSize(12);
-    doc.text("TOTAL", labelX + 60, after + 26, { align: "right" });
-    doc.text(`${fmt(total)} IDR`, totalX, after + 26, { align: "right" });
+    doc.setFont("helvetica", "bold");
+    doc.text("TOTAL", pageWidth - margin - 150, finalY + 30, { align: "right" });
+    doc.text(`IDR ${fmt(total)}`, pageWidth - margin, finalY + 30, { align: "right" });
 
-    // Notes
-    doc.setFontSize(10);
-    doc.text("Terima kasih atas kepercayaan Anda. Harap bawa/unduh invoice ini saat trip berlangsung.", left, after + 56);
+    // --- FOOTER ---
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139); // slate-500
+    const footerText = "Terima kasih telah memilih layanan kami. Mohon tunjukkan invoice ini saat tur.";
+    const textWidth = doc.getTextWidth(footerText);
+    doc.text(footerText, (pageWidth - textWidth) / 2, pageHeight - 40);
 
     return doc.output("blob");
   };
 
   const uploadInvoiceBlob = async (blob, orderRow, invoiceNo) => {
     const safeNo = invoiceNo.replace(/[^\w\-\/]/g, "_");
-    const path = `invoices/${safeNo}-${orderRow.booking_id || orderRow.id}.pdf`;
+    const path = `invoices/${safeNo}-${orderRow.id}.pdf`;
     const { error: upErr } = await supabase.storage
       .from("assets")
       .upload(path, blob, { cacheControl: "3600", upsert: true, contentType: "application/pdf" });
@@ -411,7 +449,7 @@ export default function Orderan() {
   const generateAndAttachInvoice = async (r) => {
     setGenId(r.id);
     try {
-      const items = await fetchBookingItems(r.booking_id);
+      const items = await fetchBookingItems(r.id);
       const blob = await buildInvoicePdfBlob(r, items);
       const invoiceNo = makeInvoiceNo(r);
       const url = await uploadInvoiceBlob(blob, r, invoiceNo);
@@ -419,19 +457,13 @@ export default function Orderan() {
       const upBookings = await supabase
         .from("bookings")
         .update({ invoice_no: invoiceNo, invoice_pdf_url: url })
-        .eq("id", r.booking_id);
-      if (upBookings.error) throw upBookings.error;
-
-      const upOrders = await supabase
-        .from("orders")
-        .update({ invoice: url })
         .eq("id", r.id);
-      if (upOrders.error) throw upOrders.error;
+      if (upBookings.error) throw upBookings.error;
 
       setRows((prev) =>
         prev.map((x) =>
           x.id === r.id
-            ? { ...x, invoice: url, bookings: { ...(x.bookings || {}), invoice_no: invoiceNo, invoice_pdf_url: url } }
+            ? { ...x, invoice: url, invoice_no: invoiceNo, invoice_pdf_url: url }
             : x
         )
       );
@@ -444,21 +476,19 @@ export default function Orderan() {
     }
   };
 
-  // bulk actions (tetap ada)
+  // bulk actions (tetap ada ada)
   const bulkConfirm = async () => {
     if (selected.size === 0) return;
     const ids = Array.from(selected);
-    const { error } = await supabase.from("orders").update({ status: "confirmed" }).in("id", ids);
-    if (error) { alert("Gagal update status."); return; }
-    const target = rows.filter((r) => ids.includes(r.id) && !(r.bookings?.invoice_pdf_url || r.invoice));
+    await supabase.from("bookings").update({ status: "confirmed" }).in("id", ids);
+    const target = rows.filter((r) => ids.includes(r.id) && !r.invoice_pdf_url);
     for (const r of target) await generateAndAttachInvoice({ ...r, status: "confirmed" });
     await load();
   };
   const bulkCancel = async () => {
     if (selected.size === 0) return;
     const ids = Array.from(selected);
-    const { error } = await supabase.from("orders").update({ status: "cancelled" }).in("id", ids);
-    if (error) { alert("Gagal update status."); return; }
+    await supabase.from("bookings").update({ status: "cancelled" }).in("id", ids);
     await load();
   };
 
@@ -467,15 +497,15 @@ export default function Orderan() {
     const src = rows.filter((r) => selected.size === 0 || selected.has(r.id));
     const lines = src.map((r) => [
       new Date(r.created_at).toISOString(),
-      r.bookings?.date || "",
-      r.bookings?.invoice_no || "",
-      r.name || r.bookings?.customer_name || "",
+      r.date || "",
+      r.invoice_no || "",
+      r.name || "",
       r.email || "",
       r.phone || "",
       r.pax || 1,
-      r.bookings?.total_idr || 0,
+      r.total_idr || 0,
       r.status,
-      r.bookings?.invoice_pdf_url || r.invoice || "",
+      r.invoice_pdf_url || "",
     ]);
     const csv = [header, ...lines].map((row) => row.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -489,9 +519,9 @@ export default function Orderan() {
 
   // ====== RENDER ======
   return (
-    <div className="container mt-6 space-y-4">
+    <div className="container mt-3 space-y-4">
       {/* STICKY TOOLBAR */}
-      <div className="sticky top-16 z-[5]">
+      <div className="sticky top-16 z-[5] transition-transform duration-200 translate-y-0">
         <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 py-2 glass shadow-smooth">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -574,8 +604,8 @@ export default function Orderan() {
                   <option value="created_at:asc">Terlama</option>
                   <option value="date:asc">Tanggal Tour ↑</option>
                   <option value="date:desc">Tanggal Tour ↓</option>
-                  <option value="total:asc">Total ↑</option>
-                  <option value="total:desc">Total ↓</option>
+                  <option value="total_idr:asc">Total ↑</option>
+                  <option value="total_idr:desc">Total ↓</option>
                   <option value="name:asc">Nama A→Z</option>
                   <option value="name:desc">Nama Z→A</option>
                   <option value="status:asc">Status ↑</option>
@@ -628,7 +658,7 @@ export default function Orderan() {
                   {visibleCols.name && <th className="p-3 border-b border-slate-200 dark:border-slate-700">{thBtn("Nama", "name")}</th>}
                   {visibleCols.contact && <th className="p-3 border-b border-slate-200 dark:border-slate-700">Kontak</th>}
                   {visibleCols.pax && <th className="p-3 border-b border-slate-200 dark:border-slate-700">{thBtn("Pax", "pax")}</th>}
-                  {visibleCols.total && <th className="p-3 border-b border-slate-200 dark:border-slate-700">{thBtn("Total (IDR)", "total")}</th>}
+                  {visibleCols.total && <th className="p-3 border-b border-slate-200 dark:border-slate-700">{thBtn("Total (IDR)", "total_idr")}</th>}
                   {visibleCols.status && <th className="p-3 border-b border-slate-200 dark:border-slate-700">{thBtn("Status", "status")}</th>}
                   {visibleCols.invoice && <th className="p-3 border-b border-slate-200 dark:border-slate-700">{columnLabel.invoice}</th>}
                   {visibleCols.actions && <th className="p-3 border-b border-slate-200 dark:border-slate-700 w-40">{columnLabel.actions}</th>}
@@ -636,12 +666,12 @@ export default function Orderan() {
               </thead>
               <tbody>
                 {pageRows.map((r) => {
-                  const total = r.bookings?.total_idr || 0;
-                  const tourDate = r.bookings?.date ? new Date(r.bookings.date).toLocaleDateString() : "-";
+                  const total = r.total_idr || 0;
+                  const tourDate = r.date ? new Date(r.date).toLocaleDateString() : "-";
                   const createdAt = new Date(r.created_at).toLocaleString();
-                  const canGenerate = r.status === "confirmed" && !(r.bookings?.invoice_pdf_url || r.invoice);
-                  const invUrl = r.bookings?.invoice_pdf_url || r.invoice || "";
-                  const invNo = r.bookings?.invoice_no || "";
+                  const canGenerate = r.status === "confirmed" && !r.invoice_pdf_url;
+                  const invUrl = r.invoice_pdf_url || "";
+                  const invNo = r.invoice_no || "";
 
                   const StatusBadge = () => (
                     <span className={`px-2 py-1 rounded-full text-xs ${
@@ -656,26 +686,26 @@ export default function Orderan() {
                       key={r.id}
                       className="odd:bg-slate-50 even:bg-white dark:odd:bg-slate-900/30 dark:even:bg-slate-900/10 border-b border-slate-200 dark:border-slate-800"
                     >
-                      <td className="p-3 w-10">
+                      <td className="p-2 w-10">
                         <button className="inline-flex items-center" onClick={() => toggleSelect(r.id)}>
                           {selected.has(r.id) ? <CheckSquare size={16}/> : <Square size={16}/>}
                         </button>
                       </td>
-                      {visibleCols.time && <td className="p-3">{createdAt}</td>}
-                      {visibleCols.tourDate && <td className="p-3">{tourDate}</td>}
-                      {visibleCols.package && <td className="p-3 break-words">{r.package_id}</td>}
-                      {visibleCols.name && <td className="p-3 font-medium">{r.name || r.bookings?.customer_name || "-"}</td>}
+                      {visibleCols.time && <td className="p-2">{createdAt}</td>}
+                      {visibleCols.tourDate && <td className="p-2">{tourDate}</td>}
+                      {visibleCols.package && <td className="p-2 break-words">{r.package_id}</td>}
+                      {visibleCols.name && <td className="p-2 font-medium">{r.name || "-"}</td>}
                       {visibleCols.contact && (
-                        <td className="p-3">
+                        <td className="p-2">
                           <div>{r.phone || "-"}</div>
                           <div className="text-[12px] text-slate-500 dark:text-slate-400">{r.email || "-"}</div>
                         </td>
                       )}
-                      {visibleCols.pax && <td className="p-3">{r.pax || 1}</td>}
-                      {visibleCols.total && <td className="p-3">{fmtIDR(total)}</td>}
+                      {visibleCols.pax && <td className="p-2">{r.pax || 1}</td>}
+                      {visibleCols.total && <td className="p-2">{fmtIDR(total)}</td>}
 
                       {visibleCols.status && (
-                        <td className="p-3">
+                        <td className="p-2">
                           <div className="flex items-center gap-2">
                             <StatusBadge />
                             <select
@@ -689,56 +719,59 @@ export default function Orderan() {
                         </td>
                       )}
 
-                      {visibleCols.invoice && (
-                        <td className="p-3 min-w-[260px]">
-                          <div className="flex items-center gap-2">
-                            <input
-                              className="flex-1 border rounded-xl px-2 py-1 bg-white dark:bg-slate-900"
-                              placeholder="URL invoice (auto saat Confirmed)"
-                              value={invUrl}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                setRows((prev) =>
-                                  prev.map((x) =>
-                                    x.id === r.id
-                                      ? { ...x, invoice: v, bookings: { ...(x.bookings || {}), invoice_pdf_url: v } }
-                                      : x
-                                  )
-                                );
-                              }}
-                            />
-                            {invUrl ? (
-                              <>
-                                <a href={invUrl} target="_blank" rel="noreferrer" className="btn btn-outline !py-1 !px-2" title="Lihat PDF">
-                                  <Eye size={16} />
-                                </a>
-                                <a href={invUrl} download className="btn btn-outline !py-1 !px-2" title="Download PDF">
-                                  <Download size={16} />
-                                </a>
-                                <button className="btn btn-outline !py-1 !px-2" title="Salin Link" onClick={() => navigator.clipboard.writeText(invUrl)}>
-                                  <Copy size={16}/>
-                                </button>
-                                <a href={invUrl} target="_blank" rel="noreferrer" className="btn btn-outline !py-1 !px-2" title="Cetak">
-                                  <Printer size={16}/>
-                                </a>
-                              </>
-                            ) : (
-                              <button
-                                className="btn btn-outline !py-1 !px-2"
-                                onClick={() => generateAndAttachInvoice({ ...r, status: "confirmed" })}
-                                disabled={!canGenerate || genId === r.id}
-                                title="Buat Invoice"
-                              >
-                                <FileText size={16} />
-                              </button>
-                            )}
-                          </div>
-                          {invNo && <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">No: {invNo}</div>}
-                        </td>
-                      )}
+                                        {visibleCols.invoice && (
+                    <td className="p-2 min-w-[260px]">
+                      <div className="flex items-center gap-2">
+                        <input
+                          className="flex-1 border rounded-xl px-2 py-1 bg-white dark:bg-slate-900"
+                          placeholder="URL invoice (auto saat Confirmed)"
+                          value={invUrl}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            setRows((prev) =>
+                              prev.map((x) =>
+                                x.id === r.id
+                                  ? { ...x, invoice: v, invoice_pdf_url: v }
+                                  : x
+                              )
+                            );
+                          }}
+                        />
+                        {invUrl ? (
+                          <>
+                            <a href={invUrl} target="_blank" rel="noreferrer" className="btn btn-outline !py-1 !px-2" title="Lihat PDF">
+                              <Eye size={16} />
+                            </a>
+                            {/* TOMBOL BARU UNTUK BUAT ULANG INVOICE */}
+                            <button
+                              className="btn btn-outline !py-1 !px-2"
+                              onClick={() => generateAndAttachInvoice(r)}
+                              disabled={genId === r.id}
+                              title="Buat Ulang Invoice"
+                            >
+                              <RotateCcw size={16} />
+                            </button>
+                            <a href={invUrl} download className="btn btn-outline !py-1 !px-2" title="Download PDF">
+                              <Download size={16} />
+                            </a>
+                          </>
+                        ) : (
+                          <button
+                            className="btn btn-outline !py-1 !px-2"
+                            onClick={() => generateAndAttachInvoice({ ...r, status: "confirmed" })}
+                            disabled={!canGenerate || genId === r.id}
+                            title="Buat Invoice"
+                          >
+                            <FileText size={16} />
+                          </button>
+                        )}
+                      </div>
+                      {invNo && <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">No: {invNo}</div>}
+                    </td>
+                  )}
 
                       {visibleCols.actions && (
-                        <td className="p-3">
+                        <td className="p-2">
                           <div className="flex flex-wrap gap-2">
                             <button
                               className="btn btn-primary !py-1.5 !px-3"
@@ -748,7 +781,6 @@ export default function Orderan() {
                             >
                               {savingId === r.id ? columnLabel.saving : (<><Save size={16} className="mr-1"/>{columnLabel.save}</>)}
                             </button>
-                            {/* Tombol set confirmed/cancelled di kolom actions DIHAPUS sesuai permintaan */}
                           </div>
                         </td>
                       )}

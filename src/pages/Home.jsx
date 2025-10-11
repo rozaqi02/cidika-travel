@@ -504,7 +504,8 @@ export default function Home(){
 
       <Testimonials
         title={S.testimonials?.locale?.title || t("home.testimonialsTitle", { defaultValue: "Kata Mereka" })}
-        items={S.testimonials?.data?.items || []}
+
+        items={S.testimonials?.locale?.extra?.items || []}
       />
 
       <BigCTA
@@ -516,4 +517,4 @@ export default function Home(){
       <StickyHelpCTA />
     </>
   );
-}
+} 

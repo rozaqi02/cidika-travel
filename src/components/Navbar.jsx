@@ -240,10 +240,7 @@ export default function Navbar() {
             </button>
           </div>
         </div>
-
-        {/* ======================================================= */}
-        {/* == PERUBAHAN UTAMA ADA DI BAGIAN INI == */}
-        {/* ======================================================= */}
+        
         <AnimatePresence>
           {open && (
             <motion.div

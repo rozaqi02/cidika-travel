@@ -169,19 +169,19 @@ export default function Checkout() {
         p_package_id: first.id,
         p_date,
         p_pax: Math.max(1, n(first.pax, 1)),
-        p_audience: audience,
         p_customer_name: form.name,
         p_email: form.email,
-        p_phone: form.phone,
-        p_notes: form.notes || "",
         p_items: items.map((it) => ({
           item_name: it.title + (it.audience ? ` (${it.audience})` : ""),
           qty: Math.max(1, n(it.qty, 1)),
-          price_idr: n(it.price) * Math.max(1, n(it.pax, 1)),
+          price_idr: n(it.price) * Math.max(1, n(it.pax, 1)),  // per item total (price * pax)
         })),
+        p_audience: audience,  // Optional, akan pakai default 'domestic' jika tidak dikirim
+        p_phone: form.phone || null,
+        p_notes: form.notes || null,
       };
 
-      const { data, error } = await supabase.rpc("place_order_v2", payload);
+      const { data, error } = await supabase.rpc("place_order_v3", payload);
       if (error) throw error;
 
       const row = Array.isArray(data) ? data[0] : data;

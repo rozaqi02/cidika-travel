@@ -17,14 +17,23 @@ function fmtIDR(n) {
 }
 function startOfDayISO(d) {
   const x = new Date(d);
-  x.setHours(0,0,0,0);
+  x.setHours(0, 0, 0, 0);
   return x.toISOString();
 }
 function endOfDayISO(d) {
   const x = new Date(d);
-  x.setHours(23,59,59,999);
+  x.setHours(23, 59, 59, 999);
   return x.toISOString();
 }
+// Helper untuk format YYYY-MM-DD
+function formatYYYYMMDD(d) {
+  const date = new Date(d);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 
 const COLORS = ["#0ea5e9", "#a78bfa", "#f59e0b", "#10b981", "#ef4444", "#22d3ee"];
 
@@ -41,8 +50,15 @@ export default function Dashboard() {
   const [includePendingOverlay, setIncludePendingOverlay] = useState(false); // overlay garis pending di chart
   const [audience, setAudience] = useState(""); // "" | "domestic" | "foreign"
   const [daysPreset, setDaysPreset] = useState(30); // 7 | 30 | 90 | 0 (custom)
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  
+  // PERBAIKAN: Beri nilai awal pada state tanggal
+  const [dateFrom, setDateFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 29);
+    return formatYYYYMMDD(d);
+  });
+  const [dateTo, setDateTo] = useState(() => formatYYYYMMDD(new Date()));
+
   const [sortPkgBy, setSortPkgBy] = useState("bookings"); // bookings | revenue
   const [sortPkgDir, setSortPkgDir] = useState("desc"); // asc | desc
 
@@ -57,12 +73,12 @@ export default function Dashboard() {
     avgRevenue: 0,
     conversionRate: 0,
   });
-  const [seriesDaily, setSeriesDaily] = useState([]);           // confirmed daily
+  const [seriesDaily, setSeriesDaily] = useState([]);         // confirmed daily
   const [seriesDailyPending, setSeriesDailyPending] = useState([]); // pending daily (opsional overlay)
-  const [statusCounts, setStatusCounts] = useState([]);         // distribusi status (mengikuti filter waktu & audience)
-  const [audienceDist, setAudienceDist] = useState([]);         // distribusi audience
-  const [topPackages, setTopPackages] = useState([]);           // daftar paket top
-  const [recent, setRecent] = useState([]);                     // tabel terbaru (ikut filter statusScope)
+  const [statusCounts, setStatusCounts] = useState([]);       // distribusi status (mengikuti filter waktu & audience)
+  const [audienceDist, setAudienceDist] = useState([]);       // distribusi audience
+  const [topPackages, setTopPackages] = useState([]);         // daftar paket top
+  const [recent, setRecent] = useState([]);                   // tabel terbaru (ikut filter statusScope)
 
   // ===== Date Range resolve =====
   const { fromISO, toISO, daysWindow } = useMemo(() => {
@@ -73,7 +89,7 @@ export default function Dashboard() {
       return { fromISO: startOfDayISO(from), toISO: endOfDayISO(to), daysWindow: daysPreset };
     }
     // custom
-    const from = dateFrom ? startOfDayISO(new Date(dateFrom)) : startOfDayISO(new Date(Date.now() - 29*86400000));
+    const from = dateFrom ? startOfDayISO(new Date(dateFrom)) : startOfDayISO(new Date(Date.now() - 29 * 86400000));
     const to = dateTo ? endOfDayISO(new Date(dateTo)) : endOfDayISO(new Date());
     const diffDays = Math.max(1, Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86400000) + 1);
     return { fromISO: from, toISO: to, daysWindow: diffDays };
@@ -95,7 +111,6 @@ export default function Dashboard() {
     (async () => {
       setLoading(true);
 
-      // Compose base query with time & audience
       const base = supabase
         .from("bookings")
         .select("id, created_at, total_idr, status, package_id, audience, customer_name")
@@ -105,50 +120,42 @@ export default function Dashboard() {
 
       if (audience) base.eq("audience", audience);
 
-      // Pull once; we'll split by status on client for flexibility
       const { data: rows, error } = await base;
       if (error) { console.error(error); setLoading(false); return; }
       const rowsSafe = rows || [];
 
-      // Build day buckets
       const days = [];
       for (let i = daysWindow - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setHours(0,0,0,0);
-        d.setDate(d.getDate() - i);
-        const key = d.toISOString().slice(0,10);
+        const d = new Date(fromISO);
+        d.setDate(d.getDate() + (daysWindow - 1 - i));
+        const key = d.toISOString().slice(0, 10);
         days.push({ key, label: d.toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) });
       }
       const mkMap = () => new Map(days.map(d => [d.key, { dateKey: d.key, label: d.label, count: 0, revenue: 0 }]));
       const mapConfirm = mkMap();
       const mapPending = mkMap();
 
-      // Aggregations
       let confirmCount = 0, pendingCount = 0, confirmRevenue = 0;
-      const statusMap = new Map();           // for pie
-      const audienceMap = new Map();         // for audience pie
-      const pkgCountMap = new Map();         // top pkg by bookings
-      const pkgRevenueMap = new Map();       // top pkg by revenue
+      const statusMap = new Map();
+      const audienceMap = new Map();
+      const pkgCountMap = new Map();
+      const pkgRevenueMap = new Map();
 
       rowsSafe.forEach(b => {
-        const dayKey = String(b.created_at).slice(0,10);
+        const dayKey = String(b.created_at).slice(0, 10);
         const amt = b.total_idr || 0;
         const st = (b.status || "pending").toLowerCase();
 
-        // pie status
         statusMap.set(st, (statusMap.get(st) || 0) + 1);
 
-        // audience
         const aud = b.audience || "unknown";
         audienceMap.set(aud, (audienceMap.get(aud) || 0) + 1);
 
-        // top packages counters (confirmed only for revenue & bookings by default)
         if (st === "confirmed") {
           pkgCountMap.set(b.package_id, (pkgCountMap.get(b.package_id) || 0) + 1);
           pkgRevenueMap.set(b.package_id, (pkgRevenueMap.get(b.package_id) || 0) + amt);
         }
 
-        // daily split
         if (st === "confirmed") {
           if (mapConfirm.has(dayKey)) {
             const row = mapConfirm.get(dayKey);
@@ -161,7 +168,6 @@ export default function Dashboard() {
           if (mapPending.has(dayKey)) {
             const row = mapPending.get(dayKey);
             row.count += 1;
-            // revenue pending tidak dihitung
           }
           pendingCount += 1;
         }
@@ -173,11 +179,10 @@ export default function Dashboard() {
       setAudienceDist(Array.from(audienceMap.entries()).map(([audience, count]) => ({ audience, count })));
       setStats((st) => ({ ...st, bookingsConfirm: confirmCount, bookingsPending: pendingCount, revenueConfirm: confirmRevenue, avgRevenue: confirmCount > 0 ? Math.round(confirmRevenue / confirmCount) : 0, conversionRate: (confirmCount + pendingCount) > 0 ? Math.round((confirmCount / (confirmCount + pendingCount)) * 100) : 0 }));
 
-      // resolve package titles (ID locale) for top 5
       const metricMap = (sortPkgBy === "revenue") ? pkgRevenueMap : pkgCountMap;
       const topIds = Array.from(metricMap.entries())
-        .sort((a,b) => sortPkgDir === "asc" ? a[1] - b[1] : b[1] - a[1])
-        .slice(0,5)
+        .sort((a, b) => sortPkgDir === "asc" ? a[1] - b[1] : b[1] - a[1])
+        .slice(0, 5)
         .map(([id]) => id);
 
       let titleById = {};
@@ -190,12 +195,11 @@ export default function Dashboard() {
         (titles || []).forEach(r => { titleById[r.package_id] = r.title; });
       }
       const top = Array.from(metricMap.entries())
-        .sort((a,b) => sortPkgDir === "asc" ? a[1] - b[1] : b[1] - a[1])
-        .slice(0,5)
-        .map(([id, val]) => ({ name: titleById[id] || id?.slice(0,6) || "-", value: val }));
+        .sort((a, b) => sortPkgDir === "asc" ? a[1] - b[1] : b[1] - a[1])
+        .slice(0, 5)
+        .map(([id, val]) => ({ name: titleById[id] || id?.slice(0, 6) || "-", value: val }));
       setTopPackages(top);
 
-      // Recent table (respect statusScope)
       const scope = statusScope === "all" ? undefined : statusScope;
       const recentQ = supabase
         .from("bookings")
@@ -213,14 +217,12 @@ export default function Dashboard() {
     })();
   }, [fromISO, toISO, audience, statusScope, includePendingOverlay, sortPkgBy, sortPkgDir, daysWindow]);
 
-  // ===== Derived labels =====
   const statLabels = {
     bookings: t("admin.dashboard.stats.bookings") || "Bookings",
     packages: t("admin.dashboard.stats.packages") || "Packages",
     sections: t("admin.dashboard.stats.sections") || "Sections",
   };
 
-  // ===== UI =====
   const resetFilters = () => {
     setStatusScope("confirmed");
     setIncludePendingOverlay(false);
@@ -234,10 +236,7 @@ export default function Dashboard() {
 
   return (
     <div className="container mt-3 space-y-4">
-      {/* STICKY TOOLBAR */}
-      <div
-        className="sticky top-16 z-[5] transition-transform duration-200 translate-y-0"
-      >
+      <div className="sticky top-16 z-[5] transition-transform duration-200 translate-y-0">
         <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 py-2 glass shadow-smooth">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -251,34 +250,34 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* FILTER BAR */}
             <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
-              <select className="px-3 py-2 rounded-2xl border" value={statusScope} onChange={(e)=>setStatusScope(e.target.value)}>
+              <select className="px-3 py-2 rounded-2xl border" value={statusScope} onChange={(e) => setStatusScope(e.target.value)}>
                 <option value="confirmed">Confirmed only</option>
                 <option value="pending">Pending only</option>
                 <option value="all">All status</option>
               </select>
 
               <label className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border">
-                <input type="checkbox" checked={includePendingOverlay} onChange={(e)=>setIncludePendingOverlay(e.target.checked)} />
+                <input type="checkbox" checked={includePendingOverlay} onChange={(e) => setIncludePendingOverlay(e.target.checked)} />
                 <span className="text-sm">Show Pending overlay</span>
               </label>
 
-              <select className="px-3 py-2 rounded-2xl border" value={audience} onChange={(e)=>setAudience(e.target.value)}>
+              <select className="px-3 py-2 rounded-2xl border" value={audience} onChange={(e) => setAudience(e.target.value)}>
                 <option value="">All Audience</option>
                 <option value="domestic">Domestic</option>
                 <option value="foreign">Foreign</option>
               </select>
 
-              <select className="px-3 py-2 rounded-2xl border" value={String(daysPreset)} onChange={(e)=>setDaysPreset(Number(e.target.value))}>
+              <select className="px-3 py-2 rounded-2xl border" value={String(daysPreset)} onChange={(e) => setDaysPreset(Number(e.target.value))}>
                 <option value="7">7 days</option>
                 <option value="30">30 days</option>
                 <option value="90">90 days</option>
                 <option value="0">Custom</option>
               </select>
-
-              <input type="date" disabled={daysPreset !== 0} value={dateFrom} onChange={(e)=>setDateFrom(e.target.value)} className="px-3 py-2 rounded-2xl border" />
-              <input type="date" disabled={daysPreset !== 0} value={dateTo} onChange={(e)=>setDateTo(e.target.value)} className="px-3 py-2 rounded-2xl border" />
+              
+              {/* PERBAIKAN: Gunakan `daysPreset === 0` untuk logika disabled */}
+              <input type="date" disabled={daysPreset !== 0} value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="px-3 py-2 rounded-2xl border disabled:opacity-50 disabled:cursor-not-allowed" />
+              <input type="date" disabled={daysPreset !== 0} value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="px-3 py-2 rounded-2xl border disabled:opacity-50 disabled:cursor-not-allowed" />
             </div>
 
             <div className="flex items-center justify-between">
@@ -287,11 +286,11 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500">Top Packages sort:</span>
-                <select className="px-2 py-1.5 rounded-xl border" value={sortPkgBy} onChange={(e)=>setSortPkgBy(e.target.value)}>
+                <select className="px-2 py-1.5 rounded-xl border" value={sortPkgBy} onChange={(e) => setSortPkgBy(e.target.value)}>
                   <option value="bookings">Bookings</option>
                   <option value="revenue">Revenue</option>
                 </select>
-                <select className="px-2 py-1.5 rounded-xl border" value={sortPkgDir} onChange={(e)=>setSortPkgDir(e.target.value)}>
+                <select className="px-2 py-1.5 rounded-xl border" value={sortPkgDir} onChange={(e) => setSortPkgDir(e.target.value)}>
                   <option value="desc">Desc</option>
                   <option value="asc">Asc</option>
                 </select>
@@ -301,9 +300,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {loading ? Array.from({length:4}).map((_,i)=><Skeleton key={i} className="h-28" />) : (
+        {loading ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />) : (
           <>
             <div className="card p-4 flex flex-col justify-between">
               <div className="flex items-center gap-2 text-slate-500"><TrendingUp size={20} /> Confirmed Bookings</div>
@@ -325,7 +323,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="card p-4">
           <h2 className="font-semibold mb-2 flex items-center gap-2"><BarIcon size={18} /> Daily Trends</h2>
@@ -386,15 +383,14 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" allowDecimals={false} />
                 <YAxis type="category" dataKey="name" width={120} />
-                <Tooltip formatter={(v)=> sortPkgBy==="revenue" ? [`Rp ${fmtIDR(v)}`, "Revenue"] : [v, "Bookings"]} />
-                <Bar dataKey="value" name={sortPkgBy==="revenue" ? "Revenue" : "Bookings"} fill="#10b981" radius={[4, 4, 4, 4]} />
+                <Tooltip formatter={(v) => sortPkgBy === "revenue" ? [`Rp ${fmtIDR(v)}`, "Revenue"] : [v, "Bookings"]} />
+                <Bar dataKey="value" name={sortPkgBy === "revenue" ? "Revenue" : "Bookings"} fill="#10b981" radius={[4, 4, 4, 4]} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </div>
       </div>
 
-      {/* Recent Bookings */}
       <div className="card p-4">
         <h2 className="font-semibold mb-2 flex items-center gap-2"><Calendar size={18} /> Recent Bookings</h2>
         {loading ? <Skeleton className="h-48" /> : (
@@ -415,15 +411,14 @@ export default function Dashboard() {
                   <tr key={r.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td className="p-3">{new Date(r.created_at).toLocaleDateString()}</td>
                     <td className="p-3">{r.customer_name}</td>
-                    <td className="p-3">{r.package_id.slice(0,8)}...</td>
+                    <td className="p-3">{r.package_id.slice(0, 8)}...</td>
                     <td className="p-3 capitalize">{r.audience}</td>
                     <td className="p-3">Rp {fmtIDR(r.total_idr)}</td>
                     <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        r.status === "confirmed" ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200" :
+                      <span className={`px-2 py-1 rounded-full text-xs ${r.status === "confirmed" ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200" :
                         r.status === "pending" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200" :
-                        "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200"
-                      }`}>{r.status}</span>
+                          "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200"
+                        }`}>{r.status}</span>
                     </td>
                   </tr>
                 ))}
