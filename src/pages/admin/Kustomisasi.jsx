@@ -1,10 +1,11 @@
 // src/pages/admin/Kustomisasi.jsx
 import React, { useEffect, useMemo, useState, useRef, useDeferredValue, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion"; // <-- TAMBAHKAN BARIS INI
 import { supabase } from "../../lib/supabaseClient";
 import { useTranslation } from "react-i18next";
 import {
   Trash2, Plus, ArrowUp, ArrowDown, Upload, GripVertical, Save, LayoutList, Languages, Search,
-  Copy, RotateCcw, Images, Eye, Wrench, Settings2, Star
+  Copy, RotateCcw, Images, Eye, Wrench, Settings2, Star, ChevronDown, ChevronUp
 } from "lucide-react";
 
 const LANGS = ["id", "en", "ja"];
@@ -888,6 +889,7 @@ export default function Kustomisasi() {
   const [compactToolbar, setCompactToolbar] = useState(false);
   const lastScrollYRef = useRef(0);
   const [hideToolbar, setHideToolbar] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({});
 
   // state untuk Explore -> packages
   const [pkgList, setPkgList] = useState([]);
@@ -956,6 +958,12 @@ export default function Kustomisasi() {
     setSections(mapped);
     setOriginal(mapped);
     setLoading(false);
+    // Default collapsed for all sections
+    const expandedState = mapped.reduce((acc, s) => {
+      acc[s.id] = false;
+      return acc;
+    }, {});
+    setExpandedSections(expandedState);
   };
 
   const loadPackages = async () => {
@@ -1317,6 +1325,10 @@ export default function Kustomisasi() {
       copy[target] = { ...a, sort_index: b.sort_index, _dirty: true };
       return copy;
     });
+  };
+
+  const toggleSection = (id) => {
+    setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const save = async () => {
@@ -1759,10 +1771,12 @@ export default function Kustomisasi() {
       {/* ===== Sections ===== */}
       <div className="space-y-6">
         {sorted.map((s) => {
+          const isExpanded = expandedSections[s.id];
+
           // Header bar per section
           const HeaderBar = () => (
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 cursor-pointer" onClick={() => toggleSection(s.id)}>
+              <div className="flex items-center gap-2 flex-1">
                 <span className="font-semibold uppercase">[{s.section_key}]</span>
                 <input
                   value={s.section_key}
@@ -1773,6 +1787,7 @@ export default function Kustomisasi() {
                       )
                     );
                   }}
+                  onClick={(e) => e.stopPropagation()} // Prevent toggle on input click
                   className="px-2 py-1 rounded-xl border dark:bg-slate-900"
                   placeholder="section_key"
                 />
@@ -1786,33 +1801,34 @@ export default function Kustomisasi() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <button className="p-2 rounded-xl border" onClick={() => move(s.id, -1)} title="Naik">
+                <button className="p-2 rounded-xl border" onClick={(e) => { e.stopPropagation(); move(s.id, -1); }} title="Naik">
                   <ArrowUp size={16} />
                 </button>
-                <button className="p-2 rounded-xl border" onClick={() => move(s.id, +1)} title="Turun">
+                <button className="p-2 rounded-xl border" onClick={(e) => { e.stopPropagation(); move(s.id, +1); }} title="Turun">
                   <ArrowDown size={16} />
                 </button>
                 <button
                   className="p-2 rounded-xl border"
-                  onClick={() => duplicateSection(s.id)}
+                  onClick={(e) => { e.stopPropagation(); duplicateSection(s.id); }}
                   title="Duplikat"
                 >
                   <Copy size={16} />
                 </button>
                 <button
                   className="p-2 rounded-xl border"
-                  onClick={() => revertSection(s.id)}
+                  onClick={(e) => { e.stopPropagation(); revertSection(s.id); }}
                   title="Kembalikan"
                 >
                   <RotateCcw size={16} />
                 </button>
                 <button
                   className="p-2 rounded-xl border hover:bg-red-50 dark:hover:bg-slate-800"
-                  onClick={() => deleteSection(s.id)}
+                  onClick={(e) => { e.stopPropagation(); deleteSection(s.id); }}
                   title="Hapus"
                 >
                   <Trash2 size={16} />
                 </button>
+                {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </div>
             </div>
           );
@@ -2007,14 +2023,26 @@ export default function Kustomisasi() {
           return (
             <div key={s.id} className="card p-4">
               <HeaderBar />
-              <div className="mt-4">{mode === "simple" ? renderSimple() : renderAdvanced()}</div>
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-4">{mode === "simple" ? renderSimple() : renderAdvanced()}</div>
 
-              {/* Editor FAQ (Advanced) */}
-              {mode === "advanced" && s.section_key === "faq_list" && (
-                <div className="mt-4">
-                  <FaqListEditor s={s} activeLang={activeLang} updateLocaleExtra={updateLocaleExtra} />
-                </div>
-              )}
+                    {/* Editor FAQ (Advanced) */}
+                    {mode === "advanced" && s.section_key === "faq_list" && (
+                      <div className="mt-4">
+                        <FaqListEditor s={s} activeLang={activeLang} updateLocaleExtra={updateLocaleExtra} />
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}

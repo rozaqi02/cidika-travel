@@ -145,65 +145,226 @@ function AuroraBeams({ className="" }){
   );
 }
 
-/* ================== HERO ================== */
+/* ================== HERO BARU: Lebih Profesional, Unik & React-Centric ================== */
 function Hero({ images=[], subtitle, title, desc, chips=[], onSearch, ctaContactLabel }) {
   const reduced = usePrefersReducedMotion();
   const [idx, setIdx] = useState(0);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const par = useRef(null);
+  const textRef = useRef(null);
 
   usePreload(images);
   useEffect(()=>{ if(reduced||images.length<=1) return;
     const id=setInterval(()=>setIdx(i=>(i+1)%images.length), 5200);
     return ()=>clearInterval(id);
   },[reduced, images.length]);
+
+  // Enhanced parallax dengan React state untuk mouse tracking
   useEffect(()=>{
-    const el = par.current; if(!el) return;
-    const on = (e)=>{
-      const r = el.getBoundingClientRect();
-      const cx = (e.clientX - (r.left + r.width/2)) / r.width;
-      const cy = (e.clientY - (r.top  + r.height/2)) / r.height;
-      el.style.setProperty("--parx", String(cx * 6));
-      el.style.setProperty("--pary", String(cy * 6));
+    const handleMouseMove = (e) => {
+      if (!par.current) return;
+      const r = par.current.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      const y = (e.clientY - r.top) / r.height;
+      setMousePos({ x: x * 20, y: y * 20 }); // Scale untuk efek lebih halus
     };
-    window.addEventListener("mousemove", on, { passive:true });
-    return ()=>window.removeEventListener("mousemove", on);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    return () => window.removeEventListener("mousemove", handleMouseMove);
   },[]);
+
+  // Floating particles untuk unik & modern (React-managed)
+  const particles = useMemo(() => Array.from({ length: 12 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 4 + 2,
+    opacity: Math.random() * 0.5 + 0.2,
+    delay: Math.random() * 20,
+  })), []);
+
+  const particleVariants = {
+    hidden: { opacity: 0, scale: 0 },
+    visible: (i) => ({
+      opacity: [0.2, 0.8, 0.2],
+      scale: [1, 1.2, 1],
+      x: [0, Math.sin(i) * 10, 0],
+      y: [0, Math.cos(i) * 10, 0],
+      transition: {
+        duration: 4 + Math.random() * 4,
+        repeat: Infinity,
+        delay: i * 0.1 + Math.random() * 2,
+        ease: "easeInOut",
+      },
+    }),
+  };
+
+  // Staggered text reveal untuk profesional animasi
+  const textContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.3,
+      },
+    },
+  };
+
+  const lineVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
+  };
 
   return (
     <section ref={par} className="relative h-[78vh] md:h-[88vh] overflow-hidden grain">
       {images.map((raw,i)=> {
         const src = normalizeUrl(raw);
         return (
-          <img key={src||i} src={src} alt=""
-            className={`hero-img absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ${i===idx?"opacity-100 kenburns":"opacity-0"}`}
-            style={{ transform:`translate3d(calc(var(--parx,0px)), calc(var(--pary,0px)), 0)` }}
-            loading={i===0?"eager":"lazy"} fetchpriority={i===0?"high":"auto"} />
+          <motion.img 
+            key={src||i} 
+            src={src} 
+            alt=""
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ${i===idx?"opacity-100 kenburns":"opacity-0"}`}
+            style={{ 
+              transform: `translate3d(${mousePos.x}px, ${mousePos.y}px, 0) scale(1.02)` // Parallax dengan state
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: i === idx ? 1 : 0 }}
+            transition={{ duration: 1.2 }}
+            loading={i===0?"eager":"lazy"} 
+            fetchpriority={i===0?"high":"auto"} 
+          />
         );
       })}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-900/20 to-white/75 dark:to-slate-950/85" />
       <SpotlightOverlay />
-      <div className="relative z-10 container h-full flex flex-col justify-center items-center text-center">
-        {subtitle && <motion.p variants={reveal} initial="hidden" animate="show" className="tracking-[0.28em] text-xs md:text-sm text-white/80">{subtitle}</motion.p>}
-        {title && (
-          <motion.h1 variants={reveal} initial="hidden" animate="show"
-            className="mt-2 font-extrabold text-white leading-[1.05] text-4xl md:text-6xl drop-shadow-[0_8px_24px_rgba(0,0,0,.35)]"
-            style={{ fontFamily:'var(--font-hero, "Cinzel", "EB Garamond", ui-serif, Georgia, serif)', letterSpacing:".01em" }}>
-            {title}
-          </motion.h1>
+
+      {/* Floating Particles untuk efek unik */}
+      <div className="absolute inset-0 pointer-events-none">
+        <AnimatePresence>
+          {particles.map((particle, i) => (
+            <motion.div
+              key={particle.id}
+              className="absolute bg-white/20 rounded-full"
+              style={{
+                left: `${particle.x}%`,
+                top: `${particle.y}%`,
+                width: particle.size,
+                height: particle.size,
+              }}
+              variants={particleVariants}
+              initial="hidden"
+              animate="visible"
+              custom={i}
+            />
+          ))}
+        </AnimatePresence>
+      </div>
+
+      <div className="relative z-10 container h-full flex flex-col justify-center items-center text-center px-4">
+        {/* Subtitle dengan shimmer effect */}
+        {subtitle && (
+          <motion.p 
+            variants={lineVariants}
+            initial="hidden" 
+            animate="visible"
+            className="tracking-[0.28em] text-xs md:text-sm text-white/80 mb-4 relative overflow-hidden"
+          >
+            <span className="relative z-10">{subtitle}</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 transform -translate-x-full animate-shimmer" />
+          </motion.p>
         )}
-        {desc && <motion.p variants={reveal} initial="hidden" animate="show" className="mt-4 max-w-2xl mx-auto text-[15px] md:text-base leading-relaxed text-white/90">{desc}</motion.p>}
-        {ctaContactLabel && (
-          <motion.div variants={reveal} initial="hidden" animate="show" className="mt-6 flex justify-center">
-            <ShimmerButton as={Link} to="/contact" className="!px-5 !py-2.5">{ctaContactLabel}</ShimmerButton>
+
+        {/* Title dengan split text animation */}
+        {title && (
+          <motion.div 
+            ref={textRef}
+            variants={textContainerVariants}
+            initial="hidden" 
+            animate="visible"
+            className="mt-2 font-extrabold text-white leading-[1.05] text-4xl md:text-6xl drop-shadow-[0_8px_24px_rgba(0,0,0,.35)]"
+            style={{ fontFamily:'var(--font-hero, "Cinzel", "EB Garamond", ui-serif, Georgia, serif)', letterSpacing:".01em" }}
+          >
+            {title.split(' ').map((word, i) => (
+              <motion.span
+                key={i}
+                variants={lineVariants}
+                custom={i}
+                className="inline-block"
+                style={{ display: 'inline-block' }}
+              >
+                {word}&nbsp;
+              </motion.span>
+            ))}
           </motion.div>
         )}
+
+        {/* Desc dengan fade-in staggered lines */}
+        {desc && (
+          <motion.div 
+            variants={textContainerVariants}
+            initial="hidden" 
+            animate="visible"
+            className="mt-4 max-w-2xl mx-auto text-[15px] md:text-base leading-relaxed text-white/90"
+          >
+            {desc.split('\n').map((line, i) => (
+              <motion.p 
+                key={i}
+                variants={lineVariants}
+                className="mb-2"
+              >
+                {line}
+              </motion.p>
+            ))}
+          </motion.div>
+        )}
+
+        {/* CTA dengan enhanced hover */}
+        {ctaContactLabel && (
+          <motion.div 
+            variants={lineVariants}
+            initial="hidden" 
+            animate="visible"
+            className="mt-6 flex justify-center"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <ShimmerButton as={Link} to="/contact" className="!px-8 !py-3 text-lg">
+              {ctaContactLabel}
+            </ShimmerButton>
+          </motion.div>
+        )}
+
+        {/* Chips marquee dengan enhanced animation */}
         {!!chips?.length && (
-          <motion.div variants={stagger} initial="hidden" animate="show" className="mt-6 w-full">
-            <Marquee speed={28} className="max-w-3xl mx-auto">
+          <motion.div 
+            variants={stagger} 
+            initial="hidden" 
+            animate="visible"
+            className="mt-8 w-full"
+          >
+            <Marquee speed={20} className="max-w-4xl mx-auto">
               {chips.map((c,i)=>(
-                <button key={i} onClick={()=>onSearch?.(c.q)} className="btn glass !py-2 !px-3 text-sm">
-                  <Search size={14} className="mr-1.5" /> {c.label}
-                </button>
+                <motion.button 
+                  key={i} 
+                  onClick={()=>onSearch?.(c.q)} 
+                  className="btn glass !py-3 !px-4 text-sm flex items-center gap-2 group"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <Search size={14} className="mr-1.5" /> 
+                  <span>{c.label}</span>
+                  <motion.div 
+                    className="absolute inset-0 rounded-2xl bg-gradient-to-r from-sky-400/20 to-indigo-400/20 -z-10"
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </motion.button>
               ))}
             </Marquee>
           </motion.div>
