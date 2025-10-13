@@ -1,3 +1,4 @@
+// src/pages/admin/Kustomisasi.jsx
 import React, { useEffect, useMemo, useState, useRef, useDeferredValue, useCallback } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useTranslation } from "react-i18next";
@@ -128,7 +129,7 @@ const TestimonialsEditor = ({ s, activeLang, updateLocaleExtra }) => {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <div className="font-medium">Testimonial Items — {activeLang.toUpperCase()}</div>
+        <div className="font-medium">Testimonial Items — {activeLang.toUpperCase()} (Catatan: Di frontend, semua bahasa akan digabung dan ditampilkan secara keseluruhan)</div>
         <button className="btn btn-outline !py-1 !px-3" onClick={() => setItems([...(items || []), { name: "", city: "", text: "", stars: 5 }])}>
           <Plus size={14} /> Tambah
         </button>

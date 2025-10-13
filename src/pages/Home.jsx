@@ -12,6 +12,7 @@ import usePackages from "../hooks/usePackages";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
 import usePageSections from "../hooks/usePageSections";
+import { supabase } from "../lib/supabaseClient";
 
 /* ================== Fallback assets (jika DB kosong) ================== */
 const FALLBACK_HERO_IMAGES = ["/hero1.jpg","/hero2.jpg","/hero3.jpg","/hero4.jpg","/hero5.jpg","/hero6.jpg"];
@@ -367,33 +368,35 @@ function HowItWorks({ title, subtitle, steps=[] }) {
     </section>
   );
 }
-function Testimonials({ title, items=[] }) {
+function Testimonials({ title, allItems=[] }) {
   const { i18n } = useTranslation();
   const lang = i18n.language.slice(0,2);
-  if(!items.length) return null;
+  if(!allItems.length) return null;
   const getStars = (n)=> {
     const s = Math.max(1, Math.min(5, Number(n||5)));
-    return Array.from({length:s}, (_,i)=><Star key={i} size={16} />);
+    return Array.from({length:s}, (_,i)=><Star key={i} size={16} className="text-amber-500" />);
   };
   return (
     <section className="container mt-16">
-      {title && <motion.h2 variants={reveal} initial="hidden" whileInView="show" viewport={{ once:true }} className="text-2xl md:text-3xl font-bold">{title}</motion.h2>}
-      <div className="mt-4">
-        <Marquee speed={38} className="py-2">
-          {items.map((tItem,i)=>(
-            <blockquote key={i} className="w-[340px] shrink-0 mr-3 last:mr-0 card p-4">
-              <div className="flex items-center gap-2 text-amber-500 mb-1">{getStars(tItem.stars)}</div>
-              <p className="text-slate-700 dark:text-slate-200 line-clamp-5">{tItem.text}</p>
-              {lang !== 'id' && (
-                <a href={`https://translate.google.com/?sl=id&tl=${lang}&text=${encodeURIComponent(tItem.text)}&op=translate`} target="_blank" rel="noreferrer" className="text-xs text-sky-600 hover:underline mt-1 block">
+      {title && <motion.h2 variants={reveal} initial="hidden" whileInView="show" viewport={{ once:true }} className="text-2xl md:text-3xl font-bold mb-6 text-center">{title}</motion.h2>}
+      <motion.div variants={stagger} initial="hidden" whileInView="show" viewport={{ once:true, amount: 0.2 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {allItems.map((tItem,i)=>(
+          <motion.div key={i} variants={reveal}>
+            <div className="card p-6 hover-lift shadow-smooth flex flex-col h-full">
+              <div className="flex items-center gap-2 mb-3">
+                {getStars(tItem.stars)}
+              </div>
+              <p className="text-slate-700 dark:text-slate-200 flex-grow mb-4">{tItem.text}</p>
+              {lang !== tItem.lang && (
+                <a href={`https://translate.google.com/?sl=${tItem.lang}&tl=${lang}&text=${encodeURIComponent(tItem.text)}&op=translate`} target="_blank" rel="noreferrer" className="text-xs text-sky-600 hover:underline mb-2 block">
                   Translate to {lang.toUpperCase()}
                 </a>
               )}
-              <footer className="mt-3 text-sm text-slate-500">— {tItem.name}{tItem.city?`, ${tItem.city}`:""}</footer>
-            </blockquote>
-          ))}
-        </Marquee>
-      </div>
+              <footer className="text-sm text-slate-500 mt-auto">— {tItem.name}{tItem.city ? `, ${tItem.city}` : ""}</footer>
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
     </section>
   );
 }
@@ -443,7 +446,7 @@ function StickyHelpCTA() {
 export default function Home(){
   const { rows:packages=[] } = usePackages();
   const { fx, currency, locale } = useCurrency();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { sections } = usePageSections("home");
   const S = useMemo(()=>Object.fromEntries((sections||[]).map(s=>[s.section_key,s])),[sections]);
@@ -461,6 +464,33 @@ export default function Home(){
   const heroCTA   = S.hero?.locale?.extra?.cta_contact_label || "";
   const heroChips = Array.isArray(S.hero?.data?.chips) ? S.hero.data.chips : [];
 
+  // Fetch semua testimonials dari semua bahasa
+  const [allTestimonials, setAllTestimonials] = useState([]);
+  useEffect(() => {
+    const fetchAllTestimonials = async () => {
+      const testimonialsSectionId = S.testimonials?.id;
+      if (!testimonialsSectionId) return;
+
+      const { data, error } = await supabase
+        .from("page_section_locales")
+        .select("lang, extra")
+        .eq("section_id", testimonialsSectionId);
+
+      if (error) {
+        console.error("Error fetching testimonials:", error);
+        return;
+      }
+
+      const combinedItems = data.flatMap(({ lang, extra }) => 
+        (extra?.items || []).map(item => ({ ...item, lang }))
+      );
+
+      setAllTestimonials(combinedItems);
+    };
+
+    fetchAllTestimonials();
+  }, [S.testimonials?.id]);
+
   return (
     <>
       <Hero
@@ -476,7 +506,7 @@ export default function Home(){
       <WhyUs
         title={S.whyus?.locale?.title || t("home.whyTitle", { defaultValue: "Kenapa pilih kami?" })}
         subtitle={S.whyus?.locale?.body_md || t("home.whySubtitle", { defaultValue: "Keunggulan yang bikin trip kamu lebih tenang." })}
-        items={S.whyus?.data?.items || [
+        items={S.whyus?.locale?.extra?.items || [
           { icon:"badge-check", title:t("home.whyItems.0.title", { defaultValue:"Operator Resmi & Berpengalaman" }), text:t("home.whyItems.0.text", { defaultValue:"Tim lokal paham spot & timing terbaik." }) },
           { icon:"users",       title:t("home.whyItems.1.title", { defaultValue:"Cocok untuk Semua" }),             text:t("home.whyItems.1.text", { defaultValue:"Solo, couple, family, rombongan kantor." }) },
           { icon:"calendar",    title:t("home.whyItems.2.title", { defaultValue:"Jadwal Fleksibel" }),              text:t("home.whyItems.2.text", { defaultValue:"Private charter / open trip." }) },
@@ -499,12 +529,12 @@ export default function Home(){
       <HowItWorks
         title={S.how?.locale?.title || t("home.howTitle", { defaultValue: "Cara Kerja" })}
         subtitle={S.how?.locale?.body_md || t("home.howSubtitle", { defaultValue: "Simple dan cepat tanpa login." })}
-        steps={S.how?.data?.steps || []}
+        steps={S.how?.locale?.extra?.steps || []}
       />
 
       <Testimonials
         title={S.testimonials?.locale?.title || t("home.testimonialsTitle", { defaultValue: "Kata Mereka" })}
-        items={S.testimonials?.data?.items || []}
+        allItems={allTestimonials}
       />
 
       <BigCTA
