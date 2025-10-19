@@ -312,19 +312,3 @@ body { opacity: 1; }
 
 /* pointer vars default bila belum digerakkan */
 :root{ --px: 50%; --py: 0%; }
-
-/* ===== Optional: pakai font berlisensi sendiri =====
-@font-face{
-  font-family: "Gotham Licensed";
-  src: url("/fonts/Gotham-Book.woff2") format("woff2");
-  font-weight: 400; font-style: normal; font-display: swap;
-}
-@font-face{
-  font-family: "Gotham Licensed";
-  src: url("/fonts/Gotham-Bold.woff2") format("woff2");
-  font-weight: 700; font-style: normal; font-display: swap;
-}
-:root{
-  --font-sans: "Gotham Licensed", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-}
-*/

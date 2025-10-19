@@ -121,51 +121,74 @@ const HeroEditor = ({ s, activeLang, updateLocal, updateLocaleExtra, readData, w
   );
 };
 
-const TestimonialsEditor = ({ s, activeLang, updateLocaleExtra }) => {
-  const ex = s.locales[activeLang].extra || {};
-  const items = Array.isArray(ex.items) ? ex.items : [];
-  const setItems = (arr) =>
-    updateLocaleExtra(s.id, activeLang, { ...ex, items: arr });
+const TestimonialsEditor = ({ items, setItems, loading }) => {
+  const updateTestimonial = async (id, patch) => {
+    const { error } = await supabase.from('testimonials').update(patch).eq('id', id);
+    if (error) {
+      alert('Gagal update: ' + error.message);
+      return false;
+    }
+    setItems(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
+    return true;
+  };
+
+  const deleteTestimonial = async (id) => {
+    if (!window.confirm('Yakin hapus testimoni ini?')) return;
+    const { error } = await supabase.from('testimonials').delete().eq('id', id);
+    if (error) {
+      alert('Gagal hapus: ' + error.message);
+      return;
+    }
+    setItems(prev => prev.filter(t => t.id !== id));
+  };
+
+  const handleFieldChange = (id, field, value) => {
+    setItems(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t));
+  };
+  
+  if (loading) return <div className="text-sm text-slate-500">Memuat testimoni...</div>;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <div className="font-medium">Testimonial Items — {activeLang.toUpperCase()} (Catatan: Di frontend, semua bahasa akan digabung dan ditampilkan secara keseluruhan)</div>
-        <button className="btn btn-outline !py-1 !px-3" onClick={() => setItems([...(items || []), { name: "", city: "", text: "", stars: 5 }])}>
-          <Plus size={14} /> Tambah
-        </button>
-      </div>
-
-      {(items || []).length === 0 ? (
-        <div className="text-sm text-slate-500">Belum ada testimonial untuk bahasa ini.</div>
+      <div className="font-medium mb-2">Manajemen Testimoni</div>
+      {items.length === 0 ? (
+        <div className="text-sm text-slate-500">Belum ada testimoni.</div>
       ) : (
         <div className="space-y-3">
-          {items.map((it, idx) => (
-            <div key={idx} className="p-3 rounded-xl border dark:border-slate-700">
+          {items.map((it) => (
+            <div key={it.id} className={`p-3 rounded-xl border ${it.is_approved ? 'border-emerald-200 dark:border-emerald-800' : 'border-slate-200 dark:border-slate-700'}`}>
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2 text-slate-500">
-                  <GripVertical size={16} /> <span className="text-xs">#{idx + 1}</span>
+                   <label className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input type="checkbox" checked={it.is_approved} onChange={(e) => updateTestimonial(it.id, { is_approved: e.target.checked })} />
+                    {it.is_approved ? <span className="text-emerald-600 font-medium">Disetujui</span> : 'Belum Disetujui'}
+                  </label>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button className="p-1 rounded-lg border" onClick={() => { if (idx > 0) { const arr = items.slice();[arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; setItems(arr); } }} title="Naik"><ArrowUp size={14} /></button>
-                  <button className="p-1 rounded-lg border" onClick={() => { if (idx < items.length - 1) { const arr = items.slice();[arr[idx + 1], arr[idx]] = [arr[idx], arr[idx + 1]]; setItems(arr); } }} title="Turun"><ArrowDown size={14} /></button>
-                  <button className="p-1 rounded-lg border hover:bg-red-50 dark:hover:bg-slate-800" onClick={() => { const arr = items.slice(); arr.splice(idx, 1); setItems(arr); }} title="Hapus"><Trash2 size={14} /></button>
+                  <button className="p-1 rounded-lg border hover:bg-red-50 dark:hover:bg-slate-800" onClick={() => deleteTestimonial(it.id)} title="Hapus">
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-2">
-                <input className="border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Nama" value={it.name || ""} onChange={(e) => { const arr = items.slice(); arr[idx] = { ...it, name: e.target.value }; setItems(arr); }} />
-                <input className="border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Kota (opsional)" value={it.city || ""} onChange={(e) => { const arr = items.slice(); arr[idx] = { ...it, city: e.target.value }; setItems(arr); }} />
+                <input className="border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Nama" value={it.name || ""} onChange={(e) => handleFieldChange(it.id, "name", e.target.value)} />
+                <input className="border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Kota (opsional)" value={it.city || ""} onChange={(e) => handleFieldChange(it.id, "city", e.target.value)} />
               </div>
 
-              <textarea rows="3" className="mt-2 w-full border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Teks" value={it.text || ""} onChange={(e) => { const arr = items.slice(); arr[idx] = { ...it, text: e.target.value }; setItems(arr); }} />
-
-              <div className="mt-2 flex items-center gap-2">
-                <Star size={16} className="text-amber-500" />
-                <span className="text-sm">Bintang:</span>
-                <select className="px-3 py-2 rounded-2xl" value={Number(it.stars || 5)} onChange={(e) => { const arr = items.slice(); arr[idx] = { ...it, stars: Number(e.target.value) }; setItems(arr); }}>
-                  {[1, 2, 3, 4, 5].map((n) => (<option key={n} value={n}>{n}</option>))}
-                </select>
+              <textarea rows="3" className="mt-2 w-full border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Teks" value={it.text || ""} onChange={(e) => handleFieldChange(it.id, "text", e.target.value)} />
+              
+              <div className="mt-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Star size={16} className="text-amber-500" />
+                  <span className="text-sm">Bintang:</span>
+                  <select className="px-3 py-2 rounded-2xl" value={Number(it.stars || 5)} onChange={(e) => handleFieldChange(it.id, "stars", Number(e.target.value))}>
+                    {[1, 2, 3, 4, 5].map((n) => (<option key={n} value={n}>{n}</option>))}
+                  </select>
+                </div>
+                <button className="btn btn-primary !py-1 !px-3" onClick={() => updateTestimonial(it.id, { name: it.name, city: it.city, text: it.text, stars: it.stars })}>
+                  Simpan Perubahan
+                </button>
               </div>
             </div>
           ))}
@@ -891,13 +914,30 @@ export default function Kustomisasi() {
   const [hideToolbar, setHideToolbar] = useState(false);
   const [expandedSections, setExpandedSections] = useState({});
 
-  // state untuk Explore -> packages
   const [pkgList, setPkgList] = useState([]);
   const [pkgLoading, setPkgLoading] = useState(false);
   const [pkgSaving, setPkgSaving] = useState(false);
 
-  // useDeferredValue HANYA untuk query pencarian, ini penggunaan yang benar
+  const [testimonials, setTestimonials] = useState([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
+
   const deferredQuery = useDeferredValue(query);
+
+  const loadTestimonials = async () => {
+    setTestimonialsLoading(true);
+    const { data, error } = await supabase
+      .from("testimonials")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching testimonials for admin:", error);
+      setTestimonials([]);
+    } else {
+      setTestimonials(data || []);
+    }
+    setTestimonialsLoading(false);
+  };
 
   useEffect(() => {
     const onScroll = () => {
@@ -1011,6 +1051,7 @@ export default function Kustomisasi() {
   useEffect(() => {
     load();
     if (page === "explore") loadPackages();
+    if (page === "home") loadTestimonials();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
@@ -1841,7 +1882,13 @@ export default function Kustomisasi() {
               case "whyus":           
               return <WhyUsEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} />;
               case "testimonials":
-                return <TestimonialsEditor s={s} activeLang={activeLang} updateLocaleExtra={updateLocaleExtra} />;
+              return (
+                <div className="space-y-6">
+                  <SimpleTitleBody s={s} activeLang={activeLang} updateLocal={updateLocal} bodyLabel="Subjudul (opsional)" />
+                  <div className="border-t dark:border-slate-700 my-4" />
+                  <TestimonialsEditor items={testimonials} setItems={setTestimonials} loading={testimonialsLoading} />
+                </div>
+              );
               case "stats":           
                 return <StatsEditor s={s} readData={readData} writeData={writeData} />;
               case "stats":

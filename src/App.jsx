@@ -23,6 +23,7 @@ import { CartProvider } from "./context/CartContext";
 import ScrollProgressBar from "./components/ScrollProgressBar";
 import PackageDetail from "./pages/PackageDetail";
 import Checkout from "./pages/Checkout";
+import Reset from "./pages/admin/Reset";
 
 NProgress.configure({ showSpinner:false, minimum:0.06, trickle:true, trickleRate:0.08, trickleSpeed:180, speed:420 });
 
@@ -241,6 +242,7 @@ export default function App() {
               <Route path="/admin" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
               <Route path="/admin/kustomisasi" element={<ProtectedRoute><Layout><Kustomisasi /></Layout></ProtectedRoute>} />
               <Route path="/admin/orderan" element={<ProtectedRoute><Layout><Orderan /></Layout></ProtectedRoute>} />
+              <Route path="/admin/reset" element={<Layout><Reset /></Layout>} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

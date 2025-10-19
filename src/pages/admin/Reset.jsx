@@ -1,13 +1,10 @@
-// src/pages/admin/Login.jsx
+// src/pages/admin/Reset.jsx
 import React, { useEffect, useRef, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
-
-/**
- * Efek yang dibawa layar ini: [sama seperti sebelumnya]
- */
+import { Lock, Eye, EyeOff, Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
 
 function useReduced() {
   const [reduced, setReduced] = useState(false);
@@ -22,36 +19,48 @@ function useReduced() {
   return reduced;
 }
 
-export default function Login() {
+export default function Reset() {
   const { t } = useTranslation();
-  const [email, setEmail] = useState(localStorage.getItem("adm_email") || "");
-  const [password, setPass] = useState("");
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [newPassword, setNewPass] = useState("");
+  const [confirmPassword, setConfirmPass] = useState("");
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [remember, setRemember] = useState(!!localStorage.getItem("adm_email"));
-  const [capsOn, setCapsOn] = useState(false);
+  const [isRecovery, setIsRecovery] = useState(false);
 
   const wrapRef = useRef(null);
   const cardRef = useRef(null);
   const reduced = useReduced();
 
-  // Parallax blobs (9 layer) [sama seperti sebelumnya]
+  // Deteksi jika ini reset flow (dari email link)
+  useEffect(() => {
+    const type = searchParams.get("type");
+    if (type === "recovery") {
+      setIsRecovery(true);
+      // Supabase auto-signs in user via token, tapi kita fokus ke form update
+    } else {
+      // Bukan reset, redirect ke login
+      navigate("/admin/login");
+    }
+  }, [searchParams, navigate]);
+
+  // Parallax blobs [sama seperti Login]
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
     const on = (e) => {
       const r = el.getBoundingClientRect();
-      const cx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2); // -1..1
+      const cx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
       const cy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
       el.style.setProperty("--px", String(reduced ? 0 : cx));
       el.style.setProperty("--py", String(reduced ? 0 : cy));
 
-      // tilt 3D kartu
       const card = cardRef.current;
       if (card && !reduced) {
-        const max = 6; // derajat
+        const max = 6;
         card.style.transform = `rotateX(${(-cy * max).toFixed(2)}deg) rotateY(${(cx * max).toFixed(2)}deg) translateZ(0)`;
       }
     };
@@ -59,7 +68,6 @@ export default function Login() {
     return () => window.removeEventListener("mousemove", on);
   }, [reduced]);
 
-  // Reset tilt saat mouse keluar jendela [sama]
   useEffect(() => {
     const reset = () => {
       if (cardRef.current) cardRef.current.style.transform = "";
@@ -70,43 +78,34 @@ export default function Login() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setErr("");
-    setMsg(t("admin.login.loggingIn", { defaultValue: "Logging in..." }));
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      setErr(error.message);
-      setMsg("");
-    } else {
-      if (remember) localStorage.setItem("adm_email", email);
-      else localStorage.removeItem("adm_email");
-      window.location.replace("/admin");
+    if (newPassword !== confirmPassword) {
+      setErr("Password konfirmasi tidak cocok.");
+      return;
     }
-  };
-
-  const onForgot = async () => {
-    if (!email) {
-      setErr(t("admin.login.enterEmail", { defaultValue: "Masukkan email dulu untuk reset." }));
+    if (newPassword.length < 6) {
+      setErr("Password minimal 6 karakter.");
       return;
     }
     setErr("");
-    setMsg(t("admin.login.sendingReset", { defaultValue: "Mengirim tautan reset..." }));
-    // Fix redirectTo: Gunakan domain produksi (atau env var REACT_APP_SITE_URL untuk dev/prod switch)
-    const resetUrl = process.env.REACT_APP_RESET_URL || 'https://cidikatravel.com/admin/reset';
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: resetUrl,
-    });
+    setMsg("Memperbarui password...");
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
     if (error) {
-      console.error('Reset error:', error); // Log untuk debug
-      setErr(`Gagal kirim email: ${error.message}`);
+      console.error('Update error:', error);
+      setErr(`Gagal update: ${error.message}`);
       setMsg("");
     } else {
-      setMsg(t("admin.login.resetSent", { defaultValue: "Tautan reset dikirim ke email. Cek inbox/spam." }));
+      setMsg("Password berhasil diupdate! Redirect ke login...");
+      setTimeout(() => navigate("/admin/login"), 2000);
     }
   };
 
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!isRecovery) {
+    return null; // Akan redirect otomatis
+  }
+
+  const passValid = newPassword.length >= 6 && newPassword === confirmPassword;
 
   return (
     <div ref={wrapRef} className="min-h-screen relative overflow-hidden login-bg">
@@ -142,7 +141,6 @@ export default function Login() {
         />
       ))}
 
-      {/* Content [sama] */}
       <div className="container relative mx-auto px-4 py-16 grid place-items-center">
         <motion.div
           initial={{ opacity: 0, y: 18, rotateX: 8 }}
@@ -150,25 +148,29 @@ export default function Login() {
           transition={{ duration: reduced ? 0 : 0.45, ease: "easeOut" }}
           className="w-full max-w-md"
         >
-          {/* Kartu dengan border gradien [sama] */}
           <div className="rounded-2xl p-[1px] bg-[conic-gradient(from_120deg,rgba(56,189,248,.45),rgba(2,6,23,.0),rgba(99,102,241,.4),rgba(56,189,248,.45))] relative">
             <motion.div
               ref={cardRef}
               whileHover={{ y: -2 }}
               className="rounded-2xl border border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-xl shadow-[0_30px_100px_rgba(2,6,23,.35)] p-6 transition-transform will-change-transform"
             >
-              {/* Header [sama] */}
+              {/* Header */}
               <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => navigate("/admin/login")}
+                  className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1 text-sm"
+                >
+                  <ArrowLeft size={16} /> Kembali
+                </button>
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="text-sky-600 dark:text-sky-400" size={20} />
                   <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
-                    {t("admin.login.title", { defaultValue: "Admin Login" })}
+                    Reset Password
                   </h1>
                 </div>
-                <span className="text-[11px] text-slate-500 dark:text-white/60">CIDIKA TRAVEL</span>
               </div>
 
-              {/* Alerts [sama] */}
+              {/* Alerts */}
               <AnimatePresence>
                 {!!err && (
                   <motion.div
@@ -194,104 +196,63 @@ export default function Login() {
                 )}
               </AnimatePresence>
 
-              {/* Form [sama, termasuk onForgot yang sudah diupdate] */}
+              {/* Form */}
               <form onSubmit={onSubmit} className="grid gap-3">
-                {/* Email [sama] */}
-                <div className="relative">
-                  <Mail
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-white/50 pointer-events-none"
-                  />
-                  <input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onKeyUp={(e) => setCapsOn(e.getModifierState && e.getModifierState("CapsLock"))}
-                    className="peer w-full rounded-xl bg-white/70 dark:bg-white/10 text-slate-900 dark:text-white pl-9 pr-20 py-3 border border-slate-300 dark:border-white/10 focus:ring-4 focus:ring-sky-500/25 focus:border-sky-500/70 outline-none transition"
-                    placeholder="" // kosong agar tidak menimpa teks
-                    aria-label={t("admin.login.email", { defaultValue: "Email" })}
-                    autoComplete="username"
-                    required
-                  />
-                  {/* Right hint (placeholder) */}
-                  {!email && (
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-white/50">
-                      {t("admin.login.email", { defaultValue: "Email" })}
-                    </span>
-                  )}
-                </div>
-                {!emailValid && email.length > 0 && (
-                  <p className="text-[11px] text-amber-700 dark:text-amber-300 -mt-1">
-                    {t("admin.login.invalidEmail", { defaultValue: "Format email tidak valid" })}
-                  </p>
-                )}
-
-                {/* Password [sama] */}
+                {/* Password Baru */}
                 <div className="relative">
                   <Lock
                     size={16}
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-white/50 pointer-events-none"
                   />
                   <input
-                    id="password"
+                    id="new-password"
                     type={showPass ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPass(e.target.value)}
-                    onKeyUp={(e) => setCapsOn(e.getModifierState && e.getModifierState("CapsLock"))}
-                    className="peer w-full rounded-xl bg-white/70 dark:bg-white/10 text-slate-900 dark:text-white pl-9 pr-20 py-3 border border-slate-300 dark:border-white/10 focus:ring-4 focus:ring-sky-500/25 focus:border-sky-500/70 outline-none transition"
-                    placeholder=""
-                    aria-label={t("admin.login.password", { defaultValue: "Password" })}
-                    autoComplete="current-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPass(e.target.value)}
+                    className="peer w-full rounded-xl bg-white/70 dark:bg-white/10 text-slate-900 dark:text-white pl-9 pr-10 py-3 border border-slate-300 dark:border-white/10 focus:ring-4 focus:ring-sky-500/25 focus:border-sky-500/70 outline-none transition"
+                    placeholder="Password baru"
+                    autoComplete="new-password"
                     required
+                    minLength={6}
                   />
-                  {/* Right hint (placeholder) */}
-                  {!password && (
-                    <span className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-white/50">
-                      {t("admin.login.password", { defaultValue: "Password" })}
-                    </span>
-                  )}
                   <button
                     type="button"
                     onClick={() => setShowPass((v) => !v)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-white/70"
-                    aria-label={showPass ? t("admin.login.hidePassword", { defaultValue: "Sembunyikan password" }) : t("admin.login.showPassword", { defaultValue: "Tampilkan password" })}
                   >
                     {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
-                {capsOn && (
+
+                {/* Konfirmasi Password */}
+                <div className="relative">
+                  <Lock
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-white/50 pointer-events-none"
+                  />
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPass(e.target.value)}
+                    className="peer w-full rounded-xl bg-white/70 dark:bg-white/10 text-slate-900 dark:text-white pl-9 pr-4 py-3 border border-slate-300 dark:border-white/10 focus:ring-4 focus:ring-sky-500/25 focus:border-sky-500/70 outline-none transition"
+                    placeholder="Konfirmasi password baru"
+                    autoComplete="new-password"
+                    required
+                  />
+                </div>
+                {!passValid && (newPassword || confirmPassword) && (
                   <p className="text-[11px] text-amber-700 dark:text-amber-300 -mt-1">
-                    {t("admin.login.capsOn", { defaultValue: "Caps Lock aktif" })}
+                    Password harus cocok dan minimal 6 karakter.
                   </p>
                 )}
 
-                {/* Remember + Forgot [sama, tapi onForgot sudah diupdate] */}
-                <div className="flex items-center justify-between mt-1">
-                  <label className="inline-flex items-center gap-2 text-slate-800 dark:text-white/80 text-xs">
-                    <input
-                      type="checkbox"
-                      className="accent-sky-500"
-                      checked={remember}
-                      onChange={(e) => setRemember(e.target.checked)}
-                    />
-                    {t("admin.login.remember", { defaultValue: "Ingat email" })}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={onForgot}
-                    className="text-xs text-sky-700 dark:text-sky-300 hover:underline"
-                  >
-                    {t("admin.login.forgot", { defaultValue: "Lupa password?" })}
-                  </button>
-                </div>
-
                 <button
                   className="mt-2 btn btn-primary w-full inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-[.98] transition text-white"
-                  disabled={loading || !emailValid || !password}
+                  disabled={loading || !passValid}
                 >
                   {loading && <Loader2 size={16} className="animate-spin" />}{" "}
-                  {t("admin.login.submit", { defaultValue: "Masuk" })}
+                  Update Password
                 </button>
               </form>
             </motion.div>

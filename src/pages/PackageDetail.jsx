@@ -1,4 +1,3 @@
-// src/pages/PackageDetail.jsx
 import React, { useMemo, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -45,33 +44,43 @@ function normalizeLocale(p, currentLang) {
 
 /* ===== small components ===== */
 const SectionTitle = ({ icon: Icon, children }) => (
-  <div className="flex items-center gap-2 mt-4">
-    {Icon && <Icon size={18} className="text-sky-600 dark:text-sky-400" />}
-    <h3 className="font-semibold text-base">{children}</h3>
+  <div className="flex items-center gap-2 mt-6 mb-4">
+    {Icon && <Icon size={20} className="text-sky-600 dark:text-sky-400" />}
+    <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{children}</h3>
   </div>
 );
 
 function ItineraryTimeline({ data }) {
+  const { t } = useTranslation();
   const steps = Array.isArray(data) ? data : [];
   if (!steps.length) return null;
   return (
-    <ol className="mt-2 relative border-l border-slate-200 dark:border-slate-800 pl-4 space-y-3">
+    // PERUBAHAN 1: Hapus `pl-6` dari <ol> agar `<li>` bisa mengontrol paddingnya sendiri
+    <ol className="mt-4 relative border-l-2 border-sky-200 dark:border-sky-800 space-y-4">
       {steps.map((step, i) => {
         const isObj = step && typeof step === "object";
         const time = String(isObj ? step.time ?? "" : "").trim();
         const text = String(isObj ? step.text ?? "" : step).trim();
         return (
-          <li key={i} className="relative">
-            <span className="absolute -left-[9px] top-[3px] w-2 h-2 rounded-full bg-sky-500 ring-2 ring-white dark:ring-slate-900" />
-            <div className="flex items-start gap-2">
+          <motion.li
+            key={i}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: i * 0.1 }}
+            // PERUBAHAN 2: Tambahkan padding kiri di sini untuk memberi ruang bagi teks
+            className="relative pl-8"
+          >
+            {/* PERUBAHAN 3: Ubah cara pemosisian dot agar sempurna di tengah garis */}
+            <span className="absolute left-[1px] top-1.5 w-4 h-4 rounded-full bg-sky-500 ring-4 ring-white dark:ring-gray-900 -translate-x-1/2" />
+            <div className="flex items-start gap-3">
               {time && (
-                <span className="px-2 py-0.5 text-[11px] rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                <span className="px-3 py-1 text-xs font-medium rounded-full bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 shrink-0">
                   {time}
                 </span>
               )}
-              <p className="text-sm leading-relaxed">{text}</p>
+              <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-200">{text}</p>
             </div>
-          </li>
+          </motion.li>
         );
       })}
     </ol>
@@ -86,11 +95,57 @@ function PillList({ items }) {
       {arr.map((s, i) => (
         <span
           key={i}
-          className="px-2.5 py-1 rounded-full text-[12px] bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60"
+          className="px-3 py-1.5 rounded-full text-sm bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 border border-sky-200/60 dark:border-sky-700/60 transition hover:bg-sky-200 dark:hover:bg-sky-800/50"
         >
           {typeof s === "string" ? s : JSON.stringify(s)}
         </span>
       ))}
+    </div>
+  );
+}
+
+function NoteSection({ note }) {
+  if (!note) return null;
+  const { t } = useTranslation();
+  // Parse note untuk memisahkan poin-poin dan tabel harga
+  const lines = note.split("\n").map(line => line.trim()).filter(line => line);
+  const bulletPoints = lines.filter(line => !line.match(/^\d\s+IDR/));
+  const priceLines = lines.filter(line => line.match(/^\d\s+IDR/)).map(line => {
+    const [pax, price, total] = line.split(/\s+IDR[\s.]+|Rp[\s.]+/).filter(Boolean);
+    return { pax: parseInt(pax), price: parseInt(price.replace(/\./g, '')), total: parseInt(total.replace(/\./g, '')) };
+  });
+
+  return (
+    <div className="mt-6 rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-gray-900 shadow-sm">
+      <div className="flex items-start gap-2 mb-3">
+        <Info size={18} className="mt-1 text-amber-600 dark:text-amber-400 shrink-0" />
+        <h4 className="font-semibold text-base text-gray-900 dark:text-white">{t("explore.notes", { defaultValue: "Additional Notes" })}</h4>
+      </div>
+      <ul className="space-y-2">
+        {bulletPoints.map((point, i) => (
+          <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-200">
+            <span className="mt-1 w-1.5 h-1.5 rounded-full bg-gray-400" />
+            <span>{point.replace(/Catatan\s*:/i, "").trim()}</span>
+          </li>
+        ))}
+      </ul>
+      {priceLines.length > 0 && (
+        <>
+          <h5 className="font-semibold text-sm mt-4 mb-2 text-gray-900 dark:text-white">{t("explore.pricingTable", { defaultValue: "Pricing Details" })}</h5>
+          <div className="grid grid-cols-3 gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
+            <div className="font-semibold">{t("home.pax")}</div>
+            <div className="font-semibold">{t("explore.pricePerPax", { defaultValue: "Price/Pax" })}</div>
+            <div className="font-semibold">{t("explore.totalPrice", { defaultValue: "Total" })}</div>
+            {priceLines.map((row, i) => (
+              <React.Fragment key={i}>
+                <div>{row.pax}</div>
+                <div>IDR {row.price.toLocaleString()}</div>
+                <div>IDR {row.total.toLocaleString()}</div>
+              </React.Fragment>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -113,10 +168,10 @@ export default function PackageDetail() {
   if (!pkg) {
     return (
       <div className="container py-12">
-        <button onClick={() => nav(-1)} className="btn btn-outline mb-4">
-          <ArrowLeft size={16} className="mr-2" />{t("back", { defaultValue: "Back" })}
+        <button onClick={() => nav(-1)} className="btn btn-outline mb-4 flex items-center gap-2">
+          <ArrowLeft size={16} /> {t("back", { defaultValue: "Back" })}
         </button>
-        <div className="card p-6 text-slate-600 dark:text-slate-300">
+        <div className="card p-6 text-slate-600 dark:text-slate-300 bg-white dark:bg-gray-900 rounded-xl shadow-sm">
           {t("explore.empty", { defaultValue: "No packages match your filters." })}
         </div>
       </div>
@@ -162,32 +217,37 @@ export default function PackageDetail() {
   return (
     <div className="container mt-2">
       {/* Hero */}
-      <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
-        <img src={cover} alt="" className="w-full h-[36vh] sm:h-[46vh] object-cover hero-img" />
-        <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/40 to-transparent dark:from-slate-950/85 dark:via-slate-950/35" />
-        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6">
-          <button onClick={() => nav(-1)} className="btn glass !px-3 !py-1.5 mb-3">
-            <ArrowLeft size={16} className="mr-1" /> {t("back", { defaultValue: "Back" })}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-lg"
+      >
+        <img src={cover} alt={loc?.title} className="w-full h-[40vh] sm:h-[50vh] object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-gray-900/30 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+          <button onClick={() => nav(-1)} className="btn btn-primary glass !px-4 !py-2 mb-4 flex items-center gap-2">
+            <ArrowLeft size={16} /> {t("back", { defaultValue: "Back" })}
           </button>
-          <div className="flex items-end justify-between gap-3">
+          <div className="flex items-end justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">{loc?.title || pkg.slug}</h1>
-              <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base mt-1 line-clamp-2">{loc?.summary || ""}</p>
+              <h1 className="text-3xl sm:text-4xl font-bold text-white">{loc?.title || pkg.slug}</h1>
+              <p className="text-gray-200 text-sm sm:text-base mt-2 line-clamp-2">{loc?.summary || ""}</p>
             </div>
             <div className="text-right shrink-0">
-              <div className="text-sky-700 dark:text-sky-300 font-extrabold text-xl">
-                {formatMoneyFromIDR(price, currency, fx, locale)} <span className="text-sm font-normal text-slate-600 dark:text-slate-400">/ {t("home.perPax")}</span>
+              <div className="text-sky-400 font-extrabold text-2xl sm:text-3xl">
+                {formatMoneyFromIDR(price, currency, fx, locale)} <span className="text-sm font-normal text-gray-300">/ {t("home.perPax")}</span>
               </div>
-              <div className="text-[12px] text-slate-500 dark:text-slate-400">{audienceLabel} • {pax} {t("home.pax")}</div>
+              <div className="text-sm text-gray-300">{audienceLabel} • {pax} {t("home.pax")}</div>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Content grid */}
-      <div className="grid lg:grid-cols-3 gap-5 mt-4">
+      <div className="grid lg:grid-cols-3 gap-6 mt-6">
         {/* Left: details */}
-        <div className="lg:col-span-2 card p-4 sm:p-5">
+        <div className="lg:col-span-2 space-y-4">
           {(loc?.spots?.length || 0) > 0 && (
             <>
               <SectionTitle icon={MapPin}>{t("explore.spots", { defaultValue: "Attractions" })}</SectionTitle>
@@ -205,49 +265,50 @@ export default function PackageDetail() {
           {(loc?.include?.length || 0) > 0 && (
             <>
               <SectionTitle icon={Check}>{t("explore.includes", { defaultValue: "Includes" })}</SectionTitle>
-              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {loc.include.map((s, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <Check size={16} className="mt-0.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    <span className="text-sm">{typeof s === "string" ? s : JSON.stringify(s)}</span>
+                    <Check size={16} className="mt-1 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="text-sm text-gray-700 dark:text-gray-200">{typeof s === "string" ? s : JSON.stringify(s)}</span>
                   </div>
                 ))}
               </div>
             </>
           )}
 
-          {loc?.note && (
-            <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-800 p-3 flex gap-2">
-              <Info size={16} className="mt-1 text-amber-600" />
-              <p className="text-sm text-slate-600 dark:text-slate-300">{loc.note}</p>
-            </div>
-          )}
+          {loc?.note && <NoteSection note={loc.note} />}
 
-          {/* Prices + Gallery */}
           {gallery.length > 1 && (
             <>
               <SectionTitle icon={DollarSign}>{t("explore.prices", { defaultValue: "Price per Pax" })}</SectionTitle>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {tiers.map((pt) => (
                   <button
                     key={pt.pax}
                     onClick={() => setPax(pt.pax)}
-                    className={`rounded-xl border px-3 py-2 text-left transition ${
+                    className={`rounded-xl border px-4 py-3 text-left transition-all hover:shadow-md ${
                       pt.pax === pax ? "border-sky-400 bg-sky-50 dark:bg-sky-950/30" : "border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60"
                     }`}
                   >
-                    <div className="text-[11px] text-slate-500">
-                      {pt.pax} {t("home.pax")}
-                    </div>
-                    <div className="text-sm font-semibold">{formatMoneyFromIDR(pt.price_idr, currency, fx, locale)}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{pt.pax} {t("home.pax")}</div>
+                    <div className="text-base font-semibold text-gray-900 dark:text-white">{formatMoneyFromIDR(pt.price_idr, currency, fx, locale)}</div>
                   </button>
                 ))}
               </div>
 
               <SectionTitle>{t("gallery", { defaultValue: "Gallery" })}</SectionTitle>
-              <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {gallery.map((src, i) => (
-                  <img key={i} src={src} alt="" loading="lazy" className="w-full aspect-[4/3] object-cover rounded-xl border border-slate-200 dark:border-slate-800" />
+                  <motion.img
+                    key={i}
+                    src={src}
+                    alt=""
+                    loading="lazy"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: i * 0.1 }}
+                    className="w-full aspect-[4/3] object-cover rounded-xl border border-slate-200 dark:border-slate-800 hover:scale-105 transition-transform"
+                  />
                 ))}
               </div>
             </>
@@ -256,50 +317,58 @@ export default function PackageDetail() {
 
         {/* Right: sticky booking card */}
         <motion.aside
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.05 }}
-          className="card p-4 h-max sticky top-[7.5rem] backdrop-blur-md"
-          style={{ background: "color-mix(in srgb, rgba(255,255,255,.72) 50%, transparent)" }}
+          transition={{ duration: 0.4 }}
+          className="card p-5 h-max sticky top-[7.5rem] bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg rounded-2xl shadow-lg border border-slate-200/60 dark:border-slate-700/60"
         >
-          <div className="hidden dark:block absolute inset-0 -z-10 rounded-2xl backdrop-blur-md" style={{ background: "rgba(2,6,23,.55)" }} />
-          <div className="flex items-center justify-between">
-            <div className="font-semibold">{t("explore.title", { defaultValue: "Explore Packages" })}</div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="font-semibold text-lg text-gray-900 dark:text-white">{t("explore.title", { defaultValue: "Explore Packages" })}</div>
           </div>
 
-          <div className="mt-3 flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-white/60 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-1">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-1 bg-white/60 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-700/60 rounded-xl p-1">
               {["domestic", "foreign"].map((k) => (
                 <button
                   key={k}
                   onClick={() => setAudience(k)}
-                  className={`btn ${audience === k ? "btn-primary" : "btn-outline"} !py-1 !px-2 text-xs`}
+                  className={`btn ${audience === k ? "btn-primary" : "btn-outline"} !py-1.5 !px-3 text-sm transition-all`}
                 >
                   {k === "domestic" ? t("explore.domestic", { defaultValue: "Domestik" }) : "Foreign"}
                 </button>
               ))}
             </div>
 
-            <select value={pax} onChange={(e) => setPax(parseInt(e.target.value))} className="px-3 py-2 rounded-2xl">
-              {[1,2,3,4,5,6].map((n) => (
-                <option key={n} value={n}>{n} {t("home.pax")}</option>
+            <select
+              value={pax}
+              onChange={(e) => setPax(parseInt(e.target.value))}
+              className="px-3 py-2 rounded-xl border border-slate-200/60 dark:border-slate-700/60 bg-white/60 dark:bg-slate-900/50 text-sm"
+            >
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <option key={n} value={n}>
+                  {n} {t("home.pax")}
+                </option>
               ))}
             </select>
           </div>
 
-          <div className="mt-4 rounded-xl border border-slate-200 dark:border-slate-800 p-3">
-            <div className="text-[12px] text-slate-500 dark:text-slate-400">{t("explore.prices", { defaultValue: "Price per Pax" })}</div>
-            <div className="text-xl font-extrabold text-sky-700 dark:text-sky-300">{formatMoneyFromIDR(price, currency, fx, locale)}</div>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-gray-50 dark:bg-gray-800/50">
+            <div className="text-sm text-gray-500 dark:text-gray-400">{t("explore.prices", { defaultValue: "Price per Pax" })}</div>
+            <div className="text-2xl font-extrabold text-sky-700 dark:text-sky-300">{formatMoneyFromIDR(price, currency, fx, locale)}</div>
           </div>
 
-          <div className="mt-3 flex gap-2">
-            <button className="btn btn-primary glass flex-1" onClick={goOrder}>
+          <div className="mt-4 flex gap-3">
+            <button
+              className="btn btn-primary flex-1 py-2.5 rounded-xl hover:bg-sky-600 transition-colors"
+              onClick={goOrder}
+            >
               {t("actions.order", { defaultValue: "Order" })}
             </button>
             <a
-              className="btn btn-outline"
+              className="btn btn-outline py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               href={`https://wa.me/6289523949667?text=${buildAskWAMessage()}`}
-              target="_blank" rel="noreferrer"
+              target="_blank"
+              rel="noreferrer"
             >
               {t("actions.askMore", { defaultValue: "Tanya lebih lanjut" })}
             </a>
