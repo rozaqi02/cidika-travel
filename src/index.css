@@ -312,3 +312,7 @@ body { opacity: 1; }
 
 /* pointer vars default bila belum digerakkan */
 :root{ --px: 50%; --py: 0%; }
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+:root {
+  --font-hero: 'Cinzel', 'EB Garamond', ui-serif, Georgia, serif;
+}

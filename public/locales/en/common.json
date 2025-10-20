@@ -96,7 +96,16 @@
   },
   "dest": {
     "title": "Destinations",
-    "empty": "Content is managed from Admin & Supabase."
+    "heroDesc": "Explore the beauty of Southeast Bali islands",
+    "penidaTitle": "Nusa Penida",
+    "penidaDesc": "Island with iconic beaches and cliffs in Southeast Bali, famous for Kelingking Beach and Broken Beach.",
+    "lembonganTitle": "Nusa Lembongan",
+    "lembonganDesc": "Small island with white sandy beaches, ideal for snorkeling and enjoying Devil’s Tears.",
+    "ceninganTitle": "Nusa Ceningan",
+    "ceninganDesc": "The smallest island with Blue Lagoon and a serene atmosphere, perfect for a relaxed adventure.",
+    "empty": "Content is managed from Admin & Supabase.",
+    "search": "Search destinations...",
+    "cardsTitle": "Destination Highlights"
   },
   "contact": {
     "title": "Contact Us",

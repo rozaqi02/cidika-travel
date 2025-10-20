@@ -1876,44 +1876,45 @@ export default function Kustomisasi() {
 
           // SIMPLE editors
           const renderSimple = () => {
-            switch (s.section_key) {
-              case "hero":
-                return <HeroEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} readData={readData} writeData={writeData} onUploadToImages={onUploadToImages} />;
-              case "whyus":           
-              return <WhyUsEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} />;
-              case "testimonials":
-              return (
-                <div className="space-y-6">
-                  <SimpleTitleBody s={s} activeLang={activeLang} updateLocal={updateLocal} bodyLabel="Subjudul (opsional)" />
-                  <div className="border-t dark:border-slate-700 my-4" />
-                  <TestimonialsEditor items={testimonials} setItems={setTestimonials} loading={testimonialsLoading} />
-                </div>
-              );
-              case "stats":           
-                return <StatsEditor s={s} readData={readData} writeData={writeData} />;
-              case "stats":
-                return <StatsEditor s={s} activeLang={activeLang} updateLocal={updateLocal} />;
-              case "how":
-                return <HowEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} />;
-              case "cta":
-                return <CTAEditor s={s} activeLang={activeLang} updateLocal={updateLocal} readData={readData} writeData={writeData} />;
-              case "cards":
-                return <CardsEditor s={s} activeLang={activeLang} updateLocaleExtra={updateLocaleExtra} page={page} uploadToBucket={supabase.storage} />;
-              case "categories":
-                return <CategoriesEditor s={s} readData={readData} writeData={writeData} page={page} uploadToBucket={supabase.storage} />;
-              case "categories_banner":
-              case "banner1":
-                return <BannerEditor s={s} readData={readData} writeData={writeData} onUploadToField={onUploadToField} />;
-              case "quotes_banner":
-                return <BannerEditor s={s} withQuotes readData={readData} writeData={writeData} onUploadToField={onUploadToField} />;
-              case "faq_list":
-                return <FaqListEditor s={s} activeLang={activeLang} updateLocaleExtra={updateLocaleExtra} />;
-              case "popular":
-              case "about":
-              case "destinations_intro":
-              default:
-                return <SimpleTitleBody s={s} activeLang={activeLang} updateLocal={updateLocal} />;
-            }
+switch (s.section_key) {
+  case "hero":
+  case "hero_contact":  // Tambahkan ini agar hero contact pakai editor sama seperti hero (dengan unggah gambar)
+    return <HeroEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} readData={readData} writeData={writeData} onUploadToImages={onUploadToImages} />;
+  case "whyus":           
+    return <WhyUsEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} />;
+  case "testimonials":
+    return (
+      <div className="space-y-6">
+        <SimpleTitleBody s={s} activeLang={activeLang} updateLocal={updateLocal} bodyLabel="Subjudul (opsional)" />
+        <div className="border-t dark:border-slate-700 my-4" />
+        <TestimonialsEditor items={testimonials} setItems={setTestimonials} loading={testimonialsLoading} />
+      </div>
+    );
+  case "stats":           
+    return <StatsEditor s={s} readData={readData} writeData={writeData} />;
+  case "stats":
+    return <StatsEditor s={s} activeLang={activeLang} updateLocal={updateLocal} />;
+  case "how":
+    return <HowEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} />;
+  case "cta":
+    return <CTAEditor s={s} activeLang={activeLang} updateLocal={updateLocal} readData={readData} writeData={writeData} />;
+  case "cards":
+    return <CardsEditor s={s} activeLang={activeLang} updateLocaleExtra={updateLocaleExtra} page={page} uploadToBucket={supabase.storage} />;
+  case "categories":
+    return <CategoriesEditor s={s} readData={readData} writeData={writeData} page={page} uploadToBucket={supabase.storage} />;
+  case "categories_banner":
+  case "banner1":
+    return <BannerEditor s={s} readData={readData} writeData={writeData} onUploadToField={onUploadToField} />;
+  case "quotes_banner":
+    return <BannerEditor s={s} withQuotes readData={readData} writeData={writeData} onUploadToField={onUploadToField} />;
+  case "faq_list":
+    return <FaqListEditor s={s} activeLang={activeLang} updateLocaleExtra={updateLocaleExtra} />;
+  case "popular":
+  case "about":
+  case "destinations_intro":
+  default:
+    return <SimpleTitleBody s={s} activeLang={activeLang} updateLocal={updateLocal} />;
+}
           };
 
           // ADVANCED JSON editor

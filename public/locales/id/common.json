@@ -96,7 +96,16 @@
   },
   "dest": {
     "title": "Destinasi",
-    "empty": "Konten akan diisi dari menu Admin & Supabase."
+    "heroDesc": "Jelajahi keindahan pulau-pulau di Bali Tenggara",
+    "penidaTitle": "Nusa Penida",
+    "penidaDesc": "Pulau dengan pantai dan tebing ikonik di Bali Tenggara, terkenal dengan Kelingking Beach dan Broken Beach.",
+    "lembonganTitle": "Nusa Lembongan",
+    "lembonganDesc": "Pulau kecil dengan pantai berpasir putih, ideal untuk snorkeling dan menikmati Devil’s Tears.",
+    "ceninganTitle": "Nusa Ceningan",
+    "ceninganDesc": "Pulau terkecil dengan Blue Lagoon dan suasana tenang, cocok untuk petualangan santai.",
+    "empty": "Konten akan diisi dari menu Admin & Supabase.",
+    "search": "Cari destinasi...",
+    "cardsTitle": "Pilihan Destinasi"
   },
   "contact": {
     "title": "Kontak Kami",

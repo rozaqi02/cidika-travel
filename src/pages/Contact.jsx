@@ -1,9 +1,34 @@
-// src/pages/Contact.jsx
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import usePageSections from "../hooks/usePageSections";
 import { Mail, Phone, MapPin, Instagram, MessageCircle } from "lucide-react";
+import { useEffect, useRef } from "react";  // Untuk SpotlightOverlay
+
+function SpotlightOverlay({ className = "" }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onMove = (e) => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--spot-x", `${e.clientX - r.left}px`);
+      el.style.setProperty("--spot-y", `${e.clientY - r.top}px`);
+    };
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => window.removeEventListener("mousemove", onMove);
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className={`pointer-events-none absolute inset-0 ${className}`}
+      style={{
+        background: "radial-gradient(600px circle at var(--spot-x,50%) var(--spot-y,50%), rgba(56,189,248,.25), transparent 50%)",
+        mixBlendMode: "screen",
+      }}
+    />
+  );
+}
 
 export default function Contact() {
   const { t } = useTranslation();
@@ -21,10 +46,33 @@ export default function Contact() {
     info.map_embed_src ||
     "https://www.google.com/maps?q=Bunga+Mekar,+Nusa+Penida&output=embed";
 
-  // form state
+  // Form state with validation
   const [form, setForm] = useState({ name: "", contact: "", message: "" });
+  const [errors, setErrors] = useState({ name: "", contact: "", message: "" });
 
-  // build WA text
+  // Validation function
+  const validateForm = () => {
+    const newErrors = { name: "", contact: "", message: "" };
+    let isValid = true;
+
+    if (!form.name.trim()) {
+      newErrors.name = t("contact.error.name", { defaultValue: "Name is required" });
+      isValid = false;
+    }
+    if (!form.contact.trim()) {
+      newErrors.contact = t("contact.error.contact", { defaultValue: "Contact is required" });
+      isValid = false;
+    }
+    if (!form.message.trim()) {
+      newErrors.message = t("contact.error.message", { defaultValue: "Message is required" });
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  // Build WhatsApp text
   const buildWAText = () => {
     const lines = [
       t("checkout.wa.header", { defaultValue: "Halo Admin CIDIKA, saya ingin bertanya." }),
@@ -34,177 +82,255 @@ export default function Contact() {
       "",
       form.message,
       "",
-      t("checkout.wa.footer", { defaultValue: "Mohon infonya ya 🙏" })
+      t("checkout.wa.footer", { defaultValue: "Mohon infonya ya 🙏" }),
     ];
     return encodeURIComponent(lines.join("\n"));
   };
 
+  // Handle form submission
   const submitToWA = (e) => {
     e.preventDefault();
-    const text = buildWAText();
-    window.location.href = `https://wa.me/${waNumber.replace("+", "")}?text=${text}`;
+    if (validateForm()) {
+      const text = buildWAText();
+      window.location.href = `https://wa.me/${waNumber.replace("+", "")}?text=${text}`;
+    }
   };
 
   return (
-    <div className="container mt-4 space-y-4">
-      {/* Hero */}
-      <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md p-5 glass">
-        <h1 className="text-2xl font-bold mb-1">
-          {S.hero_contact?.locale?.title || t("contact.title")}
-        </h1>
-        <p className="text-sm text-slate-600 dark:text-slate-300">
-          {S.hero_contact?.locale?.body_md ||
-            t("contact.subtitle", {
-              defaultValue: "Hubungi kami untuk pertanyaan & penyesuaian tur."
-            })}
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      {/* Hero Section */}
+<section className="relative h-[60vh] overflow-hidden">
+  <img
+    src={S.hero_contact?.data?.images?.[0] || "https://sftqstwvvtflwyfrvqdt.supabase.co/storage/v1/object/public/assets/pages/contact/hero.jpg"}
+    alt="Contact Hero"
+    className="absolute inset-0 w-full h-full object-cover"
+    loading="eager"
+  />
+  <div className="absolute inset-0 bg-gradient-to-b from-gray-900/70 via-gray-900/30 to-white/80 dark:to-gray-900/85" />
+  <SpotlightOverlay />  {/* Tambahkan ini untuk efek spotlight mulus seperti FAQ */}
+  <div className="relative z-10 container h-full flex flex-col justify-center items-center text-center px-6">
+    <motion.h1
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="text-4xl md:text-6xl font-extrabold text-white tracking-tight"
+      style={{ fontFamily: 'var(--font-hero, "Cinzel", "EB Garamond", ui-serif, Georgia, serif)' }}
+    >
+      {S.hero_contact?.locale?.title || t("contact.title", { defaultValue: "Hubungi Kami" })}
+    </motion.h1>
+    <motion.p
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: 0.2 }}
+      className="mt-4 max-w-2xl text-lg text-white/90"
+    >
+      {S.hero_contact?.locale?.body_md ||
+        t("contact.subtitle", {
+          defaultValue: "Kami siap membantu Anda merencanakan petualangan terbaik di Nusa Penida.",
+        })}
+    </motion.p>
+    <motion.a
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: 0.4 }}
+      href={`https://wa.me/${waNumber.replace("+", "")}`}
+      target="_blank"
+      rel="noreferrer"
+      className="mt-6 inline-flex items-center gap-2 rounded-full bg-sky-600 px-6 py-3 text-white hover:bg-sky-700 transition-colors"
+    >
+      <MessageCircle size={20} />
+      {t("footer.cta.whatsapp", { defaultValue: "Chat WhatsApp" })}
+    </motion.a>
+  </div>
+</section>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left: Info cards */}
-        <motion.section
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-          className="lg:col-span-1 space-y-4"
-        >
-          <div className="card p-4">
-            <h2 className="font-semibold mb-2">
+      {/* Main Content */}
+      <div className="container py-12 px-6">
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Contact Info */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
+          >
+            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
               {S.contact_info?.locale?.title || t("contact.info", { defaultValue: "Informasi Kontak" })}
             </h2>
-            <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-200">
+            <ul className="space-y-4 text-gray-700 dark:text-gray-200">
               {info.address && (
-                <li className="flex items-start gap-2">
-                  <MapPin size={16} className="mt-0.5 text-sky-600 dark:text-sky-400" />
+                <li className="flex items-start gap-3">
+                  <MapPin size={20} className="text-sky-500" />
                   <span>{info.address}</span>
                 </li>
               )}
               {info.email && (
-                <li className="flex items-start gap-2">
-                  <Mail size={16} className="mt-0.5 text-sky-600 dark:text-sky-400" />
-                  <a href={`mailto:${info.email}`} className="hover:underline">{info.email}</a>
+                <li className="flex items-start gap-3">
+                  <Mail size={20} className="text-sky-500" />
+                  <a href={`mailto:${info.email}`} className="hover:text-sky-600 transition-colors">
+                    {info.email}
+                  </a>
                 </li>
               )}
               {info.phone && (
-                <li className="flex items-start gap-2">
-                  <Phone size={16} className="mt-0.5 text-sky-600 dark:text-sky-400" />
-                  <a href={`tel:${info.phone}`} className="hover:underline">{info.phone}</a>
+                <li className="flex items-start gap-3">
+                  <Phone size={20} className="text-sky-500" />
+                  <a href={`tel:${info.phone}`} className="hover:text-sky-600 transition-colors">
+                    {info.phone}
+                  </a>
                 </li>
               )}
               {info.instagram && (
-                <li className="flex items-start gap-2">
-                  <Instagram size={16} className="mt-0.5 text-sky-600 dark:text-sky-400" />
+                <li className="flex items-start gap-3">
+                  <Instagram size={20} className="text-sky-500" />
                   <a
                     href={`https://instagram.com/${info.instagram.replace("@", "")}`}
-                    target="_blank" rel="noreferrer"
-                    className="hover:underline"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-sky-600 transition-colors"
                   >
                     {info.instagram}
                   </a>
                 </li>
               )}
             </ul>
-
             {(S.contact_info?.locale?.body_md || hrs.length) && (
-              <div className="mt-3 text-xs text-slate-600 dark:text-slate-300">
+              <div className="mt-6 text-sm text-gray-600 dark:text-gray-400">
                 {S.contact_info?.locale?.body_md}
                 {hrs.length > 0 && (
-                  <ul className="mt-1 list-disc pl-5">
-                    {hrs.map((h, i) => <li key={i}>{h}</li>)}
+                  <ul className="mt-2 list-disc pl-5">
+                    {hrs.map((h, i) => (
+                      <li key={i}>{h}</li>
+                    ))}
                   </ul>
                 )}
               </div>
             )}
-          </div>
+          </motion.section>
 
-          {/* WhatsApp CTA card */}
-          <div className="card p-4 bg-gradient-to-br from-sky-50 to-white dark:from-slate-900 dark:to-slate-900/60">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-sky-100 dark:bg-slate-800">
-                <MessageCircle />
+          {/* Contact Form */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6"
+          >
+            <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+              {S.quick_form?.locale?.title || t("contact.formTitle", { defaultValue: "Kirim Pesan" })}
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              {S.quick_form?.locale?.body_md ||
+                t("contact.formNote", {
+                  defaultValue: "Isi formulir ini untuk menghubungi kami via WhatsApp.",
+                })}
+            </p>
+            <form className="space-y-4" onSubmit={submitToWA}>
+              <div>
+                <input
+                  className={`w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all ${
+                    errors.name ? "border-red-500" : ""
+                  }`}
+                  placeholder={t("contact.name", { defaultValue: "Nama Anda" })}
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  required
+                  aria-label={t("contact.name", { defaultValue: "Nama Anda" })}
+                />
+                {errors.name && (
+                  <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                )}
               </div>
               <div>
-                <div className="font-medium">WhatsApp</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">{waNumber}</div>
+                <input
+                  className={`w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all ${
+                    errors.contact ? "border-red-500" : ""
+                  }`}
+                  placeholder={t("contact.emailwa", { defaultValue: "Email atau Nomor WhatsApp" })}
+                  value={form.contact}
+                  onChange={(e) => setForm({ ...form, contact: e.target.value })}
+                  required
+                  aria-label={t("contact.emailwa", { defaultValue: "Email atau Nomor WhatsApp" })}
+                />
+                {errors.contact && (
+                  <p className="text-red-500 text-xs mt-1">{errors.contact}</p>
+                )}
+              </div>
+              <div>
+                <textarea
+                  className={`w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-3 focus:ring-2 focus:ring-sky-500 outline-none transition-all ${
+                    errors.message ? "border-red-500" : ""
+                  }`}
+                  placeholder={t("contact.message", { defaultValue: "Pesan Anda" })}
+                  rows="5"
+                  value={form.message}
+                  onChange={(e) => setForm({ ...form, message: e.target.value })}
+                  required
+                  aria-label={t("contact.message", { defaultValue: "Pesan Anda" })}
+                />
+                {errors.message && (
+                  <p className="text-red-500 text-xs mt-1">{errors.message}</p>
+                )}
+              </div>
+              <button
+                type="submit"
+                className="w-full rounded-lg bg-sky-600 text-white py-3 hover:bg-sky-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <MessageCircle size={20} />
+                {t("footer.cta.whatsapp", { defaultValue: "Kirim via WhatsApp" })}
+              </button>
+            </form>
+          </motion.section>
+
+          {/* Map Section */}
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden"
+          >
+            <h2 className="text-xl font-semibold px-6 pt-6 text-gray-900 dark:text-white">
+              {S.map?.locale?.title || t("contact.addressLabel", { defaultValue: "Lokasi Kami" })}
+            </h2>
+            <div className="p-6">
+              <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                <iframe
+                  title="CIDIKA Travel Location"
+                  src={mapSrc}
+                  width="100%"
+                  height="100%"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  aria-label="Location map"
+                />
               </div>
               <a
-                className="ml-auto btn btn-primary"
-                href={`https://wa.me/${waNumber.replace("+", "")}`}
-                target="_blank" rel="noreferrer"
+                href="https://www.google.com/maps?q=Bunga+Mekar,+Nusa+Penida"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-block rounded-lg bg-gray-100 dark:bg-gray-700 px-4 py-2 text-sm text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               >
-                WhatsApp
+                Buka di Google Maps
               </a>
             </div>
-          </div>
-        </motion.section>
-
-        {/* Middle: Quick Form -> WhatsApp */}
-        <motion.section
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.05 }}
-          className="lg:col-span-1 card p-4"
-        >
-          <h2 className="font-semibold mb-1">
-            {S.quick_form?.locale?.title || t("contact.formTitle")}
-          </h2>
-          <p className="text-sm text-slate-500">
-            {S.quick_form?.locale?.body_md || t("contact.formNote")}
-          </p>
-
-          <form className="grid gap-2 mt-3" onSubmit={submitToWA}>
-            <input
-              className="border rounded-2xl px-3 py-2 dark:bg-slate-900"
-              placeholder={t("contact.name")}
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              required
-            />
-            <input
-              className="border rounded-2xl px-3 py-2 dark:bg-slate-900"
-              placeholder={t("contact.emailwa")}
-              value={form.contact}
-              onChange={(e) => setForm({ ...form, contact: e.target.value })}
-              required
-            />
-            <textarea
-              className="border rounded-2xl px-3 py-2 dark:bg-slate-900"
-              placeholder={t("contact.message")}
-              rows="5"
-              value={form.message}
-              onChange={(e) => setForm({ ...form, message: e.target.value })}
-              required
-            />
-            <button className="btn btn-primary">
-              {t("footer.cta.whatsapp", { defaultValue: "Chat WhatsApp" })}
-            </button>
-          </form>
-        </motion.section>
-
-        {/* Right: Map */}
-        <motion.section
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, delay: 0.08 }}
-          className="lg:col-span-1 card overflow-hidden"
-        >
-          <h2 className="font-semibold px-4 pt-4">
-            {S.map?.locale?.title || t("contact.addressLabel", { defaultValue: "ADDRESS" })}
-          </h2>
-          <div className="p-4">
-            <div className="aspect-[4/3] w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
-              <iframe
-                title="CIDIKA Travel Location"
-                src={mapSrc}
-                width="100%" height="100%" loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                style={{ border: 0 }}
-                allowFullScreen
-              />
-            </div>
-          </div>
-        </motion.section>
+          </motion.section>
+        </div>
       </div>
+
+      {/* Floating WhatsApp Button */}
+      <motion.a
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
+        href={`https://wa.me/${waNumber.replace("+", "")}`}
+        target="_blank"
+        rel="noreferrer"
+        className="fixed bottom-6 right-6 rounded-full bg-sky-600 p-4 text-white shadow-lg hover:bg-sky-700 transition-all"
+        aria-label="Chat on WhatsApp"
+      >
+        <MessageCircle size={24} />
+      </motion.a>
     </div>
   );
 }

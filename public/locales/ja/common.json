@@ -96,7 +96,16 @@
   },
   "dest": {
     "title": "目的地",
-    "empty": "コンテンツは管理画面と Supabase から管理されます。"
+    "heroDesc": "バリ南東部の美しい島々を探検",
+    "penidaTitle": "ヌサ・ペニダ",
+    "penidaDesc": "バリ南東部の象徴的なビーチと崖の島。ケリンキングビーチとブロークンビーチで有名。",
+    "lembonganTitle": "ヌサ・レンボンガン",
+    "lembonganDesc": "白い砂浜の小さな島。シュノーケリングやデビルズ・ティアーズに最適。",
+    "ceninganTitle": "ヌサ・チェニンガン",
+    "ceninganDesc": "ブルーラグーンと穏やかな雰囲気の最も小さな島。リラックスした冒険にぴったり。",
+    "empty": "コンテンツは管理画面と Supabase から管理されます。",
+    "search": "目的地を検索...",
+    "cardsTitle": "注目の目的地"
   },
   "contact": {
     "title": "お問い合わせ",
