@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
@@ -118,8 +117,6 @@ export default function Navbar() {
     customize: t("admin.menu.customize", { defaultValue: "Customize" }),
   }), [t]);
 
-  // Objek mobileVariants tidak lagi digunakan
-  
   const headerBg = cx("bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors");
   const headerShadow = atTop ? "shadow-none" : "shadow-[0_6px_24px_rgba(2,6,23,.06)]";
 
@@ -130,13 +127,19 @@ export default function Navbar() {
     >
       <div className={cx(headerBg, headerShadow)}>
         <div className="container flex items-center justify-between h-16">
-          {/* LEFT: brand only (logo tetap di kiri) */}
-          <Link to="/" className="relative h-12 lg:h-14 w-[210px] select-none" aria-label="CIDIKA TRAVEL&TOUR">
-            <img src="/biru.png" alt="CIDIKA TRAVEL&TOUR" className="absolute inset-0 h-full w-auto opacity-100 dark:opacity-0 transition-opacity duration-300" draggable="false" />
-            <img src="/putih.png" alt="" className="absolute inset-0 h-full w-auto opacity-0 dark:opacity-100 transition-opacity duration-300" draggable="false" />
-          </Link>
+          {/* LEFT: brand or admin greeting */}
+          {isAdmin ? (
+            <Link to="/admin" className="relative h-12 lg:h-14 flex items-center text-lg font-semibold text-slate-900 dark:text-slate-100" aria-label="Admin Dashboard">
+              Halo, Admin!
+            </Link>
+          ) : (
+            <Link to="/" className="relative h-12 lg:h-14 w-[210px] select-none" aria-label="CIDIKA TRAVEL&TOUR">
+              <img src="/biru.png" alt="CIDIKA TRAVEL&TOUR" className="absolute inset-0 h-full w-auto opacity-100 dark:opacity-0 transition-opacity duration-300" draggable="false" />
+              <img src="/putih.png" alt="" className="absolute inset-0 h-full w-auto opacity-0 dark:opacity-100 transition-opacity duration-300" draggable="false" />
+            </Link>
+          )}
 
-          {/* RIGHT: desktop nav & mobile hamburger (hamburger pindah ke kanan) */}
+          {/* RIGHT: desktop nav & mobile hamburger */}
           <div className="flex items-center gap-2">
             {/* Desktop Nav */}
             <nav className="hidden lg:flex items-center gap-2">
@@ -228,7 +231,7 @@ export default function Navbar() {
               )}
             </nav>
 
-            {/* Mobile Hamburger (kanan) */}
+            {/* Mobile Hamburger */}
             <button
               className="lg:hidden p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
               onClick={() => setOpen(v => !v)}
