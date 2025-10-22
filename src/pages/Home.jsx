@@ -354,7 +354,7 @@ function PopularCard({ pkg, price, pax, currency, fx, locale, audience }) {
 
 function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
   const { t } = useTranslation();
-  const [pax, setPax] = useState(1);
+  const [pax, setPax] = useState(6);
   const [audience, setAudience] = useState("domestic");
   const [popularPackages, setPopularPackages] = useState([]);
 
@@ -395,12 +395,12 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
 
   return (
     <section id="popular" className="container mt-20">
-      <div className="flex items-end justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
         <div>
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{heading || t("home.popular", { defaultValue: "Paket Populer" })}</h2>
           {subheading && <p className="text-gray-600 dark:text-gray-300 mt-2">{subheading}</p>}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex gap-2">
             {["domestic", "foreign"].map((k) => (
               <button
@@ -412,19 +412,23 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
               </button>
             ))}
           </div>
-          <label htmlFor="pax" className="text-sm text-gray-500 dark:text-gray-400">{t("home.calcFor", { defaultValue: "Hitung harga untuk" })}</label>
-          <select
-            id="pax"
-            value={pax}
-            onChange={(e) => setPax(parseInt(e.target.value))}
-            className="px-4 py-2 rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/60 dark:bg-gray-900/60"
-          >
-            {[1, 2, 3, 4, 5, 6].map(n => (
-              <option key={n} value={n}>
-                {n} {t("home.pax", { defaultValue: "pax" })}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            <label htmlFor="pax" className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              {t("home.calcFor", { defaultValue: "Harga untuk" })}
+            </label>
+            <select
+              id="pax"
+              value={pax}
+              onChange={(e) => setPax(parseInt(e.target.value))}
+              className="px-3 py-2 rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/60 dark:bg-gray-900/60 text-sm w-full sm:w-auto"
+            >
+              {[1, 2, 3, 4, 5, 6].map(n => (
+                <option key={n} value={n}>
+                  {n} {t("home.pax", { defaultValue: "pax" })}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
