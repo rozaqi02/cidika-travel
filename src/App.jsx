@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import NProgress from "nprogress";
+import { Toaster } from "react-hot-toast";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -228,6 +229,13 @@ export default function App() {
             <PreventImageDrag />
             <ButtonRippleEffect />
             <PageRevealOnce />
+
+            <Toaster
+  position="top-right"
+  toastOptions={{
+    className: "rounded-xl border border-slate-200 dark:border-slate-700",
+  }}
+/>
 
             <Routes>
               <Route path="/" element={<Layout><Home /></Layout>} />

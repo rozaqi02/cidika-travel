@@ -7,6 +7,7 @@ import {
   Trash2, Plus, ArrowUp, ArrowDown, Upload, GripVertical, Save, LayoutList, Languages, Search,
   Copy, RotateCcw, Images, Eye, Wrench, Settings2, Star, ChevronDown, ChevronUp
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const LANGS = ["id", "en", "ja"];
 
@@ -123,24 +124,27 @@ const HeroEditor = ({ s, activeLang, updateLocal, updateLocaleExtra, readData, w
 
 const TestimonialsEditor = ({ items, setItems, loading }) => {
   const updateTestimonial = async (id, patch) => {
-    const { error } = await supabase.from('testimonials').update(patch).eq('id', id);
-    if (error) {
-      alert('Gagal update: ' + error.message);
-      return false;
-    }
-    setItems(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
-    return true;
-  };
+  const { error } = await supabase.from('testimonials').update(patch).eq('id', id);
+  if (error) {
+    toast.error('Gagal update: ' + error.message);
+    return false;
+  }
+  setItems(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
+  toast.success('Perubahan testimoni disimpan');
+  return true;
+};
 
-  const deleteTestimonial = async (id) => {
-    if (!window.confirm('Yakin hapus testimoni ini?')) return;
-    const { error } = await supabase.from('testimonials').delete().eq('id', id);
-    if (error) {
-      alert('Gagal hapus: ' + error.message);
-      return;
-    }
-    setItems(prev => prev.filter(t => t.id !== id));
-  };
+const deleteTestimonial = async (id) => {
+  if (!window.confirm('Yakin hapus testimoni ini?')) return;
+  const { error } = await supabase.from('testimonials').delete().eq('id', id);
+  if (error) {
+    toast.error('Gagal hapus: ' + error.message);
+    return;
+  }
+  setItems(prev => prev.filter(t => t.id !== id));
+  toast.success('Testimoni dihapus');
+};
+
 
   const handleFieldChange = (id, field, value) => {
     setItems(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t));
@@ -931,11 +935,12 @@ export default function Kustomisasi() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching testimonials for admin:", error);
-      setTestimonials([]);
-    } else {
-      setTestimonials(data || []);
-    }
+  console.error("Error fetching testimonials for admin:", error);
+  setTestimonials([]);
+  toast.error("Gagal memuat testimoni");
+} else {
+  setTestimonials(data || []);
+}
     setTestimonialsLoading(false);
   };
 
@@ -989,11 +994,13 @@ export default function Kustomisasi() {
       .eq("page", page)
       .order("sort_index", { ascending: true });
 
-    if (error) {
-      console.error(error);
-      setSections([]); setOriginal([]); setLoading(false);
-      return;
-    }
+if (error) {
+  console.error(error);
+  setSections([]); setOriginal([]); setLoading(false);
+  toast.error("Gagal memuat sections");
+  return;
+}
+
     const mapped = mapFromDb(data);
     setSections(mapped);
     setOriginal(mapped);
@@ -1025,10 +1032,18 @@ export default function Kustomisasi() {
       is_active: p.is_active,
       default_image: p.default_image,
       locales: LANGS.reduce((acc, l) => {
-        const r = p.package_locales?.find((x) => x.lang === l) || {};
-        acc[l] = { title: r.title || "", summary: r.summary || "" };
-        return acc;
-      }, {}),
+  const r = p.package_locales?.find((x) => x.lang === l) || {};
+  acc[l] = {
+    title: r.title || "",
+    summary: r.summary || "",
+    // tambahan agar admin bisa edit semua
+    spots: Array.isArray(r.spots) ? r.spots : [],
+    itinerary: Array.isArray(r.itinerary) ? r.itinerary : [],
+    include: Array.isArray(r.include) ? r.include : [],
+    note: r.note || "",
+  };
+  return acc;
+}, {}),
       tiers: (p.price_tiers || [])
         .slice()
         .sort((a, b) =>
@@ -1074,10 +1089,14 @@ export default function Kustomisasi() {
     if (!file) return;
     const ext = file.name.split(".").pop();
     const path = `packages/${p.id}-default-${Date.now()}.${ext}`;
-    try {
-      const url = await uploadToBucket(file, path);
-      updatePkgField(p.id, "default_image", url);
-    } catch (e) { alert(e.message); }
+try {
+  const url = await uploadToBucket(file, path);
+  updatePkgField(p.id, "default_image", url);
+  toast.success("Gambar paket diperbarui");
+} catch (e) {
+  toast.error(e.message || "Gagal upload gambar");
+}
+
   };
 
   // ===== Price Tiers helpers =====
@@ -1135,6 +1154,14 @@ export default function Kustomisasi() {
     );
   };
 
+  const arrToText = (arr) => (Array.isArray(arr) ? arr.join("\n") : "");
+const textToArr = (txt) =>
+  (txt || "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+
   const savePackages = async () => {
     setPkgSaving(true);
     try {
@@ -1159,16 +1186,23 @@ export default function Kustomisasi() {
           if (e1) throw e1;
 
           for (const lang of LANGS) {
-            const payload = {
-              package_id: p.id,
-              lang,
-              title: p.locales[lang]?.title || "",
-              summary: p.locales[lang]?.summary || null,
-            };
-            const { error: e2 } = await supabase
-              .from("package_locales")
-              .upsert(payload, { onConflict: "package_id,lang" });
-            if (e2) throw e2;
+const L = p.locales[lang] || {};
+const payload = {
+  package_id: p.id,
+  lang,
+  title: L.title || "",
+  summary: L.summary || null,
+  // simpan field tambahan
+  spots: Array.isArray(L.spots) ? L.spots : null,
+  itinerary: Array.isArray(L.itinerary) ? L.itinerary : null,
+  include: Array.isArray(L.include) ? L.include : null,
+  note: L.note || null,
+};
+const { error: e2 } = await supabase
+  .from("package_locales")
+  .upsert(payload, { onConflict: "package_id,lang" });
+if (e2) throw e2;
+
           }
         }
 
@@ -1204,12 +1238,12 @@ export default function Kustomisasi() {
         }
       }
 
-      alert("Packages + Price Tiers tersimpan");
-      await loadPackages();
+      toast.success("Packages & Price Tiers tersimpan");
+await loadPackages();
     } catch (e) {
-      console.error(e);
-      alert(e.message || "Gagal simpan packages/tiers");
-    } finally {
+  console.error(e);
+  toast.error(e.message || "Gagal menyimpan packages/tiers");
+} finally {
       setPkgSaving(false);
     }
   };
@@ -1223,7 +1257,7 @@ export default function Kustomisasi() {
       .insert({ slug, is_active: true, default_image: "" })
       .select()
       .single();
-    if (error) { alert(error.message); return; }
+    if (error) { toast.error(error.message); return; }
 
     for (const lang of LANGS) {
       await supabase.from("package_locales")
@@ -1235,9 +1269,11 @@ export default function Kustomisasi() {
   // hapus paket
   const deletePackageRow = async (id) => {
     if (!confirm("Hapus paket ini?")) return;
-    const { error } = await supabase.from("packages").delete().eq("id", id);
-    if (error) { alert(error.message); return; }
-    await loadPackages();
+const { error } = await supabase.from("packages").delete().eq("id", id);
+if (error) { toast.error(error.message); return; }
+await loadPackages();
+toast.success("Paket dihapus");
+
   };
 
   // === UPDATE HELPERS (langsung, tanpa startTransition) ===
@@ -1328,7 +1364,7 @@ export default function Kustomisasi() {
       data: commitDataJSON(base),
     };
     const { data, error } = await supabase.from("page_sections").insert(payload).select().single();
-    if (error) { alert(error.message); return; }
+    if (error) { toast.error(error.message); return; }
     for (const lang of LANGS) {
       const pl = {
         section_id: data.id, lang,
@@ -1339,6 +1375,7 @@ export default function Kustomisasi() {
       await supabase.from("page_section_locales").upsert(pl, { onConflict: "section_id,lang" });
     }
     await load();
+    toast.success("Section berhasil diduplikasi");
   };
 
   const revertSection = (sid) => {
@@ -1349,9 +1386,10 @@ export default function Kustomisasi() {
 
   const deleteSection = async (id) => {
     if (!confirm("Hapus section ini?")) return;
-    const { error } = await supabase.from("page_sections").delete().eq("id", id);
-    if (error) { alert(error.message); return; }
-    setSections((prev) => prev.filter((s) => s.id !== id));
+const { error } = await supabase.from("page_sections").delete().eq("id", id);
+if (error) { toast.error(error.message); return; }
+setSections((prev) => prev.filter((s) => s.id !== id));
+toast.success("Section dihapus");
   };
 
   const move = (id, dir) => {
@@ -1395,12 +1433,12 @@ export default function Kustomisasi() {
           if (e2) throw e2;
         }
       }
-      alert("Tersimpan");
+      toast.success("Semua perubahan tersimpan");
       await load();
     } catch (e) {
-      console.error(e);
-      alert(e.message || "Gagal simpan");
-    } finally { setSaving(false); }
+  console.error(e);
+  toast.error(e.message || "Gagal menyimpan");
+} finally { setSaving(false); }
   };
 
   // === UPLOAD HELPERS ===
@@ -1426,7 +1464,7 @@ export default function Kustomisasi() {
           return { ...s, dataText: JSON.stringify(obj, null, 2), dataValid: true, _dirty: true };
         })
       );
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast.error(e.message || "Gagal upload"); }
   };
 
   const onUploadToField = async (sid, file, field = "image") => {
@@ -1692,22 +1730,68 @@ export default function Kustomisasi() {
                     </div>
                   </div>
 
-                  {/* Locale fields */}
-                  <div>
-                    <div className="text-xs mb-1">Bahasa: {activeLang.toUpperCase()}</div>
-                    <input
-                      className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-2"
-                      placeholder="Title"
-                      value={p.locales?.[activeLang]?.title || ""}
-                      onChange={(e) => updatePkgLocale(p.id, activeLang, "title", e.target.value)}
-                    />
-                    <input
-                      className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
-                      placeholder="Summary"
-                      value={p.locales?.[activeLang]?.summary || ""}
-                      onChange={(e) => updatePkgLocale(p.id, activeLang, "summary", e.target.value)}
-                    />
-                  </div>
+{/* Locale fields */}
+<div>
+  <div className="text-xs mb-1">Bahasa: {activeLang.toUpperCase()}</div>
+
+  {/* Title */}
+  <input
+    className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-2"
+    placeholder="Title"
+    value={p.locales?.[activeLang]?.title || ""}
+    onChange={(e) => updatePkgLocale(p.id, activeLang, "title", e.target.value)}
+  />
+
+  {/* Summary */}
+  <textarea
+    rows={2}
+    className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-3"
+    placeholder="Summary"
+    value={p.locales?.[activeLang]?.summary || ""}
+    onChange={(e) => updatePkgLocale(p.id, activeLang, "summary", e.target.value)}
+  />
+
+  {/* Spots */}
+  <label className="text-xs text-slate-500">Spots (satu baris = satu item)</label>
+  <textarea
+    rows={3}
+    className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-3 font-mono text-xs"
+    placeholder={"contoh:\nKelingking Beach\nBroken Beach\nAngel’s Billabong"}
+    value={arrToText(p.locales?.[activeLang]?.spots)}
+    onChange={(e) => updatePkgLocale(p.id, activeLang, "spots", textToArr(e.target.value))}
+  />
+
+  {/* Itinerary */}
+  <label className="text-xs text-slate-500">Itinerary (satu baris = satu langkah)</label>
+  <textarea
+    rows={6}
+    className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-3 font-mono text-xs"
+    placeholder={"07.15 Meeting Point di Sanur\n08.00 Berangkat ke Nusa Penida\n..."}
+    value={arrToText(p.locales?.[activeLang]?.itinerary)}
+    onChange={(e) => updatePkgLocale(p.id, activeLang, "itinerary", textToArr(e.target.value))}
+  />
+
+  {/* Include */}
+  <label className="text-xs text-slate-500">Include (satu baris = satu item)</label>
+  <textarea
+    rows={4}
+    className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-3 font-mono text-xs"
+    placeholder={"Tiket speed boat PP\nAC car (BBM + Driver)\n..."}
+    value={arrToText(p.locales?.[activeLang]?.include)}
+    onChange={(e) => updatePkgLocale(p.id, activeLang, "include", textToArr(e.target.value))}
+  />
+
+  {/* Note */}
+  <label className="text-xs text-slate-500">Note</label>
+  <textarea
+    rows={3}
+    className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+    placeholder="Catatan tambahan paket"
+    value={p.locales?.[activeLang]?.note || ""}
+    onChange={(e) => updatePkgLocale(p.id, activeLang, "note", e.target.value)}
+  />
+</div>
+
 
                   {/* Price Tiers */}
                   <div className="mt-3">
