@@ -80,7 +80,17 @@
     "searchPlaceholder": "Cari paket atau spot…",
     "domestic": "Domestik",
     "foreign": "Mancanegara",
-    "empty": "Tidak ada paket yang sesuai dengan filter."
+    "empty": "Tidak ada paket yang sesuai dengan filter.",
+    "all": "Semua",
+"destinations": "Destinasi",
+"compact": "Padat",
+"cozy": "Nyaman",
+"compactGrid": "Grid Padat",
+"cozyGrid": "Grid Nyaman",
+"privateTour": "Private Tour",
+"sortPrice": "Termurah",
+"sortName": "A–Z"
+
   },
   "actions": {
     "order": "Pesan",
@@ -123,40 +133,40 @@
     "phoneLabel": "WA/TLP",
     "instagramLabel": "IG"
   },
-  "checkout": {
-    "title": "Checkout",
-    "details": "Detail Pemesan",
-    "itemsCount": "{{count}} item",
-    "name": "Nama Lengkap",
+"checkout": {
+  "title": "Checkout",
+  "details": "Detail Pemesan",
+  "itemsCount": "{{count}} item",
+  "name": "Nama Lengkap",
+  "email": "Email",
+  "phone": "Telepon/WA",
+  "date": "Tanggal Trip (YYYY-MM-DD)",
+  "notes": "Catatan",
+  "submit": "Buat Pesanan",
+  "processing": "Memproses...",
+  "summary": "Ringkasan",
+  "cartEmptyShort": "Keranjang kosong",
+  "cartEmpty": "Keranjang kosong.",
+  "creating": "Membuat order...",
+  "failed": "Gagal membuat order",
+  "noteForeign": "Termasuk penyesuaian untuk wisatawan mancanegara.",
+  "noteDomestic": "Harga khusus wisatawan domestik.",
+  "audienceDomestic": "Domestik",
+  "audienceForeign": "Mancanegara",
+  "rateLimit": "Terlalu banyak permintaan. Coba lagi nanti atau hubungi support.",
+  "wa": {
+    "header": "Halo Admin CIDIKA, saya ingin booking.",
+    "name": "Nama",
+    "phone": "WA",
     "email": "Email",
-    "phone": "Telepon/WA",
-    "date": "Tanggal Trip (YYYY-MM-DD)",
-    "notes": "Catatan",
-    "submit": "Buat Pesanan",
-    "processing": "Memproses...",
-    "summary": "Ringkasan",
-    "cartEmptyShort": "Keranjang kosong",
-    "cartEmpty": "Keranjang kosong.",
-    "creating": "Membuat order...",
-    "failed": "Gagal membuat order",
-    "noteForeign": "Termasuk penyesuaian untuk wisatawan mancanegara.",
-    "noteDomestic": "Harga khusus wisatawan domestik.",
-    "audienceDomestic": "Domestik",
-    "audienceForeign": "Mancanegara",
-    "wa": {
-      "header": "Halo Admin CIDIKA, saya ingin booking.",
-      "name": "Nama",
-      "phone": "WA",
-      "email": "Email",
-      "date": "Tanggal",
-      "audience": "Tipe",
-      "items": "Detail Item:",
-      "total": "Total",
-      "code": "Kode",
-      "footer": "Mohon konfirmasinya ya 🙏"
-    }
+    "date": "Tanggal",
+    "audience": "Tipe",
+    "items": "Detail Item:",
+    "total": "Total",
+    "code": "Kode",
+    "footer": "Mohon konfirmasinya ya 🙏"
   },
-  "checkout.success": {
+  "success": {
     "title": "Pesanan diterima!",
     "body": "Admin kami akan segera memproses pesananmu.",
     "code": "Kode Pesanan",
@@ -165,8 +175,10 @@
     "goHome": "Ke Beranda",
     "mustConfirm": "Silakan tekan “Konfirmasi Admin” terlebih dahulu sebelum kembali ke beranda.",
     "mustConfirmHint": "Tekan “Konfirmasi Admin” dulu",
-    "confirmNote": "Konfirmasi: data di atas benar. Mohon diproses, ya 🙏"
-  },
+    "confirmNote": "Konfirmasi: data di atas benar. Mohon diproses, ya 🙏",
+    "fallback": "Jika WhatsApp gagal, salin pesan ini dan kirim secara manual ke admin kami."
+  }
+},
   "footer": {
     "cta": {
       "kicker": "Siap Jelajah",

@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { Menu, X, Moon, Sun, Globe, LogOut, UserRound, ChevronDown } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Moon, Sun, LogOut, UserRound, ChevronDown } from "lucide-react";import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabaseClient.js";
 import { AnimatePresence, motion } from "framer-motion";
@@ -10,7 +9,7 @@ import ReactCountryFlag from "react-country-flag";
 
 /* ====== Helpers ====== */
 const LANGS = [
-  { code: "en", label: "English",   country: "GB" },
+  { code: "en", label: "English",   country: "US" },
   { code: "id", label: "Indonesia", country: "ID" },
   { code: "ja", label: "日本語",     country: "JP" },
 ];
@@ -53,6 +52,45 @@ function useHideOnScroll() {
   return { atTop, show };
 }
 function cx(...x){ return x.filter(Boolean).join(" "); }
+// helper kecil untuk emoji bendera (dipakai di <select> mobile)
+function flagEmojiFromCountry(cc = "") {
+  // 'GB' -> 🇬🇧
+  return cc
+    .toUpperCase()
+    .replace(/./g, c => String.fromCodePoint(127397 + c.charCodeAt(0)));
+}
+
+function BurgerIcon({ open, reduced }) {
+  const trans = { duration: reduced ? 0.01 : 0.2, ease: "easeInOut" };
+const bar = "absolute left-0 right-0 top-1/2 h-[2px] bg-slate-700 dark:bg-slate-300 rounded-full";
+
+  return (
+    <span className="relative inline-block h-5 w-6" aria-hidden="true">
+      {/* Top */}
+      <motion.span
+        className={bar}
+        initial={false}
+        animate={open ? { y: 0, rotate: 45 } : { y: -6, rotate: 0 }}
+        transition={trans}
+      />
+      {/* Middle */}
+      <motion.span
+        className={bar}
+        initial={false}
+animate={open ? { opacity: 0, scaleX: 0.6 } : { opacity: 1, scaleX: 1, y: 0 }}        transition={trans}
+        style={{ originX: 0.5 }}
+      />
+      {/* Bottom */}
+      <motion.span
+        className={bar}
+        initial={false}
+        animate={open ? { y: 0, rotate: -45 } : { y: 6, rotate: 0 }}
+        transition={trans}
+      />
+    </span>
+  );
+}
+
 
 /* ====== Component ====== */
 export default function Navbar() {
@@ -65,9 +103,16 @@ export default function Navbar() {
   const langRef = useRef(null);
 
   const { t, i18n } = useTranslation();
+
+    const activeLang = useMemo(() => {
+    const code2 = (i18n.language || i18n.resolvedLanguage || "id").slice(0, 2);
+    return LANGS.find(l => l.code === code2) || LANGS[0];
+  }, [i18n.language, i18n.resolvedLanguage]);
+
   const { role, session } = useAuth();
   const isAdmin = role === "admin";
   const location = useLocation();
+
 
   // Tutup panel/dropdown saat pindah halaman
   useEffect(() => { setOpen(false); setLangOpen(false); }, [location.pathname]);
@@ -171,16 +216,25 @@ export default function Navbar() {
 
               {/* Language dropdown */}
               <div className="relative" ref={langRef}>
-                <button
-                  className="px-2 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition inline-flex items-center gap-1"
-                  onClick={() => setLangOpen(v => !v)}
-                  aria-haspopup="menu"
-                  aria-expanded={langOpen}
-                  aria-label={t("nav.language", { defaultValue: "Language" })}
-                >
-                  <Globe size={18} />
-                  <ChevronDown size={14} className="opacity-70" />
-                </button>
+ <button
+   className="px-2 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition inline-flex items-center gap-1"
+   onClick={() => setLangOpen(v => !v)}
+   aria-haspopup="menu"
+   aria-expanded={langOpen}
+   aria-label={`${t("nav.language", { defaultValue: "Language" })}: ${activeLang.label}`}
+   title={`${activeLang.label}`}
+ >
+   <ReactCountryFlag
+     countryCode={activeLang.country}
+     svg
+     style={{ width: "1.2em", height: "1.2em", borderRadius: 4 }}
+     aria-label={`${activeLang.label} flag`}
+   />
+   <span className="hidden xl:inline text-xs uppercase opacity-70">
+     {activeLang.code}
+   </span>
+   <ChevronDown size={14} className="opacity-70" />
+ </button>
                 <AnimatePresence>
                   {langOpen && (
                     <motion.div
@@ -232,21 +286,28 @@ export default function Navbar() {
             </nav>
 
             {/* Mobile Hamburger */}
-            <button
-              className="lg:hidden p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              onClick={() => setOpen(v => !v)}
-              aria-label={open ? t("misc.close", { defaultValue: "Close menu" }) : t("misc.open", { defaultValue: "Open menu" })}
-            >
-              <motion.span initial={false} animate={{ rotate: open ? 90 : 0, scale: open ? 0.92 : 1 }} transition={{ duration: reduced ? 0.01 : 0.18 }}>
-                {open ? <X /> : <Menu />}
-              </motion.span>
-            </button>
+ <button
+   className={cx(
+     "lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border leading-none transition shadow-smooth",    open
+      ? "border-sky-300/60 bg-sky-50/70 dark:border-sky-500/30 dark:bg-sky-400/10"
+      : "border-slate-200 dark:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/70"
+  )}
+  onClick={() => setOpen(v => !v)}
+  aria-label={open ? t("misc.close", { defaultValue: "Close menu" }) : t("misc.open", { defaultValue: "Open menu" })}
+  aria-pressed={open}
+  aria-expanded={open}
+  aria-controls="mobile-menu"
+>
+  <BurgerIcon open={open} reduced={reduced} />
+</button>
+
           </div>
         </div>
         
         <AnimatePresence>
           {open && (
             <motion.div
+            id="mobile-menu"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -285,8 +346,11 @@ export default function Navbar() {
                         value={i18n.language?.slice(0,2) || "id"}
                         onChange={(e) => onChangeLanguage(e.target.value)}
                       >
-                        {LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
-                      </select>
+ {LANGS.map(l => (
+   <option key={l.code} value={l.code}>
+     {flagEmojiFromCountry(l.country)} {l.label}
+   </option>
+ ))}                      </select>
                     </div>
                   </div>
 

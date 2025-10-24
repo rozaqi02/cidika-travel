@@ -27,16 +27,15 @@ function getPkgImage(p) {
   return raw.startsWith("/") ? raw : `/${raw}`;
 }
 
-function normalizeLocale(p, currentLang) {
-  const byCtx =
-    p?.locale || (Array.isArray(p?.locales) ? p.locales.find((l) => l.lang === currentLang) : null);
-  return byCtx || p?.locales?.[0] || {};
+function normalizeLocale(p, lang2) {
+  if (p?.locale && p.locale.title) return p.locale; // ← pakai objek tunggal
+  const L = Array.isArray(p?.locales) ? p.locales : [];
+  const pick = (code) => L.find((l) => (l.lang || "").slice(0,2) === code);
+  return pick((lang2 || "id").slice(0,2)) || pick("id") || pick("en") || L[0] || {};
 }
 
-/* ===============================
-   PackageCard — Style Marketplace-like
-================================= */
-function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t }) {
+
+function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }) {
   const nav = useNavigate();
   const cover = getPkgImage(p);
 
@@ -48,25 +47,13 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t }) {
     (p.price_tiers || [])[0];
   const priceSelected = tierForSelectedPax?.price_idr || 0;
 
-  const loc =
-    p?.locale ||
-    (Array.isArray(p?.locales)
-      ? p.locales.find((l) => l.lang === (locale || "").slice(0, 2))
-      : null) ||
-    p?.locales?.[0] ||
-    {};
-
-  const audienceLabel =
-    (locale || "").startsWith("id")
-      ? audience === "domestic" ? "Domestik" : "Mancanegara"
-      : (locale || "").startsWith("ja")
-      ? audience === "domestic" ? "国内" : "海外"
-      : audience === "domestic" ? "Domestic" : "Foreign";
+  const loc = normalizeLocale(p, lang); // title asli dari DB (package_locales)
+  const audienceLabel = audience === "domestic" ? t("explore.domestic") : t("explore.foreign");
 
   const goOrder = () => {
     const item = {
       id: p.id,
-      title: loc?.title || p.slug,
+      title: loc.title || p.slug, 
       price: priceSelected,
       pax,
       qty: 1,
@@ -75,7 +62,6 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t }) {
     nav("/checkout", { state: { items: [item] } });
   };
 
-  // Dummy rating
   const rating = 4.8;
   const stars = Array.from({ length: 5 }, (_, i) => (
     <Star key={i} size={14} className={i < rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
@@ -96,11 +82,9 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t }) {
         />
         {/* Badge */}
         <div className="absolute top-3 left-3 z-10 bg-blue-500/90 text-white px-2 py-1 rounded-full text-xs font-medium">
-          Private Tour
+          {t("explore.privateTour")}
         </div>
-        {/* Overlay Gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        {/* Wishlist Heart */}
         <button className="absolute top-3 right-3 z-10 p-2 bg-white/90 dark:bg-gray-800/90 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
           <Heart size={18} className="text-gray-600 dark:text-gray-300" />
         </button>
@@ -108,13 +92,15 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t }) {
 
       {/* Content */}
       <div className="p-4">
-        {/* Title & Subtitle */}
         <h3 className="font-bold text-lg mb-1 line-clamp-1 text-gray-900 dark:text-white">
-          {loc?.title || p.slug}
+          {loc.title || p.slug}
         </h3>
         <div className="flex flex-wrap gap-1 mb-3">
-          {(loc?.spots || []).slice(0, 3).map((spot, i) => (
-            <span key={i} className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full">
+          {(loc.spots || []).slice(0, 3).map((spot, i) => (
+            <span
+              key={i}
+              className="text-xs bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full"
+            >
               <MapPin size={10} className="inline mr-1" /> {spot}
             </span>
           ))}
@@ -126,14 +112,12 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t }) {
           <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">({rating.toFixed(1)})</span>
         </div>
 
-        {/* Price Badge */}
+        {/* Price */}
         <div className="mb-4">
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {formatMoneyFromIDR(priceSelected, currency, fx, locale)}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            / {pax} {t("home.pax")} • {audienceLabel}
-          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">/ {pax} {t("home.pax")} • {audienceLabel}</p>
         </div>
 
         {/* Actions */}
@@ -142,7 +126,7 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t }) {
             onClick={() => nav(`/packages/${p.id}`, { state: { pax, audience } })}
             className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex-1 mr-2"
           >
-            View Details
+            {t("home.viewDetails")}
           </button>
           <select
             value={pax}
@@ -151,12 +135,12 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t }) {
           >
             {[1, 2, 3, 4, 5, 6].map((n) => (
               <option key={n} value={n}>
-                {n}pax
+                {n} {t("home.pax")}
               </option>
             ))}
           </select>
           <button onClick={goOrder} className="btn btn-primary px-4 py-2 rounded-lg">
-            Book Now
+            {t("actions.order")}
           </button>
         </div>
       </div>
@@ -171,13 +155,15 @@ export default function Explore() {
   const { t, i18n } = useTranslation();
   const { rows: data = [] } = usePackages();
   const { fx, currency, locale } = useCurrency();
+  const lang = (i18n.language || "id").slice(0, 2);
+
   const { sections: destSections = [] } = usePageSections("destinations");
 
   const location = useLocation();
   const qs = new URLSearchParams(location.search);
   const qsId = qs.get("pkg");
   const qsDest = qs.get("dest");
-  const initialPax = Number(location.state?.pax) || 1;
+  const initialPax = Number(location.state?.pax) || 6;
 
   const [pax, setPax] = useState(initialPax);
   const [audience, setAudience] = useState("domestic");
@@ -250,66 +236,64 @@ export default function Explore() {
   const bgTo = isDark ? "rgba(2,6,23,0.72)" : "rgba(255,255,255,0.90)";
   const barBg = useTransform(scrollY, [0, 80], [bgFrom, bgTo]);
 
-  // Labels [sama]
-  const { sortPriceLabel, sortNameLabel, domesticLabel, foreignLabel } = useMemo(() => {
-    const lang = (i18n.language || "id").slice(0, 2);
-    if (lang === "ja") {
-      return { sortPriceLabel: "最安", sortNameLabel: "A–Z", domesticLabel: "国内", foreignLabel: "海外" };
-    }
-    if (lang === "en") {
-      return { sortPriceLabel: "Cheapest", sortNameLabel: "A–Z", domesticLabel: "Domestic", foreignLabel: "Foreign" };
-    }
-    return { sortPriceLabel: "Termurah", sortNameLabel: "A–Z", domesticLabel: "Domestik", foreignLabel: "Mancanegara" };
-  }, [i18n.language]);
+const sortPriceLabel = t("explore.sortPrice");
+const sortNameLabel  = t("explore.sortName");
+const domesticLabel  = t("explore.domestic");
+const foreignLabel   = t("explore.foreign");
+
 
   // Filter + sort [sama]
-  const filtered = useMemo(() => {
-    const q = (query || "").trim().toLowerCase();
-    const list0 = data.map((p) => {
-      const loc = normalizeLocale(p, locale?.slice(0, 2));
-      return { ...p, _loc: loc };
-    });
-    const list =
-      dest === "all"
-        ? list0
-        : list0.filter((p) => {
-            const k =
-              p.destination_key ||
-              p.destination ||
-              p.data?.destination ||
-              p.data?.dest ||
-              (dest === "nusa-penida" ? "nusa-penida" : null);
-            return k === dest;
-          });
+const filtered = useMemo(() => {
+  const q = (query || "").trim().toLowerCase();
 
-    const searched = q
-      ? list.filter((p) => {
-          const hay =
-            (p._loc?.title || "") +
-            " " +
-            (Array.isArray(p._loc?.spots) ? p._loc.spots.join(" ") : "") +
-            " " +
-            (p.slug || "");
-          return hay.toLowerCase().includes(q);
-        })
-      : list;
+  // Ambil locale paket sesuai bahasa UI
+  const list0 = data.map((p) => ({
+    ...p,
+    _loc: normalizeLocale(p, lang),
+  }));
 
-    if (sortBy === "name") {
-      return searched.sort((a, b) => (a._loc?.title || "").localeCompare(b._loc?.title || ""));
-    }
+  const list =
+    dest === "all"
+      ? list0
+      : list0.filter((p) => {
+          const k =
+            p.destination_key ||
+            p.destination ||
+            p.data?.destination ||
+            p.data?.dest ||
+            (dest === "nusa-penida" ? "nusa-penida" : null);
+          return k === dest;
+        });
 
-    return searched.sort((a, b) => {
-      const pa =
-        (a.price_tiers || []).find((x) => x.pax === pax && x.audience === audience) ||
-        (a.price_tiers || []).find((x) => x.pax === pax) ||
-        (a.price_tiers || [])[0];
-      const pb =
-        (b.price_tiers || []).find((x) => x.pax === pax && x.audience === audience) ||
-        (b.price_tiers || []).find((x) => x.pax === pax) ||
-        (b.price_tiers || [])[0];
-      return (pa?.price_idr || 0) - (pb?.price_idr || 0);
-    });
-  }, [data, query, pax, sortBy, audience, locale, dest]);
+  const searched = q
+    ? list.filter((p) => {
+        const hay =
+          (p._loc?.title || "") +
+          " " +
+          (Array.isArray(p._loc?.spots) ? p._loc.spots.join(" ") : "") +
+          " " +
+          (p.slug || "");
+        return hay.toLowerCase().includes(q);
+      })
+    : list;
+
+  if (sortBy === "name") {
+    return searched.sort((a, b) => (a._loc?.title || "").localeCompare(b._loc?.title || ""));
+  }
+
+  return searched.sort((a, b) => {
+    const pa =
+      (a.price_tiers || []).find((x) => x.pax === pax && x.audience === audience) ||
+      (a.price_tiers || []).find((x) => x.pax === pax) ||
+      (a.price_tiers || [])[0];
+    const pb =
+      (b.price_tiers || []).find((x) => x.pax === pax && x.audience === audience) ||
+      (b.price_tiers || []).find((x) => x.pax === pax) ||
+      (b.price_tiers || [])[0];
+    return (pa?.price_idr || 0) - (pb?.price_idr || 0);
+  });
+}, [data, query, pax, sortBy, audience, dest, lang]);
+
 
   return (
     <div className="container mt-2 space-y-6"> {/* Increased gap for airy feel */}
@@ -328,11 +312,10 @@ export default function Explore() {
             <button
               className="btn btn-outline !py-1.5 !px-3"
               onClick={() => setCompact((v) => !v)}
-              title={compact ? "Cozy grid" : "Compact grid"}
-            >
+              title={compact ? t("explore.cozyGrid") : t("explore.compactGrid")}>
+            
               {compact ? <LayoutGrid size={16} /> : <Rows size={16} />}
-              <span className="ml-2 text-xs">{compact ? "Compact" : "Cozy"}</span>
-            </button>
+              <span className="ml-2 text-xs">{compact ? t("explore.compact") : t("explore.cozy")}</span>            </button>
           </div>
 
           <div className="grid grid-cols-12 gap-2 items-center">
@@ -444,12 +427,14 @@ export default function Explore() {
               fx={fx}
               locale={locale}
               t={t}
+              lang={lang} /* kirim bahasa UI ke card */
             />
           ))
         ) : (
           <div className="col-span-full text-center py-16 text-gray-500 dark:text-gray-400">
-            <p className="text-lg mb-4">{t("explore.empty", { defaultValue: "No packages match your filters." })}</p>
-            {/* Skeleton Loader Marketplace-like */}
+            <p className="text-lg mb-4">
+              {t("explore.empty", { defaultValue: "No packages match your filters." })}
+            </p>
             <div className="flex justify-center space-x-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="animate-pulse">

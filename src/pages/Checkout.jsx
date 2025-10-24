@@ -151,80 +151,94 @@ export default function Checkout() {
   }, []);
 
   // ===== Submit =====
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    if (loading) return;
-    if (!items.length) { setMsg(t("checkout.cartEmpty", { defaultValue: "Keranjang kosong." })); return; }
+const onSubmit = async (e) => {
+  e.preventDefault();
+  if (loading) return;
+  if (!items.length) {
+    setMsg(t("checkout.cartEmpty", { defaultValue: "Keranjang kosong." }));
+    return;
+  }
 
-    // Pre-open tab WA agar tidak diblokir (masih dalam user gesture)
-    let waTab = null;
-    try { waTab = window.open("about:blank", "_blank"); } catch {}
+  // Disable button immediately to prevent multiple submissions
+  setLoading(true);
+  setMsg(t("checkout.creating", { defaultValue: "Membuat order..." }));
 
-    setLoading(true);
-    setMsg(t("checkout.creating", { defaultValue: "Membuat order..." }));
+  // Add a short delay to simulate throttling
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
+  let waTab = null;
+  try {
+    waTab = window.open("about:blank", "_blank");
+  } catch {
+    console.warn("Popup blocked by browser");
+  }
+
+  try {
+    const p_date = form.date || today;
+const payload = {
+  p_package_id: first?.id || null, // Use first item's ID or null
+  p_date,
+  p_pax: Math.max(1, n(first?.pax, 1)),
+  p_customer_name: form.name,
+  p_email: form.email,
+  p_phone: form.phone || null,
+  p_notes: form.notes || null,
+  p_audience: audience,
+  p_items: items.map((it) => ({
+    item_name: it.title + (it.audience ? ` (${it.audience})` : ""),
+    qty: Math.max(1, n(it.qty, 1)),
+    price_idr: n(it.price) * Math.max(1, n(it.pax, 1)), // Total price per item (price * pax)
+  })),
+};
+const { data, error } = await supabase.rpc("place_order_v3", payload);
+    if (error) throw error;
+
+    const row = Array.isArray(data) ? data[0] : data;
+    const public_code = row?.public_code || null;
+
+    const snap = snapshotFromCurrent({ public_code, p_date });
+const text = buildWAMessage({
+  name: form.name,
+  phone: form.phone,
+  email: form.email,
+  date: p_date,
+  audience,
+  grandTotal,
+  public_code,
+  items,
+});
+const waUrl = `https://wa.me/${WA_NUMBER}?text=${text}`;
+
+    saveSnapshot(snap);
+    setJustPlaced(snap);
+    setConfirmSent(false);
+    setLoading(false);
+    setMsg("");
+
+  if (waTab && !waTab.closed) {
     try {
-      const p_date = form.date || today;
-      const payload = {
-        p_package_id: first.id,
-        p_date,
-        p_pax: Math.max(1, n(first.pax, 1)),
-        p_customer_name: form.name,
-        p_email: form.email,
-        p_items: items.map((it) => ({
-          item_name: it.title + (it.audience ? ` (${it.audience})` : ""),
-          qty: Math.max(1, n(it.qty, 1)),
-          price_idr: n(it.price) * Math.max(1, n(it.pax, 1)),  // per item total (price * pax)
-        })),
-        p_audience: audience,  // Optional, akan pakai default 'domestic' jika tidak dikirim
-        p_phone: form.phone || null,
-        p_notes: form.notes || null,
-      };
-
-      const { data, error } = await supabase.rpc("place_order_v3", payload);
-      if (error) throw error;
-
-      const row = Array.isArray(data) ? data[0] : data;
-      const public_code = row?.public_code || null;
-
-      // siapkan snapshot & WA text
-      const snap = snapshotFromCurrent({ public_code, p_date });
-      const text = buildWAMessage({
-        public_code,
-        date: p_date,
-        items,
-        grandTotal,
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        audience,
-      });
-      const waUrl = `https://wa.me/${WA_NUMBER}?text=${text}`;
-
-      // tampilkan popup segera + simpan snapshot
-      saveSnapshot(snap);
-      setJustPlaced(snap);
-      setConfirmSent(false);
-      setLoading(false);
-      setMsg("");
-
-      // buka WA di tab yang sudah dipre-open; fallback: redirect halaman ini
-      if (waTab && !waTab.closed) {
-        try { waTab.location = waUrl; waTab.focus?.(); } catch { window.location.href = waUrl; }
-      } else {
-        window.location.href = waUrl;
-      }
-
-      // bersihkan cart (snapshot sudah menyimpan ringkasannya)
-      clear();
-    } catch (e2) {
-      console.error(e2);
-      setMsg(e2.message || t("checkout.failed", { defaultValue: "Gagal membuat order" }));
-      setLoading(false);
+      waTab.location = waUrl;
+      waTab.focus?.();
+    } catch {
+      window.location.href = waUrl;
     }
-  };
+  } else {
+    // Directly open WhatsApp URL without pre-opening blank tab
+    window.open(waUrl, "_blank") || (window.location.href = waUrl);
+  }
 
-  // Build text WA dari snapshot (untuk tombol "Konfirmasi Admin" di popup)
+    clear();
+  } catch (e) {
+  console.error("Error details:", e.message, e.stack);
+  if (e.message.includes("429")) {
+    setMsg(t("checkout.rateLimit", { defaultValue: "Terlalu banyak permintaan. Coba lagi nanti atau hubungi support." }));
+  } else {
+    setMsg(e.message || t("checkout.failed", { defaultValue: "Gagal membuat order" }));
+  }
+  setLoading(false);
+}
+};
+
   const buildWAFromSnapshot = (snap) => {
     const lines = [];
     lines.push(t("checkout.wa.header", { defaultValue: "Halo Admin CIDIKA, saya ingin booking." }));
@@ -328,9 +342,9 @@ export default function Checkout() {
                           {aud}
                         </span>
                         <br />
-                        <span className="text-slate-500 dark:text-slate-400 text-xs">
-                          {pax} {t("home.pax", { defaultValue: "pax" })} × {qty} • {formatMoneyFromIDR(price, currency, fx, locale)}/pax
-                        </span>
+                      <span className="text-slate-500 dark:text-slate-400 text-xs">
+                        {pax} {t("home.pax")} × {qty} • {formatMoneyFromIDR(price, currency, fx, locale)}/{t("home.perPax")}
+                      </span>
                       </span>
                       <span className="font-medium">{formatMoneyFromIDR(subtotal, currency, fx, locale)}</span>
                     </li>
@@ -363,21 +377,32 @@ export default function Checkout() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] flex items-center justify-center"
           >
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => {}} />
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+              onClick={() => {}}
+            />
+
+            {/* Modal Card */}
             <motion.div
               initial={{ scale: 0.96, y: 8, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.96, y: 8, opacity: 0 }}
               transition={{ duration: 0.18, ease: "easeOut" }}
               className="relative z-[61] w-[92vw] max-w-lg card p-6 text-center"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="order-success-title"
             >
-              <h3 className="text-xl font-bold">
+              {/* Header */}
+              <h3 id="order-success-title" className="text-xl font-bold">
                 {t("checkout.success.title", { defaultValue: "Pesanan diterima!" })}
               </h3>
               <p className="mt-2 text-slate-600 dark:text-slate-300">
                 {t("checkout.success.body", { defaultValue: "Admin kami akan segera memproses pesananmu." })}
               </p>
 
+              {/* Summary */}
               <div className="mt-3 text-sm text-slate-500 space-y-1">
                 {justPlaced.code && (
                   <div>
@@ -393,6 +418,7 @@ export default function Checkout() {
                 )}
               </div>
 
+              {/* Actions */}
               <div className="mt-5 flex flex-col sm:flex-row gap-2 justify-center">
                 <a
                   href={`https://wa.me/${WA_NUMBER}?text=${buildWAFromSnapshot(justPlaced)}`}
@@ -408,18 +434,30 @@ export default function Checkout() {
                   className="btn btn-outline disabled:opacity-50"
                   disabled={!confirmSent}
                   onClick={() => {
-                    try { localStorage.removeItem(SNAP_KEY); } catch {}
+                    try {
+                      localStorage.removeItem(SNAP_KEY);
+                    } catch {}
                     nav("/");
                   }}
-                  title={!confirmSent ? t("checkout.success.mustConfirmHint", { defaultValue: "Tekan 'Konfirmasi Admin' dulu" }) : undefined}
+                  title={
+                    !confirmSent
+                      ? t("checkout.success.mustConfirmHint", {
+                          defaultValue: "Tekan 'Konfirmasi Admin' dulu",
+                        })
+                      : undefined
+                  }
                 >
                   {t("checkout.success.goHome", { defaultValue: "Ke Beranda" })}
                 </button>
               </div>
 
+              {/* Guard note */}
               {!confirmSent && (
                 <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                  {t("checkout.success.mustConfirm", { defaultValue: "Silakan tekan 'Konfirmasi Admin' terlebih dahulu sebelum kembali ke beranda." })}
+                  {t("checkout.success.mustConfirm", {
+                    defaultValue:
+                      "Silakan tekan 'Konfirmasi Admin' terlebih dahulu sebelum kembali ke beranda.",
+                  })}
                 </p>
               )}
             </motion.div>

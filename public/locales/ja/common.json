@@ -80,7 +80,17 @@
     "searchPlaceholder": "プラン名やスポットで検索…",
     "domestic": "国内",
     "foreign": "海外",
-    "empty": "条件に一致するプランが見つかりません。"
+    "empty": "条件に一致するプランが見つかりません。",
+    "all": "すべて",
+"destinations": "目的地",
+"compact": "コンパクト",
+"cozy": "ゆったり",
+"compactGrid": "コンパクトグリッド",
+"cozyGrid": "ゆったりグリッド",
+"privateTour": "プライベートツアー",
+"sortPrice": "最安",
+"sortName": "A–Z"
+
   },
   "actions": {
     "order": "注文する",
@@ -123,40 +133,40 @@
     "phoneLabel": "電話／WA",
     "instagramLabel": "インスタ"
   },
-  "checkout": {
-    "title": "チェックアウト",
-    "details": "ご予約者情報",
-    "itemsCount": "{{count}} 件",
-    "name": "氏名",
+"checkout": {
+  "title": "チェックアウト",
+  "details": "ご予約者情報",
+  "itemsCount": "{{count}} 件",
+  "name": "氏名",
+  "email": "メール",
+  "phone": "電話／WA",
+  "date": "旅行日 (YYYY-MM-DD)",
+  "notes": "備考",
+  "submit": "注文を確定",
+  "processing": "処理中...",
+  "summary": "サマリー",
+  "cartEmptyShort": "カートは空です",
+  "cartEmpty": "カートは空です。",
+  "creating": "注文を作成中...",
+  "failed": "注文の作成に失敗しました",
+  "noteForeign": "海外旅行者向けの調整込み。",
+  "noteDomestic": "国内旅行者向けの特別料金。",
+  "audienceDomestic": "国内",
+  "audienceForeign": "海外",
+  "rateLimit": "リクエストが多すぎます。しばらくしてから再度お試しください。",
+  "wa": {
+    "header": "CIDIKA管理者さま、予約を希望します。",
+    "name": "名前",
+    "phone": "WA",
     "email": "メール",
-    "phone": "電話／WA",
-    "date": "旅行日 (YYYY-MM-DD)",
-    "notes": "備考",
-    "submit": "注文を確定",
-    "processing": "処理中...",
-    "summary": "サマリー",
-    "cartEmptyShort": "カートは空です",
-    "cartEmpty": "カートは空です。",
-    "creating": "注文を作成中...",
-    "failed": "注文の作成に失敗しました",
-    "noteForeign": "海外旅行者向けの調整込み。",
-    "noteDomestic": "国内旅行者向けの特別料金。",
-    "audienceDomestic": "国内",
-    "audienceForeign": "海外",
-    "wa": {
-      "header": "CIDIKA管理者さま、予約を希望します。",
-      "name": "名前",
-      "phone": "WA",
-      "email": "メール",
-      "date": "日付",
-      "audience": "区分",
-      "items": "内容:",
-      "total": "合計",
-      "code": "コード",
-      "footer": "ご確認をお願いします 🙏"
-    }
+    "date": "日付",
+    "audience": "区分",
+    "items": "内容:",
+    "total": "合計",
+    "code": "コード",
+    "footer": "ご確認をお願いします 🙏"
   },
-  "checkout.success": {
+  "success": {
     "title": "ご注文を受け付けました！",
     "body": "まもなく担当者が対応します。",
     "code": "注文コード",
@@ -165,8 +175,10 @@
     "goHome": "ホームへ戻る",
     "mustConfirm": "ホームへ戻る前に「管理者に確認する」をタップしてください。",
     "mustConfirmHint": "先に「管理者に確認する」をタップ",
-    "confirmNote": "確認：上記内容で問題ありません。手配をお願いします。🙏"
-  },
+    "confirmNote": "確認：上記内容で問題ありません。手配をお願いします。🙏",
+    "fallback": "WhatsAppが使えない場合、このメッセージをコピーして手動で管理者にお送りください。"
+  }
+},
     "footer": {
     "cta": {
       "kicker": "準備はいい？",

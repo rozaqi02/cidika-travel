@@ -80,7 +80,17 @@
     "searchPlaceholder": "Search packages or spots…",
     "domestic": "Domestic",
     "foreign": "Foreign",
-    "empty": "No packages match your filters."
+    "empty": "No packages match your filters.",
+    "all": "All",
+"destinations": "Destinations",
+"compact": "Compact",
+"cozy": "Cozy",
+"compactGrid": "Compact grid",
+"cozyGrid": "Cozy grid",
+"privateTour": "Private Tour",
+"sortPrice": "Cheapest",
+"sortName": "A–Z"
+
   },
   "actions": {
     "order": "Order",
@@ -123,40 +133,40 @@
     "phoneLabel": "PHONE/WA",
     "instagramLabel": "IG"
   },
-  "checkout": {
-    "title": "Checkout",
-    "details": "Customer Details",
-    "itemsCount": "{{count}} item",
-    "name": "Full Name",
+"checkout": {
+  "title": "Checkout",
+  "details": "Customer Details",
+  "itemsCount": "{{count}} item",
+  "name": "Full Name",
+  "email": "Email",
+  "phone": "Phone/WA",
+  "date": "Trip Date (YYYY-MM-DD)",
+  "notes": "Notes",
+  "submit": "Place Order",
+  "processing": "Processing...",
+  "summary": "Summary",
+  "cartEmptyShort": "Cart is empty",
+  "cartEmpty": "Cart is empty.",
+  "creating": "Creating order...",
+  "failed": "Failed to create order",
+  "noteForeign": "Includes adjustments for international travelers.",
+  "noteDomestic": "Special pricing for domestic travelers.",
+  "audienceDomestic": "Domestic",
+  "audienceForeign": "Foreign",
+  "rateLimit": "Too many requests. Please try again later or contact support.",
+  "wa": {
+    "header": "Hello CIDIKA Admin, I'd like to book.",
+    "name": "Name",
+    "phone": "WA",
     "email": "Email",
-    "phone": "Phone/WA",
-    "date": "Trip Date (YYYY-MM-DD)",
-    "notes": "Notes",
-    "submit": "Place Order",
-    "processing": "Processing...",
-    "summary": "Summary",
-    "cartEmptyShort": "Cart is empty",
-    "cartEmpty": "Cart is empty.",
-    "creating": "Creating order...",
-    "failed": "Failed to create order",
-    "noteForeign": "Includes adjustments for international travelers.",
-    "noteDomestic": "Special pricing for domestic travelers.",
-    "audienceDomestic": "Domestic",
-    "audienceForeign": "Foreign",
-    "wa": {
-      "header": "Hello CIDIKA Admin, I'd like to book.",
-      "name": "Name",
-      "phone": "WA",
-      "email": "Email",
-      "date": "Date",
-      "audience": "Type",
-      "items": "Items:",
-      "total": "Total",
-      "code": "Code",
-      "footer": "Please confirm 🙏"
-    }
+    "date": "Date",
+    "audience": "Type",
+    "items": "Items:",
+    "total": "Total",
+    "code": "Code",
+    "footer": "Please confirm 🙏"
   },
-  "checkout.success": {
+  "success": {
     "title": "Order received!",
     "body": "Our admin will process it shortly.",
     "code": "Order Code",
@@ -165,8 +175,10 @@
     "goHome": "Go to Home",
     "mustConfirm": "Please tap “Confirm to Admin” first before going home.",
     "mustConfirmHint": "Tap “Confirm to Admin” first",
-    "confirmNote": "Confirmation: the details above are correct. Please process. 🙏"
-  },
+    "confirmNote": "Confirmation: the details above are correct. Please process. 🙏",
+    "fallback": "If WhatsApp fails, copy this message and send it manually to our admin."
+  }
+},
   "footer": {
     "cta": {
       "kicker": "Ready to Explore",
@@ -280,16 +292,5 @@
     "error": "Something went wrong"
   },
   "back": "Back",
-  "gallery": "Gallery",
-  "checkout.success": {
-    "title": "Order received!",
-    "body": "Our admin will process it shortly.",
-    "code": "Order Code",
-    "total": "Total",
-    "contactAdmin": "Confirm to Admin",
-    "goHome": "Go to Home",
-    "mustConfirm": "Please tap “Confirm to Admin” first before going home.",
-    "mustConfirmHint": "Tap “Confirm to Admin” first",
-    "confirmNote": "Confirmation: the details above are correct. Please process. 🙏"
-  }
+  "gallery": "Gallery"
 }
