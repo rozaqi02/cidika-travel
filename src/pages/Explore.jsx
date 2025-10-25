@@ -1,7 +1,7 @@
 // src/pages/Explore.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useScroll, useTransform } from "framer-motion"; // Hapus motion untuk card
+import { useScroll, useTransform } from "framer-motion"; // dipakai untuk animasi toolbar (bisa dibiarkan walau toolbar off)
 import { useLocation, useNavigate } from "react-router-dom";
 import usePackages from "../hooks/usePackages";
 import usePageSections from "../hooks/usePageSections";
@@ -28,12 +28,11 @@ function getPkgImage(p) {
 }
 
 function normalizeLocale(p, lang2) {
-  if (p?.locale && p.locale.title) return p.locale; // ← pakai objek tunggal
+  if (p?.locale && p.locale.title) return p.locale; // pakai objek tunggal
   const L = Array.isArray(p?.locales) ? p.locales : [];
-  const pick = (code) => L.find((l) => (l.lang || "").slice(0,2) === code);
-  return pick((lang2 || "id").slice(0,2)) || pick("id") || pick("en") || L[0] || {};
+  const pick = (code) => L.find((l) => (l.lang || "").slice(0, 2) === code);
+  return pick((lang2 || "id").slice(0, 2)) || pick("id") || pick("en") || L[0] || {};
 }
-
 
 function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }) {
   const nav = useNavigate();
@@ -47,13 +46,13 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
     (p.price_tiers || [])[0];
   const priceSelected = tierForSelectedPax?.price_idr || 0;
 
-  const loc = normalizeLocale(p, lang); // title asli dari DB (package_locales)
+  const loc = normalizeLocale(p, lang);
   const audienceLabel = audience === "domestic" ? t("explore.domestic") : t("explore.foreign");
 
   const goOrder = () => {
     const item = {
       id: p.id,
-      title: loc.title || p.slug, 
+      title: loc.title || p.slug,
       price: priceSelected,
       pax,
       qty: 1,
@@ -72,7 +71,7 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
       id={`pkg-${p.id}`}
       className="group relative overflow-hidden rounded-xl border border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 bg-white dark:bg-gray-900"
     >
-      {/* Image Hero with Overlay */}
+      {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <img
           src={cover}
@@ -80,7 +79,6 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
           loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        {/* Badge */}
         <div className="absolute top-3 left-3 z-10 bg-blue-500/90 text-white px-2 py-1 rounded-full text-xs font-medium">
           {t("explore.privateTour")}
         </div>
@@ -95,6 +93,7 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
         <h3 className="font-bold text-lg mb-1 line-clamp-1 text-gray-900 dark:text-white">
           {loc.title || p.slug}
         </h3>
+
         <div className="flex flex-wrap gap-1 mb-3">
           {(loc.spots || []).slice(0, 3).map((spot, i) => (
             <span
@@ -117,7 +116,9 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {formatMoneyFromIDR(priceSelected, currency, fx, locale)}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">/ {pax} {t("home.pax")} • {audienceLabel}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            / {pax} {t("home.pax")} • {audienceLabel}
+          </p>
         </div>
 
         {/* Actions */}
@@ -161,7 +162,6 @@ export default function Explore() {
 
   const location = useLocation();
   const qs = new URLSearchParams(location.search);
-  const qsId = qs.get("pkg");
   const qsDest = qs.get("dest");
   const initialPax = Number(location.state?.pax) || 6;
 
@@ -172,16 +172,13 @@ export default function Explore() {
   const [compact, setCompact] = useState(false);
   const [dest, setDest] = useState(qsDest || "all");
 
-  // Ambil opsi destinasi dari DB [sama]
+  // Ambil opsi destinasi dari DB
   const S = useMemo(
     () => Object.fromEntries((destSections || []).map((s) => [s.section_key, s])),
     [destSections]
   );
   const destinationOptions = useMemo(() => {
-    const items =
-      S.cards?.locale?.extra?.items ||
-      S.cards?.data?.items ||
-      [];
+    const items = S.cards?.locale?.extra?.items || S.cards?.data?.items || [];
     const opts = (items || []).map((it) => ({
       key:
         it.key ||
@@ -199,7 +196,7 @@ export default function Explore() {
     return [{ key: "all", label: t("explore.all", { defaultValue: "Semua" }) }, ...opts];
   }, [S, t]);
 
-  // Theme & scroll [sama, tapi hapus motion di grid]
+  // Theme & scroll (dipakai bila toolbar diaktifkan)
   const [isDark, setIsDark] = useState(() =>
     typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : false
   );
@@ -236,182 +233,182 @@ export default function Explore() {
   const bgTo = isDark ? "rgba(2,6,23,0.72)" : "rgba(255,255,255,0.90)";
   const barBg = useTransform(scrollY, [0, 80], [bgFrom, bgTo]);
 
-const sortPriceLabel = t("explore.sortPrice");
-const sortNameLabel  = t("explore.sortName");
-const domesticLabel  = t("explore.domestic");
-const foreignLabel   = t("explore.foreign");
+  const sortPriceLabel = t("explore.sortPrice");
+  const sortNameLabel = t("explore.sortName");
+  const domesticLabel = t("explore.domestic");
+  const foreignLabel = t("explore.foreign");
 
+  // Filter + sort
+  const filtered = useMemo(() => {
+    const q = (query || "").trim().toLowerCase();
 
-  // Filter + sort [sama]
-const filtered = useMemo(() => {
-  const q = (query || "").trim().toLowerCase();
+    const list0 = data.map((p) => ({
+      ...p,
+      _loc: normalizeLocale(p, lang),
+    }));
 
-  // Ambil locale paket sesuai bahasa UI
-  const list0 = data.map((p) => ({
-    ...p,
-    _loc: normalizeLocale(p, lang),
-  }));
+    const list =
+      dest === "all"
+        ? list0
+        : list0.filter((p) => {
+            const k =
+              p.destination_key ||
+              p.destination ||
+              p.data?.destination ||
+              p.data?.dest ||
+              (dest === "nusa-penida" ? "nusa-penida" : null);
+            return k === dest;
+          });
 
-  const list =
-    dest === "all"
-      ? list0
-      : list0.filter((p) => {
-          const k =
-            p.destination_key ||
-            p.destination ||
-            p.data?.destination ||
-            p.data?.dest ||
-            (dest === "nusa-penida" ? "nusa-penida" : null);
-          return k === dest;
-        });
+    const searched = q
+      ? list.filter((p) => {
+          const hay =
+            (p._loc?.title || "") +
+            " " +
+            (Array.isArray(p._loc?.spots) ? p._loc.spots.join(" ") : "") +
+            " " +
+            (p.slug || "");
+          return hay.toLowerCase().includes(q);
+        })
+      : list;
 
-  const searched = q
-    ? list.filter((p) => {
-        const hay =
-          (p._loc?.title || "") +
-          " " +
-          (Array.isArray(p._loc?.spots) ? p._loc.spots.join(" ") : "") +
-          " " +
-          (p.slug || "");
-        return hay.toLowerCase().includes(q);
-      })
-    : list;
+    if (sortBy === "name") {
+      return searched.sort((a, b) => (a._loc?.title || "").localeCompare(b._loc?.title || ""));
+    }
 
-  if (sortBy === "name") {
-    return searched.sort((a, b) => (a._loc?.title || "").localeCompare(b._loc?.title || ""));
-  }
+    return searched.sort((a, b) => {
+      const pa =
+        (a.price_tiers || []).find((x) => x.pax === pax && x.audience === audience) ||
+        (a.price_tiers || []).find((x) => x.pax === pax) ||
+        (a.price_tiers || [])[0];
+      const pb =
+        (b.price_tiers || []).find((x) => x.pax === pax && x.audience === audience) ||
+        (b.price_tiers || []).find((x) => x.pax === pax) ||
+        (b.price_tiers || [])[0];
+      return (pa?.price_idr || 0) - (pb?.price_idr || 0);
+    });
+  }, [data, query, pax, sortBy, audience, dest, lang]);
 
-  return searched.sort((a, b) => {
-    const pa =
-      (a.price_tiers || []).find((x) => x.pax === pax && x.audience === audience) ||
-      (a.price_tiers || []).find((x) => x.pax === pax) ||
-      (a.price_tiers || [])[0];
-    const pb =
-      (b.price_tiers || []).find((x) => x.pax === pax && x.audience === audience) ||
-      (b.price_tiers || []).find((x) => x.pax === pax) ||
-      (b.price_tiers || [])[0];
-    return (pa?.price_idr || 0) - (pb?.price_idr || 0);
-  });
-}, [data, query, pax, sortBy, audience, dest, lang]);
-
+  // <<< Toggle toolbar di sini
+  const SHOW_TOOLBAR = false;
 
   return (
-    <div className="container mt-2 space-y-6"> {/* Increased gap for airy feel */}
-      {/* Sticky Toolbar [sama] */}
-      <div
-        style={{ minHeight: barH, boxShadow: barShadow, background: barBg }}
-        className={`sticky top-[4.75rem] z-[5] rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 py-3 sm:py-4 flex items-center transition-transform duration-200 ${
-          hideToolbar ? "-translate-y-[120%]" : "translate-y-0"
-        }`}
-      >
-        <div className="w-full flex flex-col gap-2">
-          <div className="flex items-center gap-2 justify-between">
-            <h1 className="text-base sm:text-xl font-bold text-slate-900 dark:text-slate-100 pr-2">
-              {t("explore.title")}
-            </h1>
-            <button
-              className="btn btn-outline !py-1.5 !px-3"
-              onClick={() => setCompact((v) => !v)}
-              title={compact ? t("explore.cozyGrid") : t("explore.compactGrid")}>
-            
-              {compact ? <LayoutGrid size={16} /> : <Rows size={16} />}
-              <span className="ml-2 text-xs">{compact ? t("explore.compact") : t("explore.cozy")}</span>            </button>
-          </div>
-
-          <div className="grid grid-cols-12 gap-2 items-center">
-            {/* Search [sama, tambah icon lebih marketplace-like] */}
-            <div className="col-span-12 sm:col-span-5">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={t("explore.searchPlaceholder", { defaultValue: "Search packages or spots…" })}
-                  className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-gray-200/60 dark:border-gray-700/60 shadow-sm focus:shadow-md transition-shadow"
-                />
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-              </div>
+    <div className="container mt-2 space-y-6">
+      {SHOW_TOOLBAR && (
+        <div
+          style={{ minHeight: barH, boxShadow: barShadow, background: barBg }}
+          className={`sticky top-[4.75rem] z-[5] rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 py-3 sm:py-4 flex items-center transition-transform duration-200 ${
+            hideToolbar ? "-translate-y-[120%]" : "translate-y-0"
+          }`}
+        >
+          <div className="w-full flex flex-col gap-2">
+            <div className="flex items-center gap-2 justify-between">
+              <h1 className="text-base sm:text-xl font-bold text-slate-900 dark:text-slate-100 pr-2">
+                {t("explore.title")}
+              </h1>
+              <button
+                className="btn btn-outline !py-1.5 !px-3"
+                onClick={() => setCompact((v) => !v)}
+                title={compact ? t("explore.cozyGrid") : t("explore.compactGrid")}
+              >
+                {compact ? <LayoutGrid size={16} /> : <Rows size={16} />}
+                <span className="ml-2 text-xs">{compact ? t("explore.compact") : t("explore.cozy")}</span>
+              </button>
             </div>
 
-            {/* Destinations [sama] */}
-            <div className="col-span-12 sm:col-span-4">
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-slate-500 dark:text-slate-400 shrink-0">
-                  {t("explore.destinations", { defaultValue: "Destinations" })}
-                </label>
+            <div className="grid grid-cols-12 gap-2 items-center">
+              {/* Search */}
+              <div className="col-span-12 sm:col-span-5">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={t("explore.searchPlaceholder", { defaultValue: "Search packages or spots…" })}
+                    className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-gray-200/60 dark:border-gray-700/60 shadow-sm focus:shadow-md transition-shadow"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                </div>
+              </div>
+
+              {/* Destinations */}
+              <div className="col-span-12 sm:col-span-4">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+                    {t("explore.destinations", { defaultValue: "Destinations" })}
+                  </label>
+                  <select
+                    value={dest}
+                    onChange={(e) => setDest(e.target.value)}
+                    className="px-3 py-2 rounded-xl w-full border border-gray-200/60 dark:border-gray-700/60"
+                  >
+                    {destinationOptions.map((o) => (
+                      <option key={o.key} value={o.key}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Audience */}
+              <div className="col-span-7 sm:col-span-3">
+                <div className="flex items-center gap-1 bg-white/60 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-700/60 rounded-xl p-1 overflow-x-auto no-scrollbar">
+                  {["domestic", "foreign"].map((k) => (
+                    <button
+                      key={k}
+                      onClick={() => setAudience(k)}
+                      className={`btn ${audience === k ? "btn-primary" : "btn-outline"} !py-1.5 !px-3 text-xs whitespace-nowrap`}
+                    >
+                      {k === "domestic" ? domesticLabel : foreignLabel}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pax */}
+              <div className="col-span-5 sm:col-span-2">
+                <div className="flex items-center gap-2 justify-end">
+                  <label className="text-xs text-slate-500 dark:text-slate-400 shrink-0">{t("home.calcFor")}</label>
+                  <select
+                    value={pax}
+                    onChange={(e) => setPax(parseInt(e.target.value))}
+                    className="px-3 py-2 rounded-xl border border-gray-200/60 dark:border-gray-700/60"
+                  >
+                    {[1, 2, 3, 4, 5, 6].map((n) => (
+                      <option key={n} value={n}>
+                        {n} {t("home.pax")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Sort (mobile & desktop) */}
+              <div className="col-span-12 sm:hidden">
                 <select
-                  value={dest}
-                  onChange={(e) => setDest(e.target.value)}
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
                   className="px-3 py-2 rounded-xl w-full border border-gray-200/60 dark:border-gray-700/60"
                 >
-                  {destinationOptions.map((o) => (
-                    <option key={o.key} value={o.key}>
-                      {o.label}
-                    </option>
-                  ))}
+                  <option value="price">{sortPriceLabel}</option>
+                  <option value="name">{sortNameLabel}</option>
                 </select>
               </div>
-            </div>
-
-            {/* Audience [sama] */}
-            <div className="col-span-7 sm:col-span-3">
-              <div className="flex items-center gap-1 bg-white/60 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-700/60 rounded-xl p-1 overflow-x-auto no-scrollbar">
-                {["domestic", "foreign"].map((k) => (
-                  <button
-                    key={k}
-                    onClick={() => setAudience(k)}
-                    className={`btn ${audience === k ? "btn-primary" : "btn-outline"} !py-1.5 !px-3 text-xs whitespace-nowrap`}
-                  >
-                    {k === "domestic" ? domesticLabel : foreignLabel}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Pax [sama] */}
-            <div className="col-span-5 sm:col-span-2">
-              <div className="flex items-center gap-2 justify-end">
-                <label className="text-xs text-slate-500 dark:text-slate-400 shrink-0">
-                  {t("home.calcFor")}
-                </label>
+              <div className="hidden sm:col-span-2 sm:flex items-center justify-end">
                 <select
-                  value={pax}
-                  onChange={(e) => setPax(parseInt(e.target.value))}
-                  className="px-3 py-2 rounded-xl border border-gray-200/60 dark:border-gray-700/60"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-3 py-2 rounded-xl w-full sm:w-auto border border-gray-200/60 dark:border-gray-700/60"
                 >
-                  {[1, 2, 3, 4, 5, 6].map((n) => (
-                    <option key={n} value={n}>
-                      {n} {t("home.pax")}
-                    </option>
-                  ))}
+                  <option value="price">{sortPriceLabel}</option>
+                  <option value="name">{sortNameLabel}</option>
                 </select>
               </div>
-            </div>
-
-            {/* Sort [sama] */}
-            <div className="col-span-12 sm:hidden">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 rounded-xl w-full border border-gray-200/60 dark:border-gray-700/60"
-              >
-                <option value="price">{sortPriceLabel}</option>
-                <option value="name">{sortNameLabel}</option>
-              </select>
-            </div>
-            <div className="hidden sm:col-span-2 sm:flex items-center justify-end">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 rounded-xl w-full sm:w-auto border border-gray-200/60 dark:border-gray-700/60"
-              >
-                <option value="price">{sortPriceLabel}</option>
-                <option value="name">{sortNameLabel}</option>
-              </select>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Grid — No Motion/Fade */}
       <div className={`grid gap-6 ${compact ? "sm:grid-cols-3 lg:grid-cols-4" : "md:grid-cols-2 lg:grid-cols-3"}`}>
@@ -427,7 +424,7 @@ const filtered = useMemo(() => {
               fx={fx}
               locale={locale}
               t={t}
-              lang={lang} /* kirim bahasa UI ke card */
+              lang={lang}
             />
           ))
         ) : (
