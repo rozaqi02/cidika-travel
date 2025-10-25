@@ -7,8 +7,8 @@
     "contact": "お問い合わせ",
     "login": "管理者ログイン",
     "language": "言語",
-    "cart": "カート",
-    "wishlist": "お気に入り",
+    "login": "ログイン",
+    "logout": "ログアウト",
     "theme": "テーマ",
     "light": "ライト",
     "dark": "ダーク"

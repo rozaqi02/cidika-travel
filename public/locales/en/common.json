@@ -7,8 +7,8 @@
     "contact": "Contact",
     "login": "Admin Login",
     "language": "Language",
-    "cart": "Cart",
-    "wishlist": "Wishlist",
+    "login": "Login",
+    "logout": "Logout",
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark"

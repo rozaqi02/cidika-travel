@@ -316,3 +316,27 @@ body { opacity: 1; }
 :root {
   --font-hero: 'Cinzel', 'EB Garamond', ui-serif, Georgia, serif;
 }
+
+/* Mobile Menu Glass Effect */
+.mobile-menu-glass {
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  border-bottom: 1px solid rgba(2, 6, 23, 0.12);
+}
+.dark .mobile-menu-glass {
+  background: color-mix(in srgb, rgba(2, 6, 23, 0.85) 80%, transparent);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* Subtle Gradient Overlay for Menu */
+.mobile-menu-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at top center,
+    rgba(56, 189, 248, 0.15),
+    transparent 70%
+  );
+  opacity: 0.5;
+}
