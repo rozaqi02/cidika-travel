@@ -40,6 +40,10 @@
     "point4": "Clear pricing including round-trip fast boat and entrance fees.",
     "banner1": "Iconic spots—Kelingking, Diamond, Crystal Bay—in one trip.",
     "whyTitle": "Why choose us?",
+    "submitTestimonial": "Share Your Story",
+  "namePlaceholder": "Enter your name",
+  "cityPlaceholder": "Your city (optional)",
+  "testimonialPlaceholder": "Tell us about your adventure...",
     "whySubtitle": "Advantages that make your trip worry-free.",
     "whyItems": [
       { "title": "Licensed & Experienced Operator", "text": "Local team knows the best spots and timing." },
@@ -104,19 +108,20 @@
       { "q": "Can I customize the itinerary?", "a": "Sure! Tell us your preferences when you contact us." }
     ]
   },
-  "dest": {
-    "title": "Destinations",
-    "heroDesc": "Explore the beauty of Southeast Bali islands",
-    "penidaTitle": "Nusa Penida",
-    "penidaDesc": "Island with iconic beaches and cliffs in Southeast Bali, famous for Kelingking Beach and Broken Beach.",
-    "lembonganTitle": "Nusa Lembongan",
-    "lembonganDesc": "Small island with white sandy beaches, ideal for snorkeling and enjoying Devil’s Tears.",
-    "ceninganTitle": "Nusa Ceningan",
-    "ceninganDesc": "The smallest island with Blue Lagoon and a serene atmosphere, perfect for a relaxed adventure.",
-    "empty": "Content is managed from Admin & Supabase.",
-    "search": "Search destinations...",
-    "cardsTitle": "Destination Highlights"
-  },
+"dest": {
+  "title": "Destinations",
+  "heroDesc": "Explore the beauty of Southeast Bali islands",
+  "penidaTitle": "Nusa Penida",
+  "penidaDesc": "Island with iconic beaches and cliffs in Southeast Bali, famous for Kelingking Beach and Broken Beach.",
+  "lembonganTitle": "Nusa Lembongan",
+  "lembonganDesc": "Small island with white sandy beaches, ideal for snorkeling and enjoying Devil's Tears.",
+  "ceninganTitle": "Nusa Ceningan",
+  "ceninganDesc": "The smallest island with Blue Lagoon and a serene atmosphere, perfect for a relaxed adventure.",
+  "empty": "No destinations match your search.",
+  "search": "Search destinations...",
+  "cardsTitle": "Destination Highlights",
+  "explore": "Explore"
+},
   "contact": {
     "title": "Contact Us",
     "subtitle": "Reach out for questions or custom trips — we reply fast on WhatsApp.",

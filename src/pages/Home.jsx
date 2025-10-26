@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin, Calendar, Users, BadgeCheck,
-  MessageCircle, Star, ChevronRight,
+  MessageCircle, Star, ChevronRight, ArrowRight,
   Search, Phone, Send,
 } from "lucide-react";
 import usePackages from "../hooks/usePackages";
@@ -331,15 +331,22 @@ function PopularCard({ pkg, price, pax, currency, fx, locale, audience }) {
             <Calendar size={16} /> {t("home.flexible", { defaultValue: "Flexible" })}
           </div>
         </div>
-        <div className="mt-3">
-  <button
-    className="btn btn-primary glass w-full !py-2.5"
-    onClick={() => navigate(`/packages/${pkg.id}`, { state: { pax, audience } })}
-  >
-    {t("home.viewDetails", { defaultValue: "Lihat Detail Paket" })} <ChevronRight size={16} className="ml-1" />
-  </button>
-</div>
-
+        <div className="flex gap-3">
+          <button
+            className="btn btn-outline glass flex-1"
+            onClick={() => navigate(`/packages/${pkg.id}`, { state: { pax, audience } })}
+          >
+            {t("home.viewDetails", { defaultValue: "Lihat Detail" })} <ChevronRight size={16} className="ml-1" />
+          </button>
+          <a
+            href={`https://wa.me/6289523949667?text=Halo%20Admin,%20saya%20minat%20paket%20${encodeURIComponent(title)}%20untuk%20${pax}%20${t("home.pax", { defaultValue: "pax" })}`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn btn-primary glass flex-1"
+          >
+            {t("home.orderViaWA", { defaultValue: "Pesan via WA" })} <ArrowRight size={16} className="ml-1" />
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -347,42 +354,44 @@ function PopularCard({ pkg, price, pax, currency, fx, locale, audience }) {
 
 function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
   const { t } = useTranslation();
-  const pax = 6; // dikunci ke 6 pax
+  const [pax, setPax] = useState(6);
   const [audience, setAudience] = useState("domestic");
   const [popularPackages, setPopularPackages] = useState([]);
 
   useEffect(() => {
-  // Target tetap 6 pax sesuai requirement
-  const TARGET_PAX = 6;
+    const fetchPopularPackages = async () => {
+      // Ambil semua booking yang dikonfirmasi
+      const { data: bookings, error } = await supabase
+        .from("bookings")
+        .select("package_id")
+        .eq("status", "confirmed");
 
-  // Hitung harga untuk 6 pax per-audience.
-  // Jika tidak ada tier pax=6, fallback: ambil harga per-orang termurah lalu kali 6.
-  const priceFor6Pax = (pkg) => {
-    const tiers = Array.isArray(pkg.price_tiers)
-      ? pkg.price_tiers.filter(t => String(t.audience || "domestic") === audience)
-      : [];
+      if (error) {
+        console.error("Error fetching bookings:", error);
+        return;
+      }
 
-    const exact = tiers.find(t => Number(t.pax) === TARGET_PAX);
-    if (exact) return Number(exact.price_idr);
+      // Hitung jumlah booking per package_id
+      const bookingCounts = bookings.reduce((acc, { package_id }) => {
+        acc[package_id] = (acc[package_id] || 0) + 1;
+        return acc;
+      }, {});
 
-    const perPersonList = tiers
-      .map(t => Number(t.price_idr) / Number(t.pax))
-      .filter(n => Number.isFinite(n) && n > 0);
+      // Urutkan paket berdasarkan jumlah booking
+      const popular = data
+        .map(p => ({
+          p,
+          count: bookingCounts[p.id] || 0,
+          price: (p.price_tiers || []).find(x => x.pax === pax && x.audience === audience)?.price_idr || (p.price_tiers || [])[0]?.price_idr || 0
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3);
 
-    if (!perPersonList.length) return Infinity;
+      setPopularPackages(popular);
+    };
 
-    const minPerPerson = Math.min(...perPersonList);
-    return Math.round(minPerPerson * TARGET_PAX);
-  };
-
-  const cheapest = (data || [])
-    .map(p => ({ p, price: priceFor6Pax(p) }))
-    .filter(x => Number.isFinite(x.price))
-    .sort((a, b) => a.price - b.price)
-    .slice(0, 3);
-
-  setPopularPackages(cheapest);
-}, [data, audience]); // ⬅️ tidak tergantung 'pax' lagi
+    fetchPopularPackages();
+  }, [data, pax, audience]);
 
   return (
     <section id="popular" className="container mt-20">
@@ -404,14 +413,22 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
             ))}
           </div>
           <div className="flex items-center gap-2">
-  <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-    {t("home.calcFor", { defaultValue: "Harga untuk" })}
-  </span>
-  <span className="px-3 py-2 rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/60 dark:bg-gray-900/60 text-sm">
-    6 {t("home.pax", { defaultValue: "pax" })}
-  </span>
-</div>
-
+            <label htmlFor="pax" className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              {t("home.calcFor", { defaultValue: "Harga untuk" })}
+            </label>
+            <select
+              id="pax"
+              value={pax}
+              onChange={(e) => setPax(parseInt(e.target.value))}
+              className="px-3 py-2 rounded-xl border border-gray-200/60 dark:border-gray-700/60 bg-white/60 dark:bg-gray-900/60 text-sm w-full sm:w-auto"
+            >
+              {[1, 2, 3, 4, 5, 6].map(n => (
+                <option key={n} value={n}>
+                  {n} {t("home.pax", { defaultValue: "pax" })}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -675,7 +692,7 @@ function HowItWorks({ title, subtitle, steps = [] }) {
   );
 }
 
-function BigCTA({ title, desc, whatsapp = "+62895630193926" }) {
+function BigCTA({ title, desc, whatsapp = "+6289523949667" }) {
   const { t } = useTranslation();
   return (
     <section className="container mt-20 mb-24">
@@ -841,7 +858,7 @@ export default function Home() {
       <BigCTA
         title={S.cta?.locale?.title || t("home.ctaTitle", { defaultValue: "Siap Berpetualang di Nusa Penida?" })}
         desc={S.cta?.locale?.body_md || t("home.ctaDesc", { defaultValue: "Hubungi kami via WhatsApp/Instagram/Email. Tim akan bantu atur itinerary terbaik sesuai waktu & budget." })}
-        whatsapp={S.cta?.data?.whatsapp || "+62895630193926"}
+        whatsapp={S.cta?.data?.whatsapp || "+6289523949667"}
       />
       <StickyHelpCTA />
     </>

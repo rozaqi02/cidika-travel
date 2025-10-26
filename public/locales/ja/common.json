@@ -30,6 +30,11 @@
     "flexible": "フレキシブル",
     "viewDetails": "詳細を見る",
     "orderViaWA": "WhatsAppで予約",
+    
+  "submitTestimonial": "あなたの体験をシェア",
+  "namePlaceholder": "お名前を入力",
+  "cityPlaceholder": "都市（任意）",
+  "testimonialPlaceholder": "冒険について教えてください...",
     "viewAllPackages": "すべてのプランを見る",
     "ctaPopular": "人気パッケージを見る",
     "aboutTitle": "快適にヌサ・ペニダへ",
@@ -104,19 +109,20 @@
       { "q": "行程のカスタムは可能？", "a": "可能です。ご希望をお問い合わせ時にお知らせください。" }
     ]
   },
-  "dest": {
-    "title": "目的地",
-    "heroDesc": "バリ南東部の美しい島々を探検",
-    "penidaTitle": "ヌサ・ペニダ",
-    "penidaDesc": "バリ南東部の象徴的なビーチと崖の島。ケリンキングビーチとブロークンビーチで有名。",
-    "lembonganTitle": "ヌサ・レンボンガン",
-    "lembonganDesc": "白い砂浜の小さな島。シュノーケリングやデビルズ・ティアーズに最適。",
-    "ceninganTitle": "ヌサ・チェニンガン",
-    "ceninganDesc": "ブルーラグーンと穏やかな雰囲気の最も小さな島。リラックスした冒険にぴったり。",
-    "empty": "コンテンツは管理画面と Supabase から管理されます。",
-    "search": "目的地を検索...",
-    "cardsTitle": "注目の目的地"
-  },
+"dest": {
+  "title": "目的地",
+  "heroDesc": "バリ南東部の美しい島々を探検",
+  "penidaTitle": "ヌサ・ペニダ",
+  "penidaDesc": "バリ南東部の象徴的なビーチと崖の島。ケリンキングビーチとブロークンビーチで有名。",
+  "lembonganTitle": "ヌサ・レンボンガン",
+  "lembonganDesc": "白い砂浜の小さな島。シュノーケリングやデビルズ・ティアーズに最適。",
+  "ceninganTitle": "ヌサ・チェニンガン",
+  "ceninganDesc": "ブルーラグーンと穏やかな雰囲気の最も小さな島。リラックスした冒険にぴったり。",
+  "empty": "検索に一致する目的地が見つかりません。",
+  "search": "目的地を検索...",
+  "cardsTitle": "注目の目的地",
+  "explore": "探索"
+},
   "contact": {
     "title": "お問い合わせ",
     "subtitle": "ご質問やカスタム手配のご相談はお気軽に。WhatsApp ならすぐ返信します。",

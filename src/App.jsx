@@ -41,39 +41,36 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-function ScrollManager() {
-  const reduced = usePrefersReducedMotion();
-  const { pathname, hash } = useLocation();
+function CustomScrollRestoration() {
+  const location = useLocation();
   const navType = useNavigationType();
-  const prevPath = useRef(pathname);
 
   useEffect(() => {
-    const save = () => sessionStorage.setItem(`scroll:${prevPath.current}`, String(window.scrollY || 0));
-    window.addEventListener("beforeunload", save);
-    return () => window.removeEventListener("beforeunload", save);
-  }, []);
+    // Disable browser's automatic scroll restoration
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
 
-  useEffect(() => {
-    sessionStorage.setItem(`scroll:${prevPath.current}`, String(window.scrollY || 0));
-    prevPath.current = pathname;
-
-    if (hash) {
-      const id = hash.replace("#", "");
-      const el = document.getElementById(id);
-      if (el) {
-        const y = el.getBoundingClientRect().top + window.scrollY - 72;
-        window.scrollTo({ top: y, behavior: reduced ? "auto" : "smooth" });
-        return;
+    if (navType === 'POP') {
+      // Back/forward: restore from sessionStorage
+      const saved = sessionStorage.getItem(`scroll-${location.key}`);
+      if (saved) {
+        const [x, y] = saved.split(',').map(Number);
+        // Mobile-friendly: use setTimeout for iOS Safari timing
+        setTimeout(() => window.scrollTo(x, y), 0);
+      } else {
+        setTimeout(() => window.scrollTo(0, 0), 0);
       }
+    } else {
+      // New navigation (PUSH/REPLACE): scroll to top
+      setTimeout(() => window.scrollTo(0, 0), 0);
     }
 
-    if (navType === "POP") {
-      const saved = Number(sessionStorage.getItem(`scroll:${pathname}`) || 0);
-      window.scrollTo({ top: saved, behavior: "auto" });
-    } else {
-      window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
-    }
-  }, [pathname, hash, navType, reduced]);
+    // Save current scroll position on unmount
+    return () => {
+      sessionStorage.setItem(`scroll-${location.key}`, `${window.pageXOffset},${window.pageYOffset}`);
+    };
+  }, [location.key, navType]);
 
   return null;
 }
@@ -203,6 +200,8 @@ function Layout({ children }) {
       <Navbar />
       <TransitionScrim routeKey={location.pathname} />
       <main className="min-h-[70vh] pt-16">
+        {/* Custom scroll restoration (replaces ScrollRestoration) */}
+        <CustomScrollRestoration />
         <AnimatePresence mode="wait" initial={false}
           onExitComplete={() => { NProgress.inc(0.2); requestAnimationFrame(() => NProgress.done()); }}>
           <motion.div key={location.pathname}
@@ -224,7 +223,6 @@ export default function App() {
         <CurrencyProvider>
           <CartProvider>{/* ⬅️ Bungkus semua route dengan CartProvider */}
             <MobileVhFix />
-            <ScrollManager />
             <FocusMainOnRoute />
             <PreventImageDrag />
             <ButtonRippleEffect />

@@ -32,6 +32,10 @@
     "orderViaWA": "Pesan via WA",
     "viewAllPackages": "Lihat semua paket",
     "ctaPopular": "Lihat Paket Populer",
+  "submitTestimonial": "Bagikan Cerita Anda",
+  "namePlaceholder": "Masukkan nama Anda",
+  "cityPlaceholder": "Kota Anda (opsional)",
+  "testimonialPlaceholder": "Ceritakan petualangan Anda...",
     "aboutTitle": "Jelajahi Nusa Penida dengan Nyaman",
     "aboutBody": "CIDIKA TRAVEL&TOUR berfokus pada pengalaman di Nusa Penida: tour darat, snorkeling, hingga paket menginap. Kami menggabungkan kenyamanan, kehangatan, dan profesionalisme. Pemesanan mudah via Email, Instagram, WhatsApp, atau telepon—transparan dan aman.",
     "point1": "Paket lengkap: One Day, Half Day, 1D1N + Snorkeling, 2D1N.",
@@ -104,19 +108,20 @@
       { "q": "Bisa custom itinerary?", "a": "Bisa. Sebutkan preferensi Anda saat menghubungi kami." }
     ]
   },
-  "dest": {
-    "title": "Destinasi",
-    "heroDesc": "Jelajahi keindahan pulau-pulau di Bali Tenggara",
-    "penidaTitle": "Nusa Penida",
-    "penidaDesc": "Pulau dengan pantai dan tebing ikonik di Bali Tenggara, terkenal dengan Kelingking Beach dan Broken Beach.",
-    "lembonganTitle": "Nusa Lembongan",
-    "lembonganDesc": "Pulau kecil dengan pantai berpasir putih, ideal untuk snorkeling dan menikmati Devil’s Tears.",
-    "ceninganTitle": "Nusa Ceningan",
-    "ceninganDesc": "Pulau terkecil dengan Blue Lagoon dan suasana tenang, cocok untuk petualangan santai.",
-    "empty": "Konten akan diisi dari menu Admin & Supabase.",
-    "search": "Cari destinasi...",
-    "cardsTitle": "Pilihan Destinasi"
-  },
+"dest": {
+  "title": "Destinasi",
+  "heroDesc": "Jelajahi keindahan pulau-pulau di Bali Tenggara",
+  "penidaTitle": "Nusa Penida",
+  "penidaDesc": "Pulau dengan pantai dan tebing ikonik di Bali Tenggara, terkenal dengan Kelingking Beach dan Broken Beach.",
+  "lembonganTitle": "Nusa Lembongan",
+  "lembonganDesc": "Pulau kecil dengan pantai berpasir putih, ideal untuk snorkeling dan menikmati Devil's Tears.",
+  "ceninganTitle": "Nusa Ceningan",
+  "ceninganDesc": "Pulau terkecil dengan Blue Lagoon dan suasana tenang, cocok untuk petualangan santai.",
+  "empty": "Tidak ada destinasi yang sesuai dengan pencarian Anda.",
+  "search": "Cari destinasi...",
+  "cardsTitle": "Pilihan Destinasi",
+  "explore": "Jelajahi"
+},
   "contact": {
     "title": "Kontak Kami",
     "subtitle": "Hubungi kami untuk pertanyaan atau custom trip—balas cepat via WhatsApp.",

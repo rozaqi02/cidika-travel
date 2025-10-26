@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { Moon, Sun, LogOut, UserRound, ChevronDown } from "lucide-react";import { useTranslation } from "react-i18next";
+import { Moon, Sun, LogOut, UserRound, ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabaseClient.js";
 import { AnimatePresence, motion } from "framer-motion";
@@ -214,7 +215,7 @@ export default function Navbar() {
                 {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
               </button>
 
-              {/* Language dropdown */}
+              {/* Language dropdown (Desktop) */}
               <div className="relative" ref={langRef}>
  <button
    className="px-2 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition inline-flex items-center gap-1"
@@ -285,86 +286,201 @@ export default function Navbar() {
               )}
             </nav>
 
-            {/* Mobile Hamburger */}
- <button
-   className={cx(
-     "lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-2xl border leading-none transition shadow-smooth",    open
-      ? "border-sky-300/60 bg-sky-50/70 dark:border-sky-500/30 dark:bg-sky-400/10"
-      : "border-slate-200 dark:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/70"
-  )}
-  onClick={() => setOpen(v => !v)}
-  aria-label={open ? t("misc.close", { defaultValue: "Close menu" }) : t("misc.open", { defaultValue: "Open menu" })}
-  aria-pressed={open}
-  aria-expanded={open}
-  aria-controls="mobile-menu"
->
-  <BurgerIcon open={open} reduced={reduced} />
-</button>
+            {/* Mobile: Theme Toggle + Language Button + Hamburger */}
+            <div className="flex items-center gap-2 lg:hidden">
+              {/* Mobile Theme Toggle */}
+              <button
+                className="p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                aria-label={t("misc.toggleTheme", { defaultValue: "Toggle theme" })}
+                title={t("misc.toggleTheme", { defaultValue: "Toggle theme" })}
+              >
+                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
 
+              {/* Mobile Language Button (with flag) */}
+              <div className="relative" ref={langRef}>
+                <button
+                  className="px-2 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition inline-flex items-center gap-1"
+                  onClick={() => setLangOpen(v => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={langOpen}
+                  aria-label={`${t("nav.language", { defaultValue: "Language" })}: ${activeLang.label}`}
+                  title={`${activeLang.label}`}
+                >
+                  <ReactCountryFlag
+                    countryCode={activeLang.country}
+                    svg
+                    style={{ width: "1.2em", height: "1.2em", borderRadius: 4 }}
+                    aria-label={`${activeLang.label} flag`}
+                  />
+                  <ChevronDown size={14} className="opacity-70" />
+                </button>
+                <AnimatePresence>
+                  {langOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                      transition={{ duration: reduced ? 0.01 : 0.16 }}
+                      className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-smooth p-1 z-50"
+                      role="menu"
+                    >
+                      {LANGS.map(({ code, label, country }) => (
+                        <button
+                          key={code}
+                          onClick={() => onChangeLanguage(code)}
+                          className="px-3 py-2 w-full text-left hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-2 text-sm"
+                          role="menuitem"
+                        >
+                          <ReactCountryFlag
+                            countryCode={country}
+                            svg
+                            style={{ width: "1em", height: "1em", borderRadius: 3 }}
+                            aria-label={`${label} flag`}
+                            title={label}
+                          />
+                          <span className="flex-1">{label}</span>
+                          <span className="text-xs text-slate-400 uppercase">{code}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Mobile Hamburger */}
+              <button
+                className={cx(
+                  "inline-flex h-10 w-10 items-center justify-center rounded-2xl border leading-none transition shadow-smooth",
+                  open
+                    ? "border-sky-300/60 bg-sky-50/70 dark:border-sky-500/30 dark:bg-sky-400/10"
+                    : "border-slate-200 dark:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/70"
+                )}
+                onClick={() => setOpen(v => !v)}
+                aria-label={open ? t("misc.close", { defaultValue: "Close menu" }) : t("misc.open", { defaultValue: "Open menu" })}
+                aria-pressed={open}
+                aria-expanded={open}
+                aria-controls="mobile-menu"
+              >
+                <BurgerIcon open={open} reduced={reduced} />
+              </button>
+            </div>
           </div>
         </div>
         
         <AnimatePresence>
           {open && (
             <motion.div
-            id="mobile-menu"
+              id="mobile-menu"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden overflow-hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+              transition={{ duration: reduced ? 0.1 : 0.3, ease: "easeInOut" }}
+              className="lg:hidden overflow-hidden border-t border-slate-200/50 dark:border-slate-800/50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md"
             >
-              <div className="p-2 space-y-2 text-left">
-                <div className="flex flex-col font-medium">
+              <div className="p-4 space-y-1">
+                {/* Navigation Links */}
+                <nav className="space-y-1">
                   {!isAdmin ? (
                     <>
-                      <Link to="/" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">{t("nav.home", { defaultValue: "Home" })}</Link>
-                      <Link to="/explore" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">{t("nav.explore", { defaultValue: "Explore" })}</Link>
-                      <Link to="/destinasi" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">{t("nav.destinasi", { defaultValue: "Destinations" })}</Link>
-                      <Link to="/faq" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">{t("nav.faq", { defaultValue: "FAQ" })}</Link>
-                      <Link to="/contact" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">{t("nav.contact", { defaultValue: "Contact" })}</Link>
+                      <Link 
+                        to="/" 
+                        onClick={() => setOpen(false)} 
+                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                      >
+                        {t("nav.home", { defaultValue: "Home" })}
+                      </Link>
+                      <Link 
+                        to="/explore" 
+                        onClick={() => setOpen(false)} 
+                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                      >
+                        {t("nav.explore", { defaultValue: "Explore" })}
+                      </Link>
+                      <Link 
+                        to="/destinasi" 
+                        onClick={() => setOpen(false)} 
+                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                      >
+                        {t("nav.destinasi", { defaultValue: "Destinations" })}
+                      </Link>
+                      <Link 
+                        to="/faq" 
+                        onClick={() => setOpen(false)} 
+                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                      >
+                        {t("nav.faq", { defaultValue: "FAQ" })}
+                      </Link>
+                      <Link 
+                        to="/contact" 
+                        onClick={() => setOpen(false)} 
+                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                      >
+                        {t("nav.contact", { defaultValue: "Contact" })}
+                      </Link>
                     </>
                   ) : (
                     <>
-                      <Link to="/admin" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">{adminLabels.dashboard}</Link>
-                      <Link to="/admin/orderan" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">{adminLabels.orders}</Link>
-                      <Link to="/admin/kustomisasi" onClick={() => setOpen(false)} className="px-3 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800">{adminLabels.customize}</Link>
+                      <Link 
+                        to="/admin" 
+                        onClick={() => setOpen(false)} 
+                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                      >
+                        {adminLabels.dashboard}
+                      </Link>
+                      <Link 
+                        to="/admin/orderan" 
+                        onClick={() => setOpen(false)} 
+                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                      >
+                        {adminLabels.orders}
+                      </Link>
+                      <Link 
+                        to="/admin/kustomisasi" 
+                        onClick={() => setOpen(false)} 
+                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                      >
+                        {adminLabels.customize}
+                      </Link>
                     </>
                   )}
+                </nav>
 
-                  {/* Actions */}
-                  <div className="grid grid-cols-2 gap-2 px-3 pt-2">
-                    <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="btn btn-outline">
-                      {theme === "dark" ? "Light" : "Dark"}
-                    </button>
+                {/* Divider */}
+                <div className="my-3 h-px bg-slate-200 dark:bg-slate-700" />
 
-                    {/* Tetap pakai select di mobile */}
-                    <div className="flex items-center">
-                      <label htmlFor="lang-select" className="sr-only">{t("nav.language", { defaultValue: "Language" })}</label>
-                      <select
-                        id="lang-select"
-                        className="w-full px-3 py-2 rounded-2xl border bg-white dark:bg-slate-900"
-                        value={i18n.language?.slice(0,2) || "id"}
-                        onChange={(e) => onChangeLanguage(e.target.value)}
-                      >
- {LANGS.map(l => (
-   <option key={l.code} value={l.code}>
-     {flagEmojiFromCountry(l.country)} {l.label}
-   </option>
- ))}                      </select>
-                    </div>
-                  </div>
+                {/* Actions Section */}
+                <div className="space-y-2">
+                  {/* Theme Toggle */}
+                  <button 
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")} 
+                    className="w-full px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-3"
+                  >
+                    <span className="w-6 h-6 flex items-center justify-center rounded-md bg-sky-100/50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400">
+                      {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                    </span>
+                    {theme === "dark" ? t("nav.theme.light", { defaultValue: "Light Mode" }) : t("nav.theme.dark", { defaultValue: "Dark Mode" })}
+                  </button>
 
-                  {/* Auth */}
+                  {/* Auth Button */}
                   {session ? (
                     <button
                       onClick={async () => { await supabase.auth.signOut(); window.location.href = "/"; }}
-                      className="btn btn-outline mx-3 mt-2 flex items-center gap-2"
+                      className="w-full btn btn-outline flex items-center justify-center gap-2 text-sm"
                     >
-                      <LogOut size={16}/> Logout
+                      <LogOut size={16} />
+                      {t("nav.logout", { defaultValue: "Logout" })}
                     </button>
                   ) : (
-                    <Link to="/admin/login" onClick={() => setOpen(false)} className="btn btn-outline mx-3 mt-2 flex items-center gap-2" aria-label="Login">
-                      <UserRound size={16} /> Login
+                    <Link 
+                      to="/admin/login" 
+                      onClick={() => setOpen(false)} 
+                      className="w-full btn btn-outline flex items-center justify-center gap-2 text-sm"
+                      aria-label="Login"
+                    >
+                      <UserRound size={16} />
+                      {t("nav.login", { defaultValue: "Login" })}
                     </Link>
                   )}
                 </div>
