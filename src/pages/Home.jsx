@@ -675,7 +675,7 @@ function HowItWorks({ title, subtitle, steps = [] }) {
   );
 }
 
-function BigCTA({ title, desc, whatsapp = "+6289523949667" }) {
+function BigCTA({ title, desc, whatsapp = "+62895630193926" }) {
   const { t } = useTranslation();
   return (
     <section className="container mt-20 mb-24">
@@ -841,7 +841,7 @@ export default function Home() {
       <BigCTA
         title={S.cta?.locale?.title || t("home.ctaTitle", { defaultValue: "Siap Berpetualang di Nusa Penida?" })}
         desc={S.cta?.locale?.body_md || t("home.ctaDesc", { defaultValue: "Hubungi kami via WhatsApp/Instagram/Email. Tim akan bantu atur itinerary terbaik sesuai waktu & budget." })}
-        whatsapp={S.cta?.data?.whatsapp || "+6289523949667"}
+        whatsapp={S.cta?.data?.whatsapp || "+62895630193926"}
       />
       <StickyHelpCTA />
     </>

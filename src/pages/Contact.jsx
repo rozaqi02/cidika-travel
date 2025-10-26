@@ -40,7 +40,7 @@ export default function Contact() {
 
   const info = S.contact_info?.data || {};
   const hrs = S.contact_info?.locale?.extra?.hours || [];
-  const waNumber = (info.wa || info.phone || "+6289523949667").replace(/[^\d+]/g, "");
+  const waNumber = (info.wa || info.phone || "+62895630193926").replace(/[^\d+]/g, "");
   const mapSrc =
     S.map?.data?.map_embed_src ||
     info.map_embed_src ||

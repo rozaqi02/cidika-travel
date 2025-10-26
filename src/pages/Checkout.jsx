@@ -8,7 +8,7 @@ import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
 import { motion, AnimatePresence } from "framer-motion";
 
-const WA_NUMBER = "6289523949667"; // ganti jika perlu
+const WA_NUMBER = "+62895630193926"; // ganti jika perlu
 const SNAP_KEY = "order:justPlaced";
 const SNAP_TTL_MS = 1000 * 60 * 30; // 30 menit
 
