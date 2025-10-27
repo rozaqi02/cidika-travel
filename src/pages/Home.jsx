@@ -15,7 +15,7 @@ import { supabase } from "../lib/supabaseClient";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
-const FALLBACK_HERO_IMAGES = ["/hero1.jpg", "/hero2.jpg", "/hero3.jpg", "/hero4.jpg", "/hero5.jpg", "/hero6.jpg"];
+const FALLBACK_HERO_IMAGES = ["/hero2.jpg", "/hero1.jpg", "/hero3.jpg", "/hero4.jpg", "/hero5.jpg", "/hero6.jpg"];
 
 function usePreload(images) {
   useEffect(() => {
@@ -726,7 +726,7 @@ function StickyHelpCTA() {
         >
           <div className="container">
             <a
-              href="https://wa.me/6289523949667"
+              href="https://wa.me/62895630193926"
               target="_blank"
               rel="noreferrer"
               className="w-full sm:w-auto btn btn-primary glass flex items-center gap-2 shadow-lg rounded-xl px-6 py-2.5"

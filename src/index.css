@@ -370,3 +370,8 @@ body { opacity: 1; }
 .card:hover .card-glow {
   box-shadow: 0 8px 32px rgba(56, 189, 248, 0.2);
 }
+
+@keyframes shimmer {
+  0% { background-position: -300% 0; }
+  100% { background-position: 300% 0; }
+}

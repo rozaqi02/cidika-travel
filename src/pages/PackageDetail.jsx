@@ -366,7 +366,7 @@ export default function PackageDetail() {
             </button>
             <a
               className="btn btn-outline py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              href={`https://wa.me/6289523949667?text=${buildAskWAMessage()}`}
+              href={`https://wa.me/62895630193926?text=${buildAskWAMessage()}`}
               target="_blank"
               rel="noreferrer"
             >
