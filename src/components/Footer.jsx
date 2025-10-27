@@ -126,8 +126,8 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone size={18} className="text-sky-600 dark:text-sky-400" />
-                <a className="hover:underline" href="https://wa.me/6289523949667" target="_blank" rel="noreferrer">
-                  +62 8952 3949 667 (WA)
+                <a className="hover:underline" href="https://wa.me/62895630193926" target="_blank" rel="noreferrer">
+                  +62895630193926(WA)
                 </a>
               </li>
             </ul>
