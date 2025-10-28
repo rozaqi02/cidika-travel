@@ -375,3 +375,85 @@ body { opacity: 1; }
   0% { background-position: -300% 0; }
   100% { background-position: 300% 0; }
 }
+
+/* Parallax Hero */
+.parallax-container {
+  position: relative;
+  overflow: hidden;
+}
+.parallax-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+/* Glow Hover */
+.glow-hover:hover {
+  box-shadow: 0 20px 40px rgba(56, 189, 248, 0.15), 0 0 0 1px rgba(56, 189, 248, 0.05);
+}
+
+/* Badge Glow */
+.badge-glow {
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1);
+}
+.badge-glow:hover {
+  box-shadow: 0 6px 16px rgba(56, 189, 248, 0.2);
+}
+
+/* Testimonials Enhancements */
+.card-glow {
+  background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); /* Subtle glass */
+}
+.dark .card-glow {
+  background: linear-gradient(145deg, rgba(15,23,42,0.3), rgba(15,23,42,0.1));
+}
+.card-glow:hover {
+  box-shadow: 0 10px 30px rgba(56,189,248,0.15); /* Glow on hover */
+}
+
+.avatar-initial {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.testimonial-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: rgba(148,163,184,0.5);
+  border: 1px solid rgba(148,163,184,0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.dark .dot {
+  background: rgba(71,85,105,0.5);
+}
+.dot-active {
+  background: #0ea5e9;
+  transform: scale(1.2);
+  box-shadow: 0 0 0 3px rgba(14,165,233,0.2);
+}
+
+.section-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at top center, rgba(56,189,248,0.08), transparent 70%);
+  opacity: 0.5;
+}
+
