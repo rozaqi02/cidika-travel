@@ -1,8 +1,8 @@
 ```markdown
 # CIDIKA TRAVEL & TOUR – Official Website  
 
-**Live Demo**: [https://cidika-travel.netlify.app](https://cidika-travel.netlify.app)  
-**GitHub**: https://github.com/your-username/cidika-travel  
+**Live Demo**: [https://cidikatravel.com](https://cidikatravel.com)  
+**GitHub**: https://github.com/rozaqi02/cidika-travel  
 
 ---
 
