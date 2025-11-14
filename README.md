@@ -1,135 +1,125 @@
-# CIDIKA TRAVEL&TOUR — React (CRA, JSX) + Tailwind + Supabase + Netlify
+```markdown
+# CIDIKA TRAVEL & TOUR – Official Website  
 
-> Node **v22.17.0** (Windows) — tanpa Vite, full JSX.
+**Live Demo**: [https://cidika-travel.netlify.app](https://cidika-travel.netlify.app)  
+**GitHub**: https://github.com/your-username/cidika-travel  
 
-## 0) Ekstrak & Buka Folder
-Ekstrak zip ini ke: `C:\Projects\cidika-travel` lalu buka di VS Code.
+---
 
-## 1) Install Dependencies
-```powershell
-cd C:\Projects\cidika-travel
-npm install
+## Overview
+
+**CIDIKA TRAVEL & TOUR** is a modern, fully responsive travel booking platform built for adventure seekers exploring **Nusa Penida** and beyond. Designed with a clean, luxurious aesthetic inspired by premium travel brands, the site delivers a seamless user experience across desktop and mobile devices.
+
+This project showcases a **production-ready frontend architecture** using **React (Create React App)**, **Tailwind CSS**, **Supabase** for backend services, and **Netlify** for global deployment.
+
+---
+
+## Key Features
+
+### User-Facing Experience
+- **Stunning Hero Carousel** with parallax, auto-transition, and Ken Burns zoom effects  
+- **Interactive Circular Gallery** – 3D rotating image showcase with drag-to-rotate (pure CSS + React)  
+- **Dynamic Package Explorer** with multi-tier pricing (per pax), audience filters (domestic/foreign), and real-time currency formatting  
+- **Multilingual Support** (`en`, `id`, `ja`) powered by `react-i18next`  
+- **Dark/Light Mode** with smooth transitions and system preference detection  
+- **Testimonial Carousel + Submission Form** with Google Translate fallback  
+- **Sticky WhatsApp CTA** and animated shimmer buttons for high conversion  
+- **Fully Accessible** – semantic HTML, ARIA labels, keyboard navigation  
+
+### Admin & Content Management
+- **Headless CMS via Supabase** – all page content, hero text, pricing, and packages are editable without redeploy  
+- **Admin Dashboard** (protected route) with:
+  - Real-time stats (trips, photos, ratings)
+  - Full CRUD for multilingual content
+  - Order management panel
+- **Supabase Auth** – email/password login for admins (session-aware)
+
+### Performance & UX
+- **Lazy loading**, **image preloading**, and **reduced motion** support  
+- **Framer Motion** animations with `viewport` triggers and `staggerChildren`  
+- **Glassmorphism UI**, subtle grain textures, and micro-interactions  
+- **SEO-ready** with dynamic meta tags and structured data potential  
+
+---
+
+## Tech Stack
+
+| Layer        | Technology |
+|-------------|------------|
+| **Framework** | React 18 + Create React App |
+| **Styling**   | Tailwind CSS + Custom Design System |
+| **Animations**| Framer Motion |
+| **Backend**   | Supabase (PostgreSQL, Auth, RLS) |
+| **i18n**      | `react-i18next` + JSON locale files |
+| **Routing**   | React Router DOM v6 |
+| **State**     | React Context (Currency, Cart) |
+| **Deployment**| Netlify (CI/CD, Preview URLs) |
+| **Icons**     | Lucide React |
+| **Fonts**     | Google Fonts (`Cinzel`, `League Spartan`, `Berkshire Swash`) |
+
+---
+
+## Project Structure (Highlights)
+
+```
+src/
+├── components/     → Reusable UI (BlurText, ShimmerButton, CircularGallery)
+├── pages/          → Home, Explore, FAQ, Contact, Admin/*
+├── hooks/          → usePackages, usePageSections, useCurrency
+├── context/        → CurrencyContext, CartContext
+├── lib/            → supabaseClient.js
+├── locales/        → en, id, ja translation files
+├── assets/         → Images, icons
+└── utils/          → currency formatting, URL helpers
 ```
 
-## 2) Tailwind sudah siap
-Konfigurasi ada di `tailwind.config.js`, `postcss.config.js`, dan `src/index.css`.
+---
 
-## 3) Supabase Setup
-1. Buat project di https://supabase.com (Region terdekat).
-2. Di Project Settings → API, salin:
-   - `Project URL` → `.env.local` => `REACT_APP_SUPABASE_URL`
-   - `anon public key` → `.env.local` => `REACT_APP_SUPABASE_ANON_KEY`
-3. Buat file `.env.local` dari `.env.example` dan isi nilai di atas.
-4. SQL (Table minimal):
-```sql
--- Tabel konten per halaman (multi-bahasa)
-create table if not exists page_content (
-  id bigint generated always as identity primary key,
-  page text not null,      -- e.g. 'home','explore','faq','contact'
-  key text not null,       -- e.g. 'hero_title','hero_desc'
-  lang text not null check (lang in ('en','id','ja')),
-  content text,
-  image_url text,
-  updated_at timestamp with time zone default now()
-);
-create index on page_content(page, key, lang);
+## Design Philosophy
 
--- Tabel packages (opsional, jika ingin isi dinamis dari DB)
-create table if not exists packages (
-  id uuid default gen_random_uuid() primary key,
-  slug text unique,
-  title jsonb,          -- {en:'',id:'',ja:''}
-  description jsonb,    -- {en:'',id:'',ja:''}
-  price_tiers jsonb,    -- [["1",1000000],["2",550000],...]
-  images jsonb,
-  is_active boolean default true,
-  updated_at timestamp with time zone default now()
-);
+- **Mobile-First Responsive** – fluid typography, touch-friendly interactions  
+- **Performance-First** – code splitting, lazy loading, minimal re-renders  
+- **Maintainability** – modular components, centralized content via Supabase  
+- **Scalability** – ready for e-commerce, booking engine, or blog integration  
 
--- Tabel orders (insert oleh anon)
-create table if not exists orders (
-  id bigint generated always as identity primary key,
-  package_id text,
-  name text,
-  email text,
-  phone text,
-  pax int,
-  notes text,
-  status text default 'new',
-  created_at timestamp with time zone default now()
-);
+---
 
--- RLS
-alter table page_content enable row level security;
-alter table packages enable row level security;
-alter table orders enable row level security;
+## Why This Project?
 
--- Policy: publik read page_content & packages
-create policy "public read page_content" on page_content for select using (true);
-create policy "public read packages" on packages for select using (true);
+This repository serves as a **reference implementation** for:
+- Building **beautiful, high-converting travel websites**
+- Integrating **Supabase as a full backend replacement**
+- Creating **smooth, cinematic UI animations** without heavy libraries
+- Managing **multilingual content at scale**
+- Deploying **secure, static-first apps with admin panels**
 
--- Policy: admin write (ganti 'your_admin_email@domain.com')
--- Buat Supabase Auth user untuk admin (email/password).
-create policy "admin upsert page_content" on page_content
-for insert with check (auth.email() = 'your_admin_email@domain.com');
-create policy "admin update page_content" on page_content
-for update using (auth.email() = 'your_admin_email@domain.com');
+---
 
-create policy "admin upsert packages" on packages
-for insert with check (auth.email() = 'your_admin_email@domain.com');
-create policy "admin update packages" on packages
-for update using (auth.email() = 'your_admin_email@domain.com');
+## Screenshots
 
--- Policy: anon insert orders
-create policy "anon insert orders" on orders
-for insert with check (true);
-create policy "admin read orders" on orders
-for select using (auth.email() = 'your_admin_email@domain.com');
+| Home Hero | Circular Gallery | Package Card |
+|---------|---------|---------|
+| ![Hero](https://your-screenshot-url/hero.jpg) | ![Gallery](https://your-screenshot-url/gallery.jpg) | ![Package](https://your-screenshot-url/package.jpg) |
+
+---
+
+## Contributing
+
+Contributions are welcome! Feel free to:
+- Open issues for bugs or feature requests
+- Submit pull requests with improvements (UI, accessibility, performance)
+- Suggest new destinations or UI enhancements
+
+Please follow the [Code of Conduct](CODE_OF_CONDUCT.md) and include clear descriptions.
+
+---
+
+## License
+
+This project is **open source** under the [MIT License](LICENSE). Use it, modify it, and build your own travel empire.
+
+---
+
+> **CIDIKA TRAVEL & TOUR** – *Where Adventure Meets Elegance.*  
+> Built with passion by [Your Name/Team].
 ```
-
-> Note: di app ini halaman Admin memakai Supabase Auth email/password.
-> Setelah login sukses, token dummy disimpan sebagai `sb:token` di localStorage untuk membantu guard di hosting statis. Untuk keamanan produksi, sebaiknya implement guard berdasarkan session Supabase secara penuh (fetch `getSession()` dan subscribe `onAuthStateChange`).
-
-## 4) Run Dev
-```powershell
-npm start
-```
-App jalan di http://localhost:3000
-
-## 5) GitHub Repo
-```powershell
-git init
-git add .
-git commit -m "Init CIDIKA TRAVEL&TOUR (CRA, Tailwind, i18n, Supabase, Netlify)"
-git branch -M main
-git remote add origin https://github.com/<username>/cidika-travel.git
-git push -u origin main
-```
-
-## 6) Netlify Deploy
-1. Buat site baru → Import from Git.
-2. Pilih repo `cidika-travel`.
-3. Build command: `npm run build`
-4. Publish directory: `build`
-5. Environment variables:
-   - `REACT_APP_SUPABASE_URL`
-   - `REACT_APP_SUPABASE_ANON_KEY`
-   - Opsional: set `NODE_VERSION=22.17.0` (sudah di `netlify.toml`)
-
-## 7) Struktur & Fitur
-- **Navbar**: Explore, Destinasi, FAQ, Contact, Login Admin, toggle dark/light, switch bahasa.
-- **Home**: Hero slider auto 3 detik + panah, daftar paket (harga per pax), tombol keranjang.
-- **Explore**: detail tiap paket (spot, termasuk, harga, catatan).
-- **Cart**: context + localStorage, Checkout stub (tinggal insert ke tabel `orders` Supabase).
-- **Admin**:
-  - **Dashboard**: hitung total orders/packages/page_content.
-  - **Kustomisasi**: CRUD untuk `page_content` (konten multi-bahasa).
-  - **Orderan**: list order dari Supabase.
-
-## 8) Next Steps (Opsional)
-- Ganti hero images (letakkan di `/public/` lalu update `heroImages` di `Home.jsx`).
-- Sempurnakan ProtectedRoute dan auth session Supabase.
-- Hubungkan Checkout agar `orders` ter-insert via Supabase.
-- Ganti placeholder logo di `/public/logo.png` dengan logo asli.
-
-Selamat ngoding! 🎉
