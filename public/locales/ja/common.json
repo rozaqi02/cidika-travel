@@ -1,0 +1,302 @@
+{
+  "nav": {
+    "home": "ホーム",
+    "explore": "エクスプロア",
+    "destinasi": "目的地",
+    "faq": "FAQ",
+    "contact": "お問い合わせ",
+    "login": "管理者ログイン",
+    "language": "言語",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "theme": "テーマ",
+    "light": "ライト",
+    "dark": "ダーク"
+  },
+  "hero": {
+    "tag": "BEST OFFERS",
+    "line1": "ヌサ・ペニダを旅しよう",
+    "line2": "CIDIKA TRAVEL&TOUR",
+    "desc": "ツアーやシュノーケリングを安心サポート。",
+    "ctaExplore": "パッケージを見る",
+    "ctaContact": "人気パッケージを見る"
+  },
+  "home": {
+    "popular": "人気パッケージ",
+    "popularSub": "旅行者に人気のプラン。",
+    "calcFor": "人数別の料金",
+    "pax": "名",
+    "perPax": "名",
+    "flexible": "フレキシブル",
+    "viewDetails": "詳細を見る",
+    "orderViaWA": "WhatsAppで予約",
+    
+  "submitTestimonial": "あなたの体験をシェア",
+  "namePlaceholder": "お名前を入力",
+  "cityPlaceholder": "都市（任意）",
+  "testimonialPlaceholder": "冒険について教えてください...",
+    "viewAllPackages": "すべてのプランを見る",
+    "ctaPopular": "人気パッケージを見る",
+    "aboutTitle": "快適にヌサ・ペニダへ",
+    "aboutBody": "CIDIKA TRAVEL&TOUR はヌサ・ペニダ専門。陸路ツアー、シュノーケリング、宿泊付きなど、快適さ・温かさ・プロ意識を大切にしています。予約はメール／Instagram／WhatsApp／電話で簡単・安心。",
+    "point1": "充実のプラン：日帰り、半日、1泊＋シュノーケリング、2日1泊。",
+    "point2": "写真サポートもできるローカルガイド。",
+    "point3": "プライベートツアーで柔軟なスケジュール。",
+    "point4": "往復ファストボート＆入場料込みの明朗価格。",
+    "banner1": "ケリンキング、ダイヤモンド、クリスタルベイ—人気スポットを一度に。",
+    "whyTitle": "選ばれる理由",
+    "whySubtitle": "安心して楽しめるポイント。",
+    "whyItems": [
+      { "title": "公認・経験豊富なオペレーター", "text": "ローカルチームがベストスポットとタイミングを熟知。" },
+      { "title": "誰でも楽しめる", "text": "一人旅・カップル・家族・会社旅行。" },
+      { "title": "柔軟なスケジュール", "text": "プライベートチャーター／オープントリップ。" },
+      { "title": "最適化された行程", "text": "効率的でもベストな瞬間を逃しません。" }
+    ],
+    "stats": {
+      "travelers": "満足した旅行者",
+      "media": "写真・動画",
+      "rating": "評価"
+    },
+    "howTitle": "ご利用の流れ",
+    "howSubtitle": "ログイン不要で簡単・スピーディー。",
+    "how": [
+      { "title": "プランを選ぶ", "text": "比較して人数を設定。" },
+      { "title": "問い合わせ", "text": "WhatsAppをタップ—すぐ返信します。" },
+      { "title": "日程を決める", "text": "日付と集合場所を決定。" },
+      { "title": "出発！", "text": "あとは楽しむだけ。" }
+    ],
+    "testimonialsTitle": "お客様の声",
+    "helpCTA": "お困りですか？WhatsAppで相談",
+    "addToCart": "カートに追加",
+    "ctaTitle": "ヌサ・ペニダへ行きませんか？",
+    "ctaDesc": "WhatsApp／Instagram／Emailでご連絡ください。時間とご予算に合う最適行程をご提案します。"
+  },
+  "explore": {
+    "title": "パッケージ一覧",
+    "spots": "見どころ",
+    "includes": "含まれるもの",
+    "prices": "人数別料金",
+    "itinerary": "行程",
+    "seeDetail": "詳細を見る",
+    "hideDetail": "詳細を閉じる",
+    "snorkeling": "シュノーケリング",
+    "day1": "1日目",
+    "day2": "2日目",
+    "searchPlaceholder": "プラン名やスポットで検索…",
+    "domestic": "国内",
+    "foreign": "海外",
+    "empty": "条件に一致するプランが見つかりません。",
+    "all": "すべて",
+"destinations": "目的地",
+"compact": "コンパクト",
+"cozy": "ゆったり",
+"compactGrid": "コンパクトグリッド",
+"cozyGrid": "ゆったりグリッド",
+"privateTour": "プライベートツアー",
+"sortPrice": "最安",
+"sortName": "A–Z"
+
+  },
+  "actions": {
+    "order": "注文する",
+    "askMore": "詳しく質問する"
+  },
+  "faq": {
+    "title": "よくある質問",
+    "list": [
+      { "q": "予約方法は？", "a": "パッケージをカートに追加してチェックアウト、または直接ご連絡ください。" },
+      { "q": "プライベートツアーですか？", "a": "はい、すべてプライベート（相乗りなし）です。" },
+      { "q": "行程のカスタムは可能？", "a": "可能です。ご希望をお問い合わせ時にお知らせください。" }
+    ]
+  },
+"dest": {
+  "title": "目的地",
+  "heroDesc": "バリ南東部の美しい島々を探検",
+  "penidaTitle": "ヌサ・ペニダ",
+  "penidaDesc": "バリ南東部の象徴的なビーチと崖の島。ケリンキングビーチとブロークンビーチで有名。",
+  "lembonganTitle": "ヌサ・レンボンガン",
+  "lembonganDesc": "白い砂浜の小さな島。シュノーケリングやデビルズ・ティアーズに最適。",
+  "ceninganTitle": "ヌサ・チェニンガン",
+  "ceninganDesc": "ブルーラグーンと穏やかな雰囲気の最も小さな島。リラックスした冒険にぴったり。",
+  "empty": "検索に一致する目的地が見つかりません。",
+  "search": "目的地を検索...",
+  "cardsTitle": "注目の目的地",
+  "explore": "探索"
+},
+  "contact": {
+    "title": "お問い合わせ",
+    "subtitle": "ご質問やカスタム手配のご相談はお気軽に。WhatsApp ならすぐ返信します。",
+    "info": "連絡先情報",
+    "formTitle": "クイックフォーム",
+    "formNote": "デモ用フォームです。本番では WhatsApp／Email へリダイレクトしてください。",
+    "name": "お名前",
+    "emailwa": "Email／WhatsApp",
+    "message": "メッセージ",
+    "send": "送信",
+    "sent": "ありがとうございます。追ってご連絡します。",
+    "addressLabel": "住所",
+    "emailLabel": "メール",
+    "phoneLabel": "電話／WA",
+    "instagramLabel": "インスタ"
+  },
+"checkout": {
+  "title": "チェックアウト",
+  "details": "ご予約者情報",
+  "itemsCount": "{{count}} 件",
+  "name": "氏名",
+  "email": "メール",
+  "phone": "電話／WA",
+  "date": "旅行日 (YYYY-MM-DD)",
+  "notes": "備考",
+  "submit": "注文を確定",
+  "processing": "処理中...",
+  "summary": "サマリー",
+  "cartEmptyShort": "カートは空です",
+  "cartEmpty": "カートは空です。",
+  "creating": "注文を作成中...",
+  "failed": "注文の作成に失敗しました",
+  "noteForeign": "海外旅行者向けの調整込み。",
+  "noteDomestic": "国内旅行者向けの特別料金。",
+  "audienceDomestic": "国内",
+  "audienceForeign": "海外",
+  "rateLimit": "リクエストが多すぎます。しばらくしてから再度お試しください。",
+  "wa": {
+    "header": "CIDIKA管理者さま、予約を希望します。",
+    "name": "名前",
+    "phone": "WA",
+    "email": "メール",
+    "date": "日付",
+    "audience": "区分",
+    "items": "内容:",
+    "total": "合計",
+    "code": "コード",
+    "footer": "ご確認をお願いします 🙏"
+  },
+  "success": {
+    "title": "ご注文を受け付けました！",
+    "body": "まもなく担当者が対応します。",
+    "code": "注文コード",
+    "total": "合計",
+    "contactAdmin": "管理者に確認する",
+    "goHome": "ホームへ戻る",
+    "mustConfirm": "ホームへ戻る前に「管理者に確認する」をタップしてください。",
+    "mustConfirmHint": "先に「管理者に確認する」をタップ",
+    "confirmNote": "確認：上記内容で問題ありません。手配をお願いします。🙏",
+    "fallback": "WhatsAppが使えない場合、このメッセージをコピーして手動で管理者にお送りください。"
+  }
+},
+    "footer": {
+    "cta": {
+      "kicker": "準備はいい？",
+      "title": "ヌサ・ペニダの旅、手配は私たちにお任せ。",
+      "whatsapp": "WhatsAppで相談",
+      "contact": "お問い合わせ"
+    },
+    "brand": {
+      "tagline": "ヌサ・ペニダ島ツアー＆シュノーケリング。プライベート対応、柔軟な行程、経験豊富なローカルチーム。"
+    },
+    "links": {
+      "title": "メニュー",
+      "packages": "料金とプラン",
+      "destinations": "人気スポット",
+      "faq": "FAQ",
+      "contact": "お問い合わせ"
+    },
+    "contact": {
+      "title": "連絡先",
+      "addressText": "ブンガ・メカル／ヌサ・ペニダ／クルンクン県／バリ"
+    },
+    "newsletter": {
+      "title": "最新情報を受け取る",
+      "desc": "プロモや最新行程をメールでお届けします。",
+      "placeholder": "メールアドレス",
+      "submit": "登録",
+      "note": "登録によりプライバシーポリシーに同意したものとします。",
+      "thanks": "ありがとうございます！最新情報をお送りします 🎉"
+    },
+    "bottom": {
+      "rights": "無断転載禁止。",
+      "terms": "利用規約",
+      "privacy": "プライバシー",
+      "follow": "フォロー"
+    }
+  },
+  "admin": {
+    "menu": {
+      "dashboard": "ダッシュボード",
+      "orders": "注文一覧",
+      "customize": "カスタマイズ"
+    },
+    "common": {
+      "empty": "データはまだありません"
+    },
+    "login": {
+      "title": "管理者ログイン",
+      "email": "メール",
+      "password": "パスワード",
+      "submit": "ログイン",
+      "loggingIn": "ログイン中..."
+    },
+    "dashboard": {
+      "stats": {
+        "bookings": "予約",
+        "packages": "パッケージ",
+        "sections": "セクション"
+      },
+      "latestOrders": "最新の注文",
+      "table": {
+        "date": "日時",
+        "name": "名前",
+        "status": "ステータス",
+        "totalIDR": "合計 (IDR)"
+      }
+    },
+    "customize": {
+      "title": "ページのカスタマイズ",
+      "saveAll": "すべて保存",
+      "saving": "保存中...",
+      "section": "セクション:",
+      "sort": "並び順",
+      "dataJsonLabel": "データ (JSON) — 例: hero { images:[] }",
+      "titleLabel": "タイトル",
+      "bodyLabel": "本文 (Markdown)",
+      "saved": "保存しました",
+      "saveFailed": "保存に失敗しました",
+      "addSection": "セクションを追加"
+    },
+    "orders": {
+      "title": "注文一覧",
+      "table": {
+        "date": "日時",
+        "package": "パッケージ",
+        "name": "氏名",
+        "contact": "連絡先",
+        "pax": "人数",
+        "status": "状況",
+        "totalIDR": "合計 (IDR)"
+      },
+      "status": {
+        "pending": "保留",
+        "success": "完了",
+        "cancelled": "キャンセル"
+      },
+      "actions": {
+        "edit": "編集",
+        "save": "保存",
+        "saving": "保存中...",
+        "saved": "保存しました",
+        "updateStatus": "ステータスを更新",
+        "invoice": "インボイス",
+        "invoicePlaceholder": "インボイス番号／リンクを貼り付け",
+        "viewBooking": "予約を表示"
+      }
+    }
+  },
+  "misc": {
+    "loading": "読み込み中...",
+    "success": "成功しました",
+    "error": "エラーが発生しました"
+  },
+  "back": "戻る",
+  "gallery": "ギャラリー"
+}

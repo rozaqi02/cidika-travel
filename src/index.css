@@ -1,0 +1,459 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==== Display "batik" look (FREE) ====
+   Berkshire Swash = ornamental headline
+   Merienda = friendly cursive fallback
+   → dipakai khusus untuk hero & judul (bukan global).
+*/
+@import url('https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Merienda:wght@700&display=swap');
+
+/* ==== Tesla-like global (body & headings umum) ==== */
+@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@600;700;800;900&family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+/* ===============================
+   Base tokens
+=================================*/
+:root{
+  --brand:#0ea5e9; /* sky-500 */
+  --brand-2:#38bdf8;/* sky-400 */
+  --ink:#0f172a;    /* slate-900 */
+  --bg:#ffffff;
+  --bg-dark:#0b1220;
+
+  /* Global sans & heading (tesla-like) */
+  --font-sans: 'Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  --font-hero:'League Spartan','Montserrat', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+
+  /* New: special batik display font (for hero/faq/contact only) */
+  --font-batik: 'Berkshire Swash','Merienda','Segoe Script','Brush Script MT', cursive;
+
+  --page-x: clamp(24px, 6vw, 72px);
+}
+
+/* util font */
+.font-hero{ font-family: var(--font-hero); }
+/* New: utility untuk heading batik */
+.font-batik{
+  font-family: var(--font-batik);
+  font-weight: 400;
+  letter-spacing: .01em;
+  font-feature-settings: "liga" 1, "clig" 1;
+}
+
+/* Preset opsional biar tinggal pakai class */
+.hero-batik{ @apply font-batik; line-height: 1.05; }
+.faq-title{ @apply font-batik; }
+.contact-title{ @apply font-batik; }
+
+/* Full-height app */
+html, body, #root { height: 100%; }
+
+/* Smooth scroll */
+html{ scroll-behavior:smooth; }
+
+/* Theme base + global font */
+body{
+  @apply text-slate-900 bg-white;
+  font-family: var(--font-sans);
+}
+.dark body{ @apply text-slate-100 bg-slate-950; }
+
+/* Container gutters */
+.container{
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: calc(var(--page-x) + env(safe-area-inset-left, 0px));
+  padding-right: calc(var(--page-x) + env(safe-area-inset-right, 0px));
+}
+
+/* Prefer transform/opacity transitions only */
+*{ -webkit-tap-highlight-color: transparent; }
+img{ image-rendering: -webkit-optimize-contrast; }
+
+/* Global transitions */
+body, main, header, footer, nav, .card, .btn, input, select, textarea {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: .25s;
+  transition-timing-function: ease;
+}
+
+/* Content-visibility perf */
+.card, section, article { content-visibility:auto; }
+
+/* ===============================
+   Cards
+=================================*/
+.card{
+  @apply rounded-2xl shadow-smooth bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800;
+}
+
+/* ===============================
+   FORMS
+=================================*/
+input, select, textarea{ @apply bg-white text-slate-900 border border-slate-300 rounded-2xl px-3 py-2; font-family: var(--font-sans); }
+.dark input, .dark select, .dark textarea{ @apply bg-slate-900 text-slate-100 border-slate-700; }
+input::placeholder, textarea::placeholder{ @apply text-slate-400; }
+.dark input::placeholder, .dark textarea::placeholder{ @apply text-slate-500; }
+
+/* Floating label helper (agar label tidak menimpa teks saat sudah terisi) */
+.floating-label{
+  @apply pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 text-sm text-slate-500 dark:text-white/60 transition-all bg-white/70 dark:bg-white/10 px-1 rounded;
+}
+/* Saat fokus ATAU saat input sudah ada nilainya, kecilkan & naikkan label */
+.peer:focus ~ .floating-label,
+.peer:not(:placeholder-shown) ~ .floating-label{
+  top: .25rem;              /* sama dengan top-1 */
+  transform: translateY(0); /* hilangkan -translate-y-1/2 */
+  font-size: .75rem;        /* text-xs */
+  color: rgb(2 132 199);    /* sky-600 */
+}
+.dark .peer:focus ~ .floating-label,
+.dark .peer:not(:placeholder-shown) ~ .floating-label{
+  color: rgb(56 189 248);   /* sky-400 */
+}
+
+/* ===============================
+   BUTTONS → Glassy
+=================================*/
+.btn{
+  @apply inline-flex items-center justify-center rounded-2xl font-medium;
+  padding: .55rem 1rem;
+  backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
+  border: 1px solid rgba(2,6,23,.12);
+  color: var(--ink);
+  box-shadow: 0 6px 24px rgba(2,6,23,.06), 0 2px 8px rgba(2,6,23,.04);
+  will-change: transform, opacity;
+  font-family: var(--font-sans);
+}
+.btn:hover{ transform: translateY(-1px); }
+.btn:active{ transform: translateY(0); }
+.btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+.dark .btn{
+  background: color-mix(in srgb, rgba(2,6,23,.85) 36%, transparent);
+  border-color: rgba(148,163,184,.25);
+  color: #e2e8f0;
+}
+
+/* Primary */
+.btn-primary{
+  color: var(--ink);
+  background: color-mix(in srgb, var(--brand) 16%, var(--bg) 84%);
+  border-color: color-mix(in srgb, var(--brand) 40%, rgba(2,6,23,.10));
+}
+.btn-primary:hover{ background: color-mix(in srgb, var(--brand) 22%, var(--bg) 78%); }
+.dark .btn-primary{
+  color:#fff;
+  background: color-mix(in srgb, var(--brand) 26%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 50%, transparent);
+}
+
+/* Outline */
+.btn-outline{
+  background: color-mix(in srgb, var(--bg) 28%, transparent);
+  border-color: rgba(2,6,23,.18);
+  color: inherit;
+}
+.btn-outline:hover{ background: color-mix(in srgb, var(--bg) 36%, transparent); }
+.dark .btn-outline{
+  background: color-mix(in srgb, rgba(2,6,23,.92) 28%, transparent);
+  border-color: rgba(148,163,184,.25);
+  color: #e2e8f0;
+}
+
+/* Utility glass (hero) */
+.glass{ background: color-mix(in srgb, var(--bg) 48%, transparent); }
+.dark .glass{ background: color-mix(in srgb, rgba(2,6,23,.85) 34%, transparent); }
+.grain .btn.glass{ background: color-mix(in srgb, var(--bg) 40%, transparent); }
+.dark .grain .btn.glass{ background: color-mix(in srgb, rgba(2,6,23,.88) 32%, transparent); }
+
+/* Fokus ring */
+:focus-visible{ outline:2px solid var(--brand-2); outline-offset:3px; }
+
+/* ===============================
+   NProgress
+=================================*/
+#nprogress{ pointer-events:none; }
+#nprogress .bar{
+  background: linear-gradient(90deg, var(--brand), var(--brand-2)) !important;
+  position: fixed; z-index: 2000; top:0; left:0; height:3px !important;
+  will-change: width, opacity;
+  transition: width .2s linear, opacity .2s ease;
+}
+#nprogress .peg{ box-shadow: none !important; }
+#nprogress .spinner{ display:none !important; }
+
+/* ===============================
+   Scroll Progress
+=================================*/
+.scroll-progress{
+  position: fixed; top: 3px; left:0; height: 3px; width: 0%;
+  background: var(--brand, #0ea5e9);
+  z-index: 1900;
+}
+
+/* ===============================
+   Micro-effects
+=================================*/
+.hover-lift{ transform: translateY(0); }
+.hover-lift:hover{ transform: translateY(-2px); }
+.shadow-smooth{ box-shadow: 0 6px 30px rgba(2,6,23,.06), 0 2px 10px rgba(2,6,23,.04); }
+
+/* Ken Burns */
+@keyframes kenburns{ 0%{ transform: scale(1); } 100%{ transform: scale(1.08); } }
+.kenburns{ animation: kenburns 9s ease-in-out both; }
+
+/* Grain overlay helper */
+.grain::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' opacity='.05'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode:soft-light;
+}
+
+/* Flag emoji render tweak */
+.flag-emoji{ font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",system-ui,sans-serif; }
+
+/* Reduce flicker slider */
+.hero-img{ will-change: opacity; backface-visibility:hidden; }
+
+/* Page reveal */
+:root.page-reveal body { opacity: 0; transition: opacity .35s ease; }
+body { opacity: 1; }
+
+/* ===============================
+   Login background (light/dark)
+=================================*/
+.login-bg{
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(14,165,233,.22), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(59,130,246,.18), transparent 60%),
+    linear-gradient(180deg, #f8fbff 0%, #eaf2ff 100%);
+}
+.dark .login-bg{
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(14,165,233,.22), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(59,130,246,.18), transparent 60%),
+    linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+}
+
+/* ===== FAQ liquid glass ===== */
+.faq-hero {
+  position: relative;
+  overflow: hidden;
+}
+.faq-hero .faq-blob{
+  position:absolute;
+  width: 60vmin; height: 60vmin; border-radius: 50%;
+  background:
+    radial-gradient(closest-side, rgba(56,189,248,.28), rgba(56,189,248,0) 65%),
+    radial-gradient(closest-side, rgba(99,102,241,.26), rgba(99,102,241,0) 70%);
+  filter: blur(20px);
+  opacity: .45;
+  transform: translate3d(0,0,0);
+}
+
+/* Kad kartu */
+.faq-card{
+  position: relative;
+  border-radius: 20px;
+  padding: 1px; /* untuk efek border */
+  background:
+    conic-gradient(from 120deg,
+      rgba(56,189,248,.45),
+      rgba(2,6,23,0),
+      rgba(99,102,241,.45),
+      rgba(56,189,248,.45));
+  /* glow mengikuti pointer */
+  --x: var(--px, 50%); --y: var(--py, 0%);
+  box-shadow: 0 20px 60px rgba(2,6,23,.10);
+  transition: box-shadow .25s ease, transform .25s ease, opacity .25s ease;
+}
+.faq-card::before{
+  content:""; position:absolute; inset:0; border-radius:inherit;
+  padding:1px;
+  background:
+    radial-gradient(400px 400px at var(--x) var(--y), rgba(56,189,248,.35), transparent 55%),
+    radial-gradient(600px 600px at calc(var(--x) + 60px) calc(var(--y) + 60px), rgba(99,102,241,.30), transparent 60%);
+  /* tampilkan hanya sisi border (masking) */
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  pointer-events: none;
+  opacity: .9;
+}
+.faq-card:hover{ transform: translateY(-1px); }
+
+.faq-summary{
+  display:flex; align-items:center; justify-content:space-between;
+  width:100%; border:none; background:transparent; cursor:pointer;
+  padding: 16px 18px; border-radius: 18px;
+  color: inherit;
+  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  border: 1px solid rgba(2,6,23,.10);
+}
+.dark .faq-summary{
+  background: color-mix(in srgb, rgba(2,6,23,.88) 46%, transparent);
+  border-color: rgba(148,163,184,.20);
+}
+.faq-q{
+  font-weight: 600; line-height: 1.3;
+  font-family: var(--font-hero);
+}
+.faq-a{
+  padding: 0 18px 16px 18px;
+  color: rgb(71 85 105); /* slate-600 */
+}
+.dark .faq-a{ color: rgb(203 213 225); /* slate-300 */ }
+
+/* pointer vars default bila belum digerakkan */
+:root{ --px: 50%; --py: 0%; }
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+:root {
+  --font-hero: 'Cinzel', 'EB Garamond', ui-serif, Georgia, serif;
+}
+
+/* Mobile Menu Glass Effect */
+.mobile-menu-glass {
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  border-bottom: 1px solid rgba(2, 6, 23, 0.12);
+}
+.dark .mobile-menu-glass {
+  background: color-mix(in srgb, rgba(2, 6, 23, 0.85) 80%, transparent);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* Subtle Gradient Overlay for Menu */
+.mobile-menu-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at top center,
+    rgba(56, 189, 248, 0.15),
+    transparent 70%
+  );
+  opacity: 0.5;
+}
+
+/* Enhanced Glass Effect for Cards */
+.card-glass {
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(2, 6, 23, 0.12);
+}
+.dark .card-glass {
+  background: color-mix(in srgb, rgba(2, 6, 23, 0.85) 80%, transparent);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+/* Gradient Overlay for Sections */
+.section-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at top center,
+    rgba(56, 189, 248, 0.15),
+    transparent 70%
+  );
+  opacity: 0.4;
+}
+
+/* Hover Glow Effect */
+.card:hover .card-glow {
+  box-shadow: 0 8px 32px rgba(56, 189, 248, 0.2);
+}
+
+@keyframes shimmer {
+  0% { background-position: -300% 0; }
+  100% { background-position: 300% 0; }
+}
+
+/* Parallax Hero */
+.parallax-container {
+  position: relative;
+  overflow: hidden;
+}
+.parallax-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+/* Glow Hover */
+.glow-hover:hover {
+  box-shadow: 0 20px 40px rgba(56, 189, 248, 0.15), 0 0 0 1px rgba(56, 189, 248, 0.05);
+}
+
+/* Badge Glow */
+.badge-glow {
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.1);
+}
+.badge-glow:hover {
+  box-shadow: 0 6px 16px rgba(56, 189, 248, 0.2);
+}
+
+/* Testimonials Enhancements */
+.card-glow {
+  background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); /* Subtle glass */
+}
+.dark .card-glow {
+  background: linear-gradient(145deg, rgba(15,23,42,0.3), rgba(15,23,42,0.1));
+}
+.card-glow:hover {
+  box-shadow: 0 10px 30px rgba(56,189,248,0.15); /* Glow on hover */
+}
+
+.avatar-initial {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.testimonial-dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: rgba(148,163,184,0.5);
+  border: 1px solid rgba(148,163,184,0.3);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.dark .dot {
+  background: rgba(71,85,105,0.5);
+}
+.dot-active {
+  background: #0ea5e9;
+  transform: scale(1.2);
+  box-shadow: 0 0 0 3px rgba(14,165,233,0.2);
+}
+
+.section-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at top center, rgba(56,189,248,0.08), transparent 70%);
+  opacity: 0.5;
+}
+

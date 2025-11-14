@@ -1,0 +1,301 @@
+{
+  "nav": {
+    "home": "Beranda",
+    "explore": "Explore",
+    "destinasi": "Destinasi",
+    "faq": "FAQ",
+    "contact": "Kontak",
+    "login": "Login Admin",
+    "language": "Bahasa",
+    "login": "Login",
+    "logout": "Logout",
+    "theme": "Tema",
+    "light": "Terang",
+    "dark": "Gelap"
+  },
+  "hero": {
+    "tag": "BEST OFFERS",
+    "line1": "Jelajahi Nusa Penida bersama",
+    "line2": "CIDIKA TRAVEL&TOUR",
+    "desc": "Agen perjalanan terpercaya untuk tour, snorkeling, dan lainnya.",
+    "ctaExplore": "Lihat Paket",
+    "ctaContact": "Lihat Paket Populer"
+  },
+  "home": {
+    "popular": "Paket Populer",
+    "popularSub": "Pilihan terbaik wisatawan.",
+    "calcFor": "Hitung harga untuk",
+    "pax": "pax",
+    "perPax": "pax",
+    "flexible": "Fleksibel",
+    "viewDetails": "Lihat Detail",
+    "orderViaWA": "Pesan via WA",
+    "viewAllPackages": "Lihat semua paket",
+    "ctaPopular": "Lihat Paket Populer",
+  "submitTestimonial": "Bagikan Cerita Anda",
+  "namePlaceholder": "Masukkan nama Anda",
+  "cityPlaceholder": "Kota Anda (opsional)",
+  "testimonialPlaceholder": "Ceritakan petualangan Anda...",
+    "aboutTitle": "Jelajahi Nusa Penida dengan Nyaman",
+    "aboutBody": "CIDIKA TRAVEL&TOUR berfokus pada pengalaman di Nusa Penida: tour darat, snorkeling, hingga paket menginap. Kami menggabungkan kenyamanan, kehangatan, dan profesionalisme. Pemesanan mudah via Email, Instagram, WhatsApp, atau telepon—transparan dan aman.",
+    "point1": "Paket lengkap: One Day, Half Day, 1D1N + Snorkeling, 2D1N.",
+    "point2": "Guide lokal berpengalaman (bisa bantu dokumentasi foto).",
+    "point3": "Private tour—jadwal fleksibel, tidak digabung rombongan.",
+    "point4": "Harga jelas termasuk fast boat PP & tiket masuk.",
+    "banner1": "Spot ikonik—Kelingking, Diamond, Crystal Bay—dalam satu perjalanan.",
+    "whyTitle": "Kenapa pilih kami?",
+    "whySubtitle": "Keunggulan yang bikin trip kamu lebih tenang.",
+    "whyItems": [
+      { "title": "Operator Resmi & Berpengalaman", "text": "Tim lokal paham spot & timing terbaik." },
+      { "title": "Cocok untuk Semua", "text": "Solo, couple, family, rombongan kantor." },
+      { "title": "Jadwal Fleksibel", "text": "Private charter / open trip." },
+      { "title": "Itinerary Optimal", "text": "Efisien, tetap dapat momen terbaik." }
+    ],
+    "stats": {
+      "travelers": "Traveler puas",
+      "media": "Foto & video",
+      "rating": "Rating"
+    },
+    "howTitle": "Cara Kerja",
+    "howSubtitle": "Simple dan cepat tanpa login.",
+    "how": [
+      { "title": "Pilih Paket", "text": "Bandingkan & sesuaikan pax." },
+      { "title": "Chat Admin", "text": "Klik WhatsApp, kami balas cepat." },
+      { "title": "Atur Jadwal", "text": "Tentukan tanggal & meeting point." },
+      { "title": "Berangkat!", "text": "Nikmati trip." }
+    ],
+    "testimonialsTitle": "Kata Mereka",
+    "helpCTA": "Butuh bantuan? Chat WhatsApp",
+    "addToCart": "Tambah ke Keranjang",
+    "ctaTitle": "Siap Berpetualang di Nusa Penida?",
+    "ctaDesc": "Hubungi kami via WhatsApp/Instagram/Email. Tim akan bantu atur itinerary terbaik sesuai waktu & budget."
+  },
+  "explore": {
+    "title": "Explore Paket",
+    "spots": "Spot Wisata",
+    "includes": "Termasuk",
+    "prices": "Harga per Pax",
+    "itinerary": "Rundown",
+    "seeDetail": "Lihat Detail",
+    "hideDetail": "Tutup Detail",
+    "snorkeling": "Spot Snorkeling",
+    "day1": "Hari 1",
+    "day2": "Hari 2",
+    "searchPlaceholder": "Cari paket atau spot…",
+    "domestic": "Domestik",
+    "foreign": "Mancanegara",
+    "empty": "Tidak ada paket yang sesuai dengan filter.",
+    "all": "Semua",
+"destinations": "Destinasi",
+"compact": "Padat",
+"cozy": "Nyaman",
+"compactGrid": "Grid Padat",
+"cozyGrid": "Grid Nyaman",
+"privateTour": "Private Tour",
+"sortPrice": "Termurah",
+"sortName": "A–Z"
+
+  },
+  "actions": {
+    "order": "Pesan",
+    "askMore": "Tanya lebih lanjut"
+  },
+  "faq": {
+    "title": "FAQ",
+    "list": [
+      { "q": "Bagaimana cara booking?", "a": "Tambah paket ke keranjang lalu Checkout, atau hubungi kami langsung." },
+      { "q": "Apakah private tour?", "a": "Ya, semua paket bersifat private (tidak digabung)." },
+      { "q": "Bisa custom itinerary?", "a": "Bisa. Sebutkan preferensi Anda saat menghubungi kami." }
+    ]
+  },
+"dest": {
+  "title": "Destinasi",
+  "heroDesc": "Jelajahi keindahan pulau-pulau di Bali Tenggara",
+  "penidaTitle": "Nusa Penida",
+  "penidaDesc": "Pulau dengan pantai dan tebing ikonik di Bali Tenggara, terkenal dengan Kelingking Beach dan Broken Beach.",
+  "lembonganTitle": "Nusa Lembongan",
+  "lembonganDesc": "Pulau kecil dengan pantai berpasir putih, ideal untuk snorkeling dan menikmati Devil's Tears.",
+  "ceninganTitle": "Nusa Ceningan",
+  "ceninganDesc": "Pulau terkecil dengan Blue Lagoon dan suasana tenang, cocok untuk petualangan santai.",
+  "empty": "Tidak ada destinasi yang sesuai dengan pencarian Anda.",
+  "search": "Cari destinasi...",
+  "cardsTitle": "Pilihan Destinasi",
+  "explore": "Jelajahi"
+},
+  "contact": {
+    "title": "Kontak Kami",
+    "subtitle": "Hubungi kami untuk pertanyaan atau custom trip—balas cepat via WhatsApp.",
+    "info": "Informasi Kontak",
+    "formTitle": "Form Cepat",
+    "formNote": "Form ini contoh; di produksi arahkan ke WhatsApp/Email.",
+    "name": "Nama",
+    "emailwa": "Email/WA",
+    "message": "Pesan",
+    "send": "Kirim",
+    "sent": "Terima kasih! Kami akan menghubungi Anda.",
+    "addressLabel": "ALAMAT",
+    "emailLabel": "EMAIL",
+    "phoneLabel": "WA/TLP",
+    "instagramLabel": "IG"
+  },
+"checkout": {
+  "title": "Checkout",
+  "details": "Detail Pemesan",
+  "itemsCount": "{{count}} item",
+  "name": "Nama Lengkap",
+  "email": "Email",
+  "phone": "Telepon/WA",
+  "date": "Tanggal Trip (YYYY-MM-DD)",
+  "notes": "Catatan",
+  "submit": "Buat Pesanan",
+  "processing": "Memproses...",
+  "summary": "Ringkasan",
+  "cartEmptyShort": "Keranjang kosong",
+  "cartEmpty": "Keranjang kosong.",
+  "creating": "Membuat order...",
+  "failed": "Gagal membuat order",
+  "noteForeign": "Termasuk penyesuaian untuk wisatawan mancanegara.",
+  "noteDomestic": "Harga khusus wisatawan domestik.",
+  "audienceDomestic": "Domestik",
+  "audienceForeign": "Mancanegara",
+  "rateLimit": "Terlalu banyak permintaan. Coba lagi nanti atau hubungi support.",
+  "wa": {
+    "header": "Halo Admin CIDIKA, saya ingin booking.",
+    "name": "Nama",
+    "phone": "WA",
+    "email": "Email",
+    "date": "Tanggal",
+    "audience": "Tipe",
+    "items": "Detail Item:",
+    "total": "Total",
+    "code": "Kode",
+    "footer": "Mohon konfirmasinya ya 🙏"
+  },
+  "success": {
+    "title": "Pesanan diterima!",
+    "body": "Admin kami akan segera memproses pesananmu.",
+    "code": "Kode Pesanan",
+    "total": "Total",
+    "contactAdmin": "Konfirmasi Admin",
+    "goHome": "Ke Beranda",
+    "mustConfirm": "Silakan tekan “Konfirmasi Admin” terlebih dahulu sebelum kembali ke beranda.",
+    "mustConfirmHint": "Tekan “Konfirmasi Admin” dulu",
+    "confirmNote": "Konfirmasi: data di atas benar. Mohon diproses, ya 🙏",
+    "fallback": "Jika WhatsApp gagal, salin pesan ini dan kirim secara manual ke admin kami."
+  }
+},
+  "footer": {
+    "cta": {
+      "kicker": "Siap Jelajah",
+      "title": "Siap liburan ke Nusa Penida? Kami urus dari A sampai Z.",
+      "whatsapp": "Chat WhatsApp",
+      "contact": "Kontak Kami"
+    },
+    "brand": {
+      "tagline": "PAKET TRIP NUSA PENIDA ISLAND TOUR & SNORKELING. Private trip, itinerary fleksibel, dan tim lokal berpengalaman."
+    },
+    "links": {
+      "title": "Jelajahi",
+      "packages": "Paket & Harga",
+      "destinations": "Destinasi Populer",
+      "faq": "FAQ",
+      "contact": "Kontak"
+    },
+    "contact": {
+      "title": "Kontak",
+      "addressText": "Bunga Mekar, Nusa Penida, Kab. Klungkung, Bali"
+    },
+    "newsletter": {
+      "title": "Dapatkan Penawaran",
+      "desc": "Masukkan email untuk menerima promo & itinerary terbaru.",
+      "placeholder": "Alamat email",
+      "submit": "Daftar",
+      "note": "Dengan mendaftar Anda setuju dengan kebijakan privasi kami.",
+      "thanks": "Terima kasih! Kami akan mengabari promo terbaru 🎉"
+    },
+    "bottom": {
+      "rights": "Hak cipta dilindungi.",
+      "terms": "Syarat",
+      "privacy": "Privasi",
+      "follow": "Ikuti"
+    }
+  },
+  "admin": {
+    "menu": {
+      "dashboard": "Dashboard",
+      "orders": "Orderan",
+      "customize": "Kustomisasi"
+    },
+    "common": {
+      "empty": "Belum ada data"
+    },
+    "login": {
+      "title": "Login Admin",
+      "email": "Email",
+      "password": "Kata sandi",
+      "submit": "Login",
+      "loggingIn": "Masuk..."
+    },
+    "dashboard": {
+      "stats": {
+        "bookings": "Order",
+        "packages": "Paket",
+        "sections": "Section"
+      },
+      "latestOrders": "Order Terbaru",
+      "table": {
+        "date": "Tanggal",
+        "name": "Nama",
+        "status": "Status",
+        "totalIDR": "Total (IDR)"
+      }
+    },
+    "customize": {
+      "title": "Kustomisasi Halaman",
+      "saveAll": "Simpan Semua",
+      "saving": "Menyimpan...",
+      "section": "Section:",
+      "sort": "Sort",
+      "dataJsonLabel": "Data (JSON) — contoh: hero { images:[] }",
+      "titleLabel": "Judul",
+      "bodyLabel": "Isi (Markdown)",
+      "saved": "Tersimpan",
+      "saveFailed": "Gagal simpan",
+      "addSection": "Tambah Section"
+    },
+    "orders": {
+      "title": "Orderan",
+      "table": {
+        "date": "Tanggal",
+        "package": "Paket",
+        "name": "Nama",
+        "contact": "Kontak",
+        "pax": "Pax",
+        "status": "Status",
+        "totalIDR": "Total (IDR)"
+      },
+      "status": {
+        "pending": "Pending",
+        "success": "Sukses",
+        "cancelled": "Dibatalkan"
+      },
+      "actions": {
+        "edit": "Ubah",
+        "save": "Simpan",
+        "saving": "Menyimpan...",
+        "saved": "Tersimpan",
+        "updateStatus": "Perbarui Status",
+        "invoice": "Invoice",
+        "invoicePlaceholder": "Tempel nomor/tautan invoice di sini",
+        "viewBooking": "Lihat Booking"
+      }
+    }
+  },
+  "misc": {
+    "loading": "Memuat...",
+    "success": "Berhasil",
+    "error": "Terjadi kesalahan"
+  },
+  "back": "Kembali",
+  "gallery": "Galeri"
+}

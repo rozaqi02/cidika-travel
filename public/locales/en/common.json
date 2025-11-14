@@ -1,0 +1,301 @@
+{
+  "nav": {
+    "home": "Home",
+    "explore": "Explore",
+    "destinasi": "Destinations",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "login": "Admin Login",
+    "language": "Language",
+    "login": "Login",
+    "logout": "Logout",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "hero": {
+    "tag": "BEST OFFERS",
+    "line1": "Explore Nusa Penida with",
+    "line2": "CIDIKA TRAVEL&TOUR",
+    "desc": "Your trusted travel agency for tours, snorkeling, and more.",
+    "ctaExplore": "See Packages",
+    "ctaContact": "See Popular Packages"
+  },
+  "home": {
+    "popular": "Popular Packages",
+    "popularSub": "Top choices for travelers.",
+    "calcFor": "Price for",
+    "pax": "pax",
+    "perPax": "pax",
+    "flexible": "Flexible",
+    "viewDetails": "See Details",
+    "orderViaWA": "Order via WhatsApp",
+    "viewAllPackages": "See all packages",
+    "ctaPopular": "See Popular Packages",
+    "aboutTitle": "Travel Nusa Penida Comfortably",
+    "aboutBody": "CIDIKA TRAVEL&TOUR focuses on Nusa Penida experiences: land tours, snorkeling, and stay packages. We combine comfort, warmth, and professionalism. Booking is easy via Email, Instagram, WhatsApp, or phone—transparent and secure.",
+    "point1": "Complete packages: One Day, Half Day, 1D1N + Snorkeling, 2D1N.",
+    "point2": "Local guides who can help with photos.",
+    "point3": "Private tours—flexible schedule, no shared groups.",
+    "point4": "Clear pricing including round-trip fast boat and entrance fees.",
+    "banner1": "Iconic spots—Kelingking, Diamond, Crystal Bay—in one trip.",
+    "whyTitle": "Why choose us?",
+    "submitTestimonial": "Share Your Story",
+  "namePlaceholder": "Enter your name",
+  "cityPlaceholder": "Your city (optional)",
+  "testimonialPlaceholder": "Tell us about your adventure...",
+    "whySubtitle": "Advantages that make your trip worry-free.",
+    "whyItems": [
+      { "title": "Licensed & Experienced Operator", "text": "Local team knows the best spots and timing." },
+      { "title": "Great for Everyone", "text": "Solo, couple, family, or company trip." },
+      { "title": "Flexible Schedule", "text": "Private charter / open trip." },
+      { "title": "Optimized Itinerary", "text": "Efficient while still catching the best moments." }
+    ],
+    "stats": {
+      "travelers": "Happy travelers",
+      "media": "Photos & videos",
+      "rating": "Rating"
+    },
+    "howTitle": "How It Works",
+    "howSubtitle": "Simple and fast—no login needed.",
+    "how": [
+      { "title": "Choose a Package", "text": "Compare and set your pax." },
+      { "title": "Chat Admin", "text": "Tap WhatsApp—we reply quickly." },
+      { "title": "Set the Date", "text": "Pick dates & meeting point." },
+      { "title": "Go!", "text": "Enjoy the trip." }
+    ],
+    "testimonialsTitle": "What They Say",
+    "helpCTA": "Need help? Chat on WhatsApp",
+    "addToCart": "Add to Cart",
+    "ctaTitle": "Ready for Nusa Penida?",
+    "ctaDesc": "Reach us via WhatsApp/Instagram/Email. We'll tailor the best itinerary for your time & budget."
+  },
+  "explore": {
+    "title": "Explore Packages",
+    "spots": "Attractions",
+    "includes": "Includes",
+    "prices": "Price per Pax",
+    "itinerary": "Itinerary",
+    "seeDetail": "See Details",
+    "hideDetail": "Hide Details",
+    "snorkeling": "Snorkeling Spots",
+    "day1": "Day 1",
+    "day2": "Day 2",
+    "searchPlaceholder": "Search packages or spots…",
+    "domestic": "Domestic",
+    "foreign": "Foreign",
+    "empty": "No packages match your filters.",
+    "all": "All",
+"destinations": "Destinations",
+"compact": "Compact",
+"cozy": "Cozy",
+"compactGrid": "Compact grid",
+"cozyGrid": "Cozy grid",
+"privateTour": "Private Tour",
+"sortPrice": "Cheapest",
+"sortName": "A–Z"
+
+  },
+  "actions": {
+    "order": "Order",
+    "askMore": "Ask more"
+  },
+  "faq": {
+    "title": "FAQ",
+    "list": [
+      { "q": "How do I book?", "a": "Add a package to the cart then Checkout, or contact us directly." },
+      { "q": "Is it a private tour?", "a": "Yes, all packages are private (no sharing with other groups)." },
+      { "q": "Can I customize the itinerary?", "a": "Sure! Tell us your preferences when you contact us." }
+    ]
+  },
+"dest": {
+  "title": "Destinations",
+  "heroDesc": "Explore the beauty of Southeast Bali islands",
+  "penidaTitle": "Nusa Penida",
+  "penidaDesc": "Island with iconic beaches and cliffs in Southeast Bali, famous for Kelingking Beach and Broken Beach.",
+  "lembonganTitle": "Nusa Lembongan",
+  "lembonganDesc": "Small island with white sandy beaches, ideal for snorkeling and enjoying Devil's Tears.",
+  "ceninganTitle": "Nusa Ceningan",
+  "ceninganDesc": "The smallest island with Blue Lagoon and a serene atmosphere, perfect for a relaxed adventure.",
+  "empty": "No destinations match your search.",
+  "search": "Search destinations...",
+  "cardsTitle": "Destination Highlights",
+  "explore": "Explore"
+},
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "Reach out for questions or custom trips — we reply fast on WhatsApp.",
+    "info": "Contact Information",
+    "formTitle": "Quick Form",
+    "formNote": "This is a demo form; in production please redirect to WhatsApp/Email.",
+    "name": "Name",
+    "emailwa": "Email/WhatsApp",
+    "message": "Message",
+    "send": "Send",
+    "sent": "Thanks! We will reach you soon.",
+    "addressLabel": "ADDRESS",
+    "emailLabel": "EMAIL",
+    "phoneLabel": "PHONE/WA",
+    "instagramLabel": "IG"
+  },
+"checkout": {
+  "title": "Checkout",
+  "details": "Customer Details",
+  "itemsCount": "{{count}} item",
+  "name": "Full Name",
+  "email": "Email",
+  "phone": "Phone/WA",
+  "date": "Trip Date (YYYY-MM-DD)",
+  "notes": "Notes",
+  "submit": "Place Order",
+  "processing": "Processing...",
+  "summary": "Summary",
+  "cartEmptyShort": "Cart is empty",
+  "cartEmpty": "Cart is empty.",
+  "creating": "Creating order...",
+  "failed": "Failed to create order",
+  "noteForeign": "Includes adjustments for international travelers.",
+  "noteDomestic": "Special pricing for domestic travelers.",
+  "audienceDomestic": "Domestic",
+  "audienceForeign": "Foreign",
+  "rateLimit": "Too many requests. Please try again later or contact support.",
+  "wa": {
+    "header": "Hello CIDIKA Admin, I'd like to book.",
+    "name": "Name",
+    "phone": "WA",
+    "email": "Email",
+    "date": "Date",
+    "audience": "Type",
+    "items": "Items:",
+    "total": "Total",
+    "code": "Code",
+    "footer": "Please confirm 🙏"
+  },
+  "success": {
+    "title": "Order received!",
+    "body": "Our admin will process it shortly.",
+    "code": "Order Code",
+    "total": "Total",
+    "contactAdmin": "Confirm to Admin",
+    "goHome": "Go to Home",
+    "mustConfirm": "Please tap “Confirm to Admin” first before going home.",
+    "mustConfirmHint": "Tap “Confirm to Admin” first",
+    "confirmNote": "Confirmation: the details above are correct. Please process. 🙏",
+    "fallback": "If WhatsApp fails, copy this message and send it manually to our admin."
+  }
+},
+  "footer": {
+    "cta": {
+      "kicker": "Ready to Explore",
+      "title": "Ready for Nusa Penida? We handle everything A—Z.",
+      "whatsapp": "Chat WhatsApp",
+      "contact": "Contact Us"
+    },
+    "brand": {
+      "tagline": "NUSA PENIDA ISLAND TOUR & SNORKELING packages. Private trips, flexible itinerary, and experienced local team."
+    },
+    "links": {
+      "title": "Explore",
+      "packages": "Packages & Pricing",
+      "destinations": "Popular Destinations",
+      "faq": "FAQ",
+      "contact": "Contact"
+    },
+    "contact": {
+      "title": "Contact",
+      "addressText": "Bunga Mekar, Nusa Penida, Klungkung Regency, Bali"
+    },
+    "newsletter": {
+      "title": "Get Offers",
+      "desc": "Enter your email to receive promos & latest itineraries.",
+      "placeholder": "Email address",
+      "submit": "Subscribe",
+      "note": "By subscribing, you agree to our privacy policy.",
+      "thanks": "Thanks! We'll keep you posted 🎉"
+    },
+    "bottom": {
+      "rights": "All rights reserved.",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "follow": "Follow"
+    }
+  },
+  "admin": {
+    "menu": {
+      "dashboard": "Dashboard",
+      "orders": "Orders",
+      "customize": "Customize"
+    },
+    "common": {
+      "empty": "No data yet"
+    },
+    "login": {
+      "title": "Admin Login",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Login",
+      "loggingIn": "Logging in..."
+    },
+    "dashboard": {
+      "stats": {
+        "bookings": "Bookings",
+        "packages": "Packages",
+        "sections": "Sections"
+      },
+      "latestOrders": "Latest Orders",
+      "table": {
+        "date": "Date",
+        "name": "Name",
+        "status": "Status",
+        "totalIDR": "Total (IDR)"
+      }
+    },
+    "customize": {
+      "title": "Customize Pages",
+      "saveAll": "Save All",
+      "saving": "Saving...",
+      "section": "Section:",
+      "sort": "Sort",
+      "dataJsonLabel": "Data (JSON) — e.g. hero { images:[] }",
+      "titleLabel": "Title",
+      "bodyLabel": "Body (Markdown)",
+      "saved": "Saved",
+      "saveFailed": "Failed to save",
+      "addSection": "Add Section"
+    },
+    "orders": {
+      "title": "Orders",
+      "table": {
+        "date": "Date",
+        "package": "Package",
+        "name": "Name",
+        "contact": "Contact",
+        "pax": "Pax",
+        "status": "Status",
+        "totalIDR": "Total (IDR)"
+      },
+      "status": {
+        "pending": "Pending",
+        "success": "Success",
+        "cancelled": "Cancelled"
+      },
+      "actions": {
+        "edit": "Edit",
+        "save": "Save",
+        "saving": "Saving...",
+        "saved": "Saved",
+        "updateStatus": "Update Status",
+        "invoice": "Invoice",
+        "invoicePlaceholder": "Paste invoice number/link here",
+        "viewBooking": "View Booking"
+      }
+    }
+  },
+  "misc": {
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Something went wrong"
+  },
+  "back": "Back",
+  "gallery": "Gallery"
+}
