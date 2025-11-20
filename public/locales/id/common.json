@@ -289,7 +289,24 @@
         "invoicePlaceholder": "Tempel nomor/tautan invoice di sini",
         "viewBooking": "Lihat Booking"
       }
-    }
+    },
+    "reset": {
+    "title": "Reset Password",
+    "subtitle": "Buat kata sandi baru yang kuat.",
+    "newPass": "Password Baru",
+    "confirmPass": "Konfirmasi Password",
+    "mismatch": "Password tidak cocok.",
+    "minChar": "Password min 6 karakter.",
+    "btn": "Perbarui Password",
+    "success": "Berhasil! Mengalihkan...",
+    "process": "Mengamankan akun..."
+  },
+  "loginHero": {
+    "title": "Kelola Perjalanan\nDengan Mudah.",
+    "desc": "Akses dasbor admin Cidika Travel untuk memantau pesanan, paket wisata, dan analitik dalam satu tempat yang terintegrasi.",
+    "secure": "Aman",
+    "monitoring": "Monitoring"
+  }
   },
   "misc": {
     "loading": "Memuat...",

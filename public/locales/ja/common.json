@@ -290,7 +290,24 @@
         "invoicePlaceholder": "インボイス番号／リンクを貼り付け",
         "viewBooking": "予約を表示"
       }
-    }
+    },
+    "reset": {
+    "title": "パスワード再設定",
+    "subtitle": "新しい強力なパスワードを作成してください。",
+    "newPass": "新しいパスワード",
+    "confirmPass": "パスワード（確認）",
+    "mismatch": "パスワードが一致しません。",
+    "minChar": "パスワードは6文字以上必要です。",
+    "btn": "パスワードを更新",
+    "success": "成功！リダイレクト中...",
+    "process": "アカウントを保護中..."
+  },
+  "loginHero": {
+    "title": "旅行管理を\nもっと簡単に。",
+    "desc": "Cidika Travel管理ダッシュボードにアクセスして、注文、ツアーパッケージ、分析を一元管理しましょう。",
+    "secure": "安全",
+    "monitoring": "監視中"
+  }
   },
   "misc": {
     "loading": "読み込み中...",
