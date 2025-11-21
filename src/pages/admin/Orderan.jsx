@@ -7,7 +7,7 @@ import {
   CheckCircle2, XCircle, ChevronDown, CheckSquare, Square, Calendar as CalendarIcon,
   MoreHorizontal, FileDown, Loader2
 } from "lucide-react";
-import ReactCountryFlag from "react-country-flag"; 
+import ReactCountryFlag from "react-country-flag";
 
 /* =========================
    DATE PICKER HELPERS
@@ -115,9 +115,9 @@ const INVOICE_LANG = {
     footer1: "Thank you for choosing Cidika Travel for your journey.", footer2: "Please keep this document as valid proof of payment.", contact: "Need help? Contact our WhatsApp."
   },
   ja: {
-    title: "INVOICE", billedTo: "BILLED TO", details: "ORDER DETAILS", invNo: "Invoice Number", issueDate: "Issue Date", tourDate: "Tour Date",
-    desc: "Description", qty: "Pax", price: "Unit Price", subtotal: "Subtotal", total: "TOTAL AMOUNT", status: "STATUS", confirmed: "PAID", pending: "UNPAID",
-    footer1: "Thank you for choosing Cidika Travel.", footer2: "Please keep this invoice safe.", contact: "Contact our WhatsApp for support."
+    title: "請求書", billedTo: "請求先", details: "注文詳細", invNo: "請求書番号", issueDate: "発行日", tourDate: "ツアー日",
+    desc: "内容", qty: "人数", price: "単価", subtotal: "小計", total: "合計金額", status: "ステータス", confirmed: "支払済", pending: "未払",
+    footer1: "Cidika Travelをご利用いただきありがとうございます。", footer2: "この請求書は大切に保管してください。", contact: "サポートが必要な場合はWhatsAppまでご連絡ください。"
   }
 };
 
@@ -147,7 +147,6 @@ export default function Orderan() {
   });
   const [selected, setSelected] = useState(() => new Set());
 
-  // UI Labels
   const columnLabel = useMemo(() => {
     const L = {
       id: { invoice: "Invoice", actions: "Aksi", search: "Cari...", allStatus: "Semua Status", exportCsv: "CSV", save: "Simpan", saving: "..." },
@@ -157,7 +156,7 @@ export default function Orderan() {
     return L[i18n.language?.slice(0, 2)] || L.en;
   }, [i18n.language]);
 
-  // Load Data - UPDATED: Fetch Package Title via Relation
+// Load Data - REVISI: Prioritaskan Bahasa Inggris untuk Nama Trip
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -171,13 +170,22 @@ export default function Orderan() {
       .order("created_at", { ascending: false });
 
     if (!error) {
-      // Process data to extract clean trip name
       const formattedData = (data || []).map(item => {
-        let tripTitle = "Tour Package"; // Default fallback
-        if (item.packages?.package_locales?.length > 0) {
-           const locs = item.packages.package_locales;
-           // Prioritize ID, then EN, then whatever is first
-           const found = locs.find(l => l.lang === 'id') || locs.find(l => l.lang === 'en') || locs[0];
+        let tripTitle = "Tour Package";
+        
+        // Handle packages relation
+        const pkg = Array.isArray(item.packages) ? item.packages[0] : item.packages;
+        
+        if (pkg?.package_locales?.length > 0) {
+           const locs = pkg.package_locales;
+           
+           // --- PERBAIKAN LOGIKA DISINI ---
+           // Urutan prioritas pencarian judul:
+           // 1. Cari yang 'en' (Inggris) -> AGAR INVOICE KONSISTEN INGGRIS
+           // 2. Jika tidak ada, cari 'id' (Indonesia)
+           // 3. Jika tidak ada, pakai yang pertama ketemu
+           const found = locs.find(l => l.lang === 'en') || locs.find(l => l.lang === 'id') || locs[0];
+           
            if (found?.title) tripTitle = found.title;
         }
         return { ...item, trip_name: tripTitle };
@@ -193,7 +201,6 @@ export default function Orderan() {
 
   useEffect(() => { load(); }, [i18n.language]);
 
-  // Helpers
   const fmtIDR = (n) => (Number(n || 0)).toLocaleString("id-ID");
   const insideDateRange = (iso) => {
     if (!iso) return true;
@@ -203,7 +210,6 @@ export default function Orderan() {
     return fromOk && toOk;
   };
   
-  // Data Processing
   const processed = useMemo(() => {
     const text = q.trim().toLowerCase();
     let arr = (rows || []).filter((r) => {
@@ -235,7 +241,6 @@ export default function Orderan() {
     setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => (allSelected ? n.delete(id) : n.add(id))); return n; });
   };
 
-  // ===== INVOICE GENERATOR ENGINE =====
   const makeInvoiceNo = (r) => {
     if (r?.invoice_no) return r.invoice_no;
     const d = new Date(r.created_at);
@@ -255,10 +260,37 @@ export default function Orderan() {
     const { jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
     
-    // Force EN for Japanese to safely render text without custom font
-    const usedLang = langCode === 'ja' ? 'en' : (INVOICE_LANG[langCode] ? langCode : 'en');
-    const txt = INVOICE_LANG[usedLang];
+    const txt = INVOICE_LANG[langCode] || INVOICE_LANG.en;
     
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+    // === FONT HANDLING (JAPANESE) ===
+    let activeFont = "helvetica"; // Default font
+    if (langCode === 'ja') {
+      try {
+        const fontRes = await fetch('/NotoSansJP-Regular.ttf');
+        if (fontRes.ok) {
+           const fontBlob = await fontRes.blob();
+           const reader = new FileReader();
+           await new Promise((resolve) => {
+             reader.onload = () => resolve(reader.result);
+             reader.readAsDataURL(fontBlob);
+           }).then((base64Data) => {
+             const base64Str = base64Data.split(',')[1];
+             doc.addFileToVFS('NotoSansJP.ttf', base64Str);
+             doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal');
+             activeFont = 'NotoSansJP'; // Set flag font Jepang
+             doc.setFont(activeFont); 
+           });
+        }
+      } catch (e) {
+        console.error("Gagal load font Jepang:", e);
+      }
+    } else {
+      doc.setFont("helvetica");
+    }
+    // =================================
+
     // Load Logo
     let logoBase64 = null;
     try {
@@ -267,19 +299,24 @@ export default function Orderan() {
       logoBase64 = await new Promise(r => { const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); });
     } catch {}
 
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 40;
     const brandColor = "#0ea5e9";
 
+    // Header
     doc.setFillColor(brandColor);
     doc.rect(0, 0, pageWidth, 10, "F");
     if (logoBase64) doc.addImage(logoBase64, 'PNG', margin, 30, 100, 50);
 
-    doc.setFont("helvetica", "bold");
+    // Reset Color (Fix abu-abu problem)
+    doc.setTextColor(30, 41, 59); 
     doc.setFontSize(28);
-    doc.setTextColor(30, 41, 59);
+    
+    // Gunakan bold hanya jika bukan Jepang (font Noto biasanya normal)
+    if (langCode !== 'ja') doc.setFont("helvetica", "bold");
+    else doc.setFont(activeFont, "normal");
+
     doc.text(txt.title, pageWidth - margin, 50, { align: "right" });
 
     doc.setFontSize(12);
@@ -292,45 +329,51 @@ export default function Orderan() {
     y += 25;
 
     const col2X = pageWidth / 2 + 20;
-    // Customer Info
-    doc.setFontSize(9); doc.setTextColor(148, 163, 184);
+    
+    // --- Customer Info ---
+    // Reset font & color
+    if (langCode !== 'ja') doc.setFont("helvetica", "normal");
+    else doc.setFont(activeFont);
+    doc.setFontSize(9); 
+    doc.setTextColor(148, 163, 184); // Gray label
+
     doc.text(txt.billedTo, margin, y);
     y += 15;
-    doc.setFontSize(11); doc.setTextColor(30, 41, 59);
+    doc.setFontSize(11); doc.setTextColor(30, 41, 59); // Dark text
     doc.text(orderRow.name || "-", margin, y);
     y += 14;
     doc.setFontSize(10); doc.setTextColor(71, 85, 105);
     doc.text(orderRow.email || "-", margin, y);
     if(orderRow.phone) { y += 14; doc.text(orderRow.phone, margin, y); }
 
-    // Invoice Meta
+    // --- Invoice Meta ---
     y = 135;
-    doc.setFontSize(9); doc.setTextColor(148, 163, 184);
+    doc.setFontSize(9); doc.setTextColor(148, 163, 184); // Gray label
     doc.text(txt.invNo, col2X, y);
-    doc.setFontSize(10); doc.setTextColor(30, 41, 59);
+    doc.setFontSize(10); doc.setTextColor(30, 41, 59); // Dark text
     const invoiceNo = makeInvoiceNo(orderRow);
     doc.text(invoiceNo, pageWidth - margin, y, { align: "right" });
 
     y += 20;
-    doc.setFontSize(9); doc.setTextColor(148, 163, 184);
+    doc.setFontSize(9); doc.setTextColor(148, 163, 184); // Gray label
     doc.text(txt.issueDate, col2X, y);
-    doc.setFontSize(10); doc.setTextColor(30, 41, 59);
-    // Format date based on invoice language (or fallback to US for consistency in EN invoices)
-    const dateLocale = usedLang === 'id' ? 'id-ID' : 'en-US';
+    doc.setFontSize(10); doc.setTextColor(30, 41, 59); // Dark text
+    
+    const dateLocale = langCode === 'id' ? 'id-ID' : (langCode === 'ja' ? 'ja-JP' : 'en-US');
     doc.text(new Date(orderRow.created_at).toLocaleDateString(dateLocale), pageWidth - margin, y, { align: "right" });
 
     y += 20;
-    doc.setFontSize(9); doc.setTextColor(148, 163, 184);
+    doc.setFontSize(9); doc.setTextColor(148, 163, 184); // Gray label
     doc.text(txt.tourDate, col2X, y);
-    doc.setFontSize(10); doc.setFont("helvetica", "bold");
+    doc.setFontSize(10); doc.setTextColor(30, 41, 59); // Dark text
+    
+    if (langCode !== 'ja') doc.setFont("helvetica", "bold");
     doc.text(new Date(orderRow.date || "").toLocaleDateString(dateLocale, { dateStyle: 'medium' }), pageWidth - margin, y, { align: "right" });
 
     y += 40;
     const fmt = (n) => (Number(n || 0)).toLocaleString(dateLocale);
     
-    // Use Trip Name if items is generic or empty
     const rowBody = (items?.length ? items : [{ 
-        // FALLBACK: Use trip_name we fetched in load()
         item_name: orderRow.trip_name || "Tour Package", 
         qty: orderRow.pax, 
         price_idr: orderRow.total_idr/Math.max(1, orderRow.pax), 
@@ -342,13 +385,33 @@ export default function Orderan() {
         fmt(it.total_idr)
     ]);
 
+// --- Table ---
     autoTable(doc, {
       startY: y,
       head: [[txt.desc, txt.qty, `${txt.price} (IDR)`, `${txt.subtotal} (IDR)`]],
       body: rowBody,
       theme: 'plain',
-      styles: { fontSize: 10, cellPadding: 10, textColor: 50 },
-      headStyles: { fillColor: [248, 250, 252], textColor: 100, fontStyle: 'bold', lineColor: 230, lineWidth: { bottom: 1 } },
+      styles: { 
+         fontSize: 10, 
+         cellPadding: 10, 
+         textColor: 50,
+         // Pastikan font Jepang dipakai di seluruh tabel
+         font: langCode === 'ja' ? 'NotoSansJP' : 'helvetica' 
+      },
+      headStyles: { 
+        fillColor: [248, 250, 252], 
+        textColor: 100, 
+        
+        // --- PERBAIKAN UTAMA DI SINI ---
+        // Jika Jepang, paksa 'normal' karena kita cuma punya font Regular.
+        // Jika Inggris/Indo, boleh 'bold'.
+        fontStyle: langCode === 'ja' ? 'normal' : 'bold', 
+        
+        lineColor: 230, 
+        lineWidth: { bottom: 1 },
+        // Pastikan font header juga diset
+        font: langCode === 'ja' ? 'NotoSansJP' : 'helvetica'
+      },
       bodyStyles: { lineColor: 240, lineWidth: { bottom: 1 } },
       columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" } },
       margin: { left: margin, right: margin },
@@ -356,19 +419,27 @@ export default function Orderan() {
 
     let finalY = doc.lastAutoTable.finalY + 20;
     doc.setFillColor(248, 250, 252);
-    // Increased width to avoid text overlap
-    doc.roundedRect(pageWidth - margin - 240, finalY, 240, 40, 4, 4, "F");
     
-    doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(30, 41, 59);
-    // Shift Label to Left
-    doc.text(txt.total, pageWidth - margin - 220, finalY + 25);
+    doc.roundedRect(pageWidth - margin - 320, finalY, 320, 40, 4, 4, "F");
+    
+    doc.setFontSize(10); 
+    if (langCode !== 'ja') doc.setFont("helvetica", "bold");
+    else doc.setFont(activeFont, "normal");
+    
+    doc.setTextColor(30, 41, 59); // Pastikan label total gelap
+    
+    doc.text(txt.total, pageWidth - margin - 300, finalY + 25);
     
     doc.setFontSize(14); doc.setTextColor(brandColor);
     doc.text(`IDR ${fmt(orderRow.total_idr)}`, pageWidth - margin - 20, finalY + 25, { align: "right" });
 
     const footerY = pageHeight - 60;
     doc.setDrawColor(226, 232, 240); doc.line(margin, footerY, pageWidth - margin, footerY);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(148, 163, 184);
+    
+    if (langCode !== 'ja') doc.setFont("helvetica", "normal");
+    else doc.setFont(activeFont, "normal");
+
+    doc.setFontSize(9); doc.setTextColor(148, 163, 184); // Gray footer
     doc.text(txt.footer1, pageWidth / 2, footerY + 20, { align: "center" });
     doc.text(txt.contact, pageWidth / 2, footerY + 34, { align: "center" });
     
@@ -402,10 +473,8 @@ export default function Orderan() {
       }
       await load();
       alert(t("admin.orders.saved", { defaultValue: "Tersimpan" }));
-    } catch (e) {
-      console.error(e);
-      alert("Gagal menyimpan");
-    } finally { setSavingId(null); }
+    } catch (e) { console.error(e); alert("Gagal menyimpan"); } 
+    finally { setSavingId(null); }
   };
 
   const handleDownload = async (row, lang) => {
@@ -417,11 +486,8 @@ export default function Orderan() {
          invNo = res.invoiceNo;
       }
       if (!invNo) invNo = makeInvoiceNo(row);
-
       const items = await fetchBookingItems(row.id);
-      // Pass the clean trip name from row to generator
       const blob = await buildInvoicePdfBlob(row, items, lang);
-      
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -430,12 +496,8 @@ export default function Orderan() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-      alert("Gagal download invoice");
-    } finally {
-      setDownloadingId(null);
-    }
+    } catch (e) { console.error(e); alert("Gagal download invoice"); } 
+    finally { setDownloadingId(null); }
   };
 
   const InvoiceDropdown = ({ row }) => {
@@ -460,7 +522,6 @@ export default function Orderan() {
            <span>Download</span>
            <ChevronDown size={14}/>
         </button>
-        
         {isOpen && (
           <div className="absolute right-0 mt-1 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
             <div className="px-3 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800">
@@ -495,7 +556,6 @@ export default function Orderan() {
     await supabase.from("bookings").update({ status: "cancelled" }).in("id", ids);
     await load();
   };
-
   const exportCsv = () => {
      const header = ["Date", "Invoice", "Name", "Trip", "Total", "Status"];
      const src = rows.filter(r => selected.size===0 || selected.has(r.id));
