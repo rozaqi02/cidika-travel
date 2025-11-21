@@ -302,9 +302,9 @@
     "process": "Mengamankan akun..."
   },
   "loginHero": {
-    "title": "Kelola Perjalanan\nDengan Mudah.",
-    "desc": "Akses dasbor admin Cidika Travel untuk memantau pesanan, paket wisata, dan analitik dalam satu tempat yang terintegrasi.",
-    "secure": "Aman",
+    "title": "Manage Travel\nWith Ease.",
+    "desc": "Access the Cidika Travel admin dashboard to monitor orders, tour packages, and analytics in one integrated place.",
+    "secure": "Secure",
     "monitoring": "Monitoring"
   }
   },

@@ -34,7 +34,7 @@ export default function Login() {
     setLoading(false);
 
     if (error) {
-      setErr(error.message === "Invalid login credentials" ? t("misc.error") : error.message);
+      setErr(error.message === "Invalid login credentials" ? t("misc.error", { defaultValue: "Error" }) : error.message);
     } else {
       if (remember) localStorage.setItem("adm_email", email);
       else localStorage.removeItem("adm_email");
@@ -48,8 +48,11 @@ export default function Login() {
       return;
     }
     setErr("");
-    setMsg(t("misc.loading"));
-    const resetUrl = process.env.REACT_APP_RESET_URL || window.location.origin + '/admin/reset';
+    setMsg(t("misc.loading", { defaultValue: "Loading..." }));
+    
+    // Gunakan URL produksi jika ada, atau fallback ke window.location.origin
+    const baseUrl = process.env.REACT_APP_SITE_URL || window.location.origin;
+    const resetUrl = `${baseUrl}/admin/reset`;
     
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: resetUrl,
@@ -59,7 +62,7 @@ export default function Login() {
       setErr(error.message);
       setMsg("");
     } else {
-      setMsg("Check email.");
+      setMsg("Check email for reset link.");
     }
   };
 
@@ -71,7 +74,8 @@ export default function Login() {
         <div 
           className="absolute inset-0 z-0 opacity-60 mix-blend-overlay"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&auto=format&fit=crop&w=2021&q=80')`,
+            // Pastikan file 11.jpg ada di folder public
+            backgroundImage: `url('/11.jpg')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}

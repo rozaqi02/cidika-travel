@@ -1,14 +1,13 @@
 // src/pages/admin/Reset.jsx
 import React, { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient.js";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTranslation } from "react-i18next"; // Import Translation
+import { useTranslation } from "react-i18next";
 import { Lock, Eye, EyeOff, Loader2, ArrowLeft, KeyRound } from "lucide-react";
 
 export default function Reset() {
-  const { t } = useTranslation(); // Hook
-  const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [newPassword, setNewPass] = useState("");
   const [confirmPassword, setConfirmPass] = useState("");
@@ -16,16 +15,38 @@ export default function Reset() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [isRecovery, setIsRecovery] = useState(false);
+  
+  // Kita asumsikan user sudah diarahkan ke sini
+  // Event listener auth di bawah akan memastikan user punya sesi valid
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const type = searchParams.get("type");
-    if (type === "recovery") {
-      setIsRecovery(true);
-    } else {
-      navigate("/admin/login");
-    }
-  }, [searchParams, navigate]);
+    // Cek apakah user memiliki sesi (dari link email)
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Jika tidak ada sesi, berarti link expired atau akses langsung
+        navigate("/admin/login");
+      } else {
+        setIsReady(true);
+      }
+    };
+
+    // Listener untuk menangani event PASSWORD_RECOVERY
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsReady(true);
+      } else if (event === "SIGNED_OUT") {
+        navigate("/admin/login");
+      }
+    });
+
+    checkSession();
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -36,7 +57,9 @@ export default function Reset() {
     setMsg(t("admin.reset.process"));
     setLoading(true);
     
+    // Update password untuk user yang sedang login (hasil klik link email)
     const { error } = await supabase.auth.updateUser({ password: newPassword });
+    
     setLoading(false);
     
     if (error) {
@@ -44,11 +67,22 @@ export default function Reset() {
       setMsg("");
     } else {
       setMsg(t("admin.reset.success"));
-      setTimeout(() => navigate("/admin/login"), 2000);
+      // Logout dan redirect ke login
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        navigate("/admin/login");
+      }, 2000);
     }
   };
 
-  if (!isRecovery) return null;
+  if (!isReady) {
+    // Loading state sementara cek sesi
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <Loader2 className="animate-spin text-slate-400" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
@@ -58,6 +92,8 @@ export default function Reset() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 p-8"
         >
+          {/* ... (SISA KODE TAMPILAN SAMA SEPERTI SEBELUMNYA) ... */}
+          {/* Copy paste bagian JSX return dari file Reset.jsx sebelumnya mulai dari <button onClick...> */}
           <button
             onClick={() => navigate("/admin/login")}
             className="group flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors mb-6"

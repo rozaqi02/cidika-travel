@@ -1,6 +1,7 @@
+// src/App.jsx
 import "nprogress/nprogress.css";
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { Routes, Route, Navigate, useLocation, useNavigationType, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import NProgress from "nprogress";
 import { Toaster } from "react-hot-toast";
@@ -28,6 +29,7 @@ import Reset from "./pages/admin/Reset";
 
 NProgress.configure({ showSpinner:false, minimum:0.06, trickle:true, trickleRate:0.08, trickleSpeed:180, speed:420 });
 
+/* --- Helpers & Hooks (Sama seperti sebelumnya) --- */
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -44,47 +46,33 @@ function usePrefersReducedMotion() {
 function CustomScrollRestoration() {
   const location = useLocation();
   const navType = useNavigationType();
-
   useEffect(() => {
-    // Disable browser's automatic scroll restoration
-    if ('scrollRestoration' in history) {
-      history.scrollRestoration = 'manual';
-    }
-
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     if (navType === 'POP') {
-      // Back/forward: restore from sessionStorage
       const saved = sessionStorage.getItem(`scroll-${location.key}`);
       if (saved) {
         const [x, y] = saved.split(',').map(Number);
-        // Mobile-friendly: use setTimeout for iOS Safari timing
         setTimeout(() => window.scrollTo(x, y), 0);
       } else {
         setTimeout(() => window.scrollTo(0, 0), 0);
       }
     } else {
-      // New navigation (PUSH/REPLACE): scroll to top
       setTimeout(() => window.scrollTo(0, 0), 0);
     }
-
-    // Save current scroll position on unmount
     return () => {
       sessionStorage.setItem(`scroll-${location.key}`, `${window.pageXOffset},${window.pageYOffset}`);
     };
   }, [location.key, navType]);
-
   return null;
 }
 
 function usePageVariants() {
   const reduced = usePrefersReducedMotion();
-  return useMemo(
-    () => ({
-      initial: { opacity: 0, y: reduced ? 0 : 10 },
-      in: { opacity: 1, y: 0, transition: { duration: reduced ? 0.02 : 0.22, ease: "easeOut" } },
-      out: { opacity: 0, y: reduced ? 0 : -8, transition: { duration: reduced ? 0.02 : 0.14, ease: "easeIn" } },
-    }),
-    [reduced]
-  );
+  return useMemo(() => ({
+    initial: { opacity: 0, y: reduced ? 0 : 10 },
+    in: { opacity: 1, y: 0, transition: { duration: reduced ? 0.02 : 0.22, ease: "easeOut" } },
+    out: { opacity: 0, y: reduced ? 0 : -8, transition: { duration: reduced ? 0.02 : 0.14, ease: "easeIn" } },
+  }), [reduced]);
 }
 
 function TransitionScrim({ routeKey }) {
@@ -147,16 +135,12 @@ function ButtonRippleEffect() {
       const y = e.clientY - rect.top;
       const d = Math.max(rect.width, rect.height);
       const ripple = document.createElement("span");
-      ripple.style.position = "absolute";
-      ripple.style.left = `${x - d / 2}px`;
-      ripple.style.top = `${y - d / 2}px`;
-      ripple.style.width = ripple.style.height = `${d}px`;
-      ripple.style.borderRadius = "9999px";
-      ripple.style.pointerEvents = "none";
-      ripple.style.background = "rgba(14,165,233,.25)";
-      ripple.style.transform = "scale(0)";
-      ripple.style.opacity = "0.8";
-      ripple.style.transition = "transform .45s ease, opacity .6s ease";
+      Object.assign(ripple.style, {
+        position: "absolute", left: `${x - d / 2}px`, top: `${y - d / 2}px`,
+        width: `${d}px`, height: `${d}px`, borderRadius: "9999px", pointerEvents: "none",
+        background: "rgba(14,165,233,.25)", transform: "scale(0)", opacity: "0.8",
+        transition: "transform .45s ease, opacity .6s ease"
+      });
       ripple.className = "btn-ripple";
       target.style.position = target.style.position || "relative";
       target.appendChild(ripple);
@@ -182,6 +166,17 @@ function PageRevealOnce() {
   return null;
 }
 
+function AuthRedirectListener() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes("type=recovery")) {
+       navigate("/admin/reset");
+    }
+  }, [navigate]);
+  return null;
+}
+
 function Layout({ children }) {
   const location = useLocation();
   const pageVariants = usePageVariants();
@@ -194,13 +189,29 @@ function Layout({ children }) {
     return () => clearTimeout(fallback);
   }, [location.pathname]);
 
+  // --- MODIFIKASI DI SINI ---
+  
+  // 1. Tentukan halaman mana yang TIDAK menampilkan Navbar
+  // "/admin/login" DIHAPUS dari sini agar Navbar muncul
+  const hideNavbarPaths = ["/admin/reset", "/checkout"];
+  const showNavbar = !hideNavbarPaths.includes(location.pathname);
+
+  // 2. Tentukan halaman mana yang TIDAK menampilkan Footer
+  // "/admin/login" TETAP DISINI agar Footer tidak mengganggu layout login
+  const hideFooterPaths = ["/admin/login", "/admin/reset", "/checkout"];
+  const showFooter = !hideFooterPaths.includes(location.pathname);
+
   return (
     <>
       <ScrollProgressBar />
-      <Navbar />
+      
+      {/* Render Navbar jika showNavbar true */}
+      {showNavbar && <Navbar />}
+      
       <TransitionScrim routeKey={location.pathname} />
-      <main className="min-h-[70vh] pt-16">
-        {/* Custom scroll restoration (replaces ScrollRestoration) */}
+      
+      {/* Padding top (pt-16) hanya ditambahkan jika Navbar muncul */}
+      <main className={`min-h-[70vh] ${showNavbar ? 'pt-16' : ''}`}>
         <CustomScrollRestoration />
         <AnimatePresence mode="wait" initial={false}
           onExitComplete={() => { NProgress.inc(0.2); requestAnimationFrame(() => NProgress.done()); }}>
@@ -211,7 +222,9 @@ function Layout({ children }) {
           </motion.div>
         </AnimatePresence>
       </main>
-      <Footer />
+
+      {/* Render Footer jika showFooter true */}
+      {showFooter && <Footer />}
     </>
   );
 }
@@ -221,25 +234,22 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <CurrencyProvider>
-          <CartProvider>{/* ⬅️ Bungkus semua route dengan CartProvider */}
+          <CartProvider>
             <MobileVhFix />
             <FocusMainOnRoute />
             <PreventImageDrag />
             <ButtonRippleEffect />
             <PageRevealOnce />
+            
+            <AuthRedirectListener /> 
 
-            <Toaster
-  position="top-right"
-  toastOptions={{
-    className: "rounded-xl border border-slate-200 dark:border-slate-700",
-  }}
-/>
+            <Toaster position="top-right" toastOptions={{ className: "rounded-xl border border-slate-200 dark:border-slate-700" }} />
 
             <Routes>
               <Route path="/" element={<Layout><Home /></Layout>} />
               <Route path="/explore" element={<Layout><Explore /></Layout>} />
               <Route path="/packages/:id" element={<Layout><PackageDetail /></Layout>} />
-              <Route path="/checkout" element={<Layout><Checkout /></Layout>} /> {/* ⬅️ ROUTE BARU */}
+              <Route path="/checkout" element={<Layout><Checkout /></Layout>} />
               <Route path="/destinasi" element={<Layout><Destinasi /></Layout>} />
               <Route path="/faq" element={<Layout><FAQ /></Layout>} />
               <Route path="/contact" element={<Layout><Contact /></Layout>} />
@@ -252,6 +262,7 @@ export default function App() {
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+
           </CartProvider>
         </CurrencyProvider>
       </AuthProvider>
