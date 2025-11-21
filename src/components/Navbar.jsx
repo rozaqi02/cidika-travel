@@ -1,20 +1,34 @@
+// src/components/Navbar.jsx
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom"; // Tambah useNavigate
 import { useTheme } from "../context/ThemeContext";
-import { Moon, Sun, LogOut, UserRound, ChevronDown } from "lucide-react";
+import { Moon, Sun, LogOut, UserRound, ChevronDown, X, Home, Compass, Map, HelpCircle, Phone, LayoutDashboard, ShoppingBag, PenTool } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabaseClient.js";
 import { AnimatePresence, motion } from "framer-motion";
 import ReactCountryFlag from "react-country-flag";
 
-/* ====== Helpers ====== */
+/* ====== CONFIG ====== */
 const LANGS = [
   { code: "en", label: "English", country: "US" },
   { code: "id", label: "Indonesia", country: "ID" },
   { code: "ja", label: "日本語", country: "JP" },
 ];
 
+/* ====== ICONS MAP FOR MOBILE ====== */
+const ICONS = {
+  "/": Home,
+  "/explore": Compass,
+  "/destinasi": Map,
+  "/faq": HelpCircle,
+  "/contact": Phone,
+  "/admin": LayoutDashboard,
+  "/admin/orderan": ShoppingBag,
+  "/admin/kustomisasi": PenTool
+};
+
+/* ====== HOOKS ====== */
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -58,73 +72,57 @@ function cx(...x) {
   return x.filter(Boolean).join(" ");
 }
 
-function flagEmojiFromCountry(cc = "") {
-  return cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
-}
-
-function BurgerIcon({ open, reduced }) {
-  const trans = { duration: reduced ? 0.01 : 0.2, ease: "easeInOut" };
-  const bar = "absolute left-0 right-0 top-1/2 h-[2px] bg-slate-700 dark:bg-slate-300 rounded-full";
-
-  return (
-    <span className="relative inline-block h-5 w-6" aria-hidden="true">
-      <motion.span
-        className={bar}
-        initial={false}
-        animate={open ? { y: 0, rotate: 45 } : { y: -6, rotate: 0 }}
-        transition={trans}
-      />
-      <motion.span
-        className={bar}
-        initial={false}
-        animate={open ? { opacity: 0, scaleX: 0.6 } : { opacity: 1, scaleX: 1, y: 0 }}
-        transition={trans}
-        style={{ originX: 0.5 }}
-      />
-      <motion.span
-        className={bar}
-        initial={false}
-        animate={open ? { y: 0, rotate: -45 } : { y: 6, rotate: 0 }}
-        transition={trans}
-      />
-    </span>
-  );
-}
-
-/* ====== Component ====== */
+/* ====== COMPONENT ====== */
 export default function Navbar() {
   const { theme, setTheme } = useTheme();
   const reduced = usePrefersReducedMotion();
   const { atTop, show } = useHideOnScroll();
+  
+  // Hooks Navigasi
+  const navigate = useNavigate();
 
-  const [open, setOpen] = useState(false);
+  // State
+  const [open, setOpen] = useState(false); // Mobile Sidebar
   const [langOpenDesktop, setLangOpenDesktop] = useState(false);
-  const [langOpenMobile, setLangOpenMobile] = useState(false);
   const desktopLangRef = useRef(null);
-  const mobileLangRef = useRef(null);
 
   const { t, i18n } = useTranslation();
-
-  const activeLang = useMemo(() => {
-    const code2 = (i18n.language || i18n.resolvedLanguage || "id").slice(0, 2);
-    console.log("Current language:", code2); // Debug: Check current language
-    return LANGS.find((l) => l.code === code2) || LANGS[0];
-  }, [i18n.language, i18n.resolvedLanguage]);
-
   const { role, session } = useAuth();
   const isAdmin = role === "admin";
   const location = useLocation();
 
-  const adminLabels = useMemo(
-    () => ({
-      dashboard: t("admin.menu.dashboard", { defaultValue: "Dashboard" }),
-      orders: t("admin.menu.orders", { defaultValue: "Orders" }),
-      customize: t("admin.menu.customize", { defaultValue: "Customize" }),
-    }),
-    [t]
-  );
+  // === LOGIC LOGOUT YANG AMAN ===
+  const handleLogout = async () => {
+    try {
+      // 1. Tunggu sampai Supabase benar-benar sign out
+      await supabase.auth.signOut();
+      
+      // 2. Tutup sidebar mobile jika terbuka
+      setOpen(false);
 
-  // Menu items
+      // 3. Pindah ke halaman Home menggunakan React Router (SPA navigation)
+      // Ini memicu AuthContext untuk update state tanpa refresh halaman
+      navigate("/", { replace: true });
+      
+      // Opsional: Reload halaman jika state benar-benar nyangkut (biasanya tidak perlu)
+      // window.location.reload(); 
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  // Derived State
+  const activeLang = useMemo(() => {
+    const code2 = (i18n.language || i18n.resolvedLanguage || "id").slice(0, 2);
+    return LANGS.find((l) => l.code === code2) || LANGS[0];
+  }, [i18n.language, i18n.resolvedLanguage]);
+
+  const adminLabels = useMemo(() => ({
+    dashboard: t("admin.menu.dashboard", { defaultValue: "Dashboard" }),
+    orders: t("admin.menu.orders", { defaultValue: "Orders" }),
+    customize: t("admin.menu.customize", { defaultValue: "Customize" }),
+  }), [t]);
+
   const menuItems = useMemo(() => {
     if (isAdmin) {
       return [
@@ -142,474 +140,307 @@ export default function Navbar() {
     ];
   }, [isAdmin, t, adminLabels]);
 
-  // Indicator state and refs
-  const navRefs = useRef([]);
-  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
-
-  // Update indicator position
-  useLayoutEffect(() => {
-    const activeIndex = menuItems.findIndex(
-      (item) =>
-        location.pathname === item.to ||
-        (!item.end && location.pathname.startsWith(item.to))
-    );
-    if (activeIndex !== -1 && navRefs.current[activeIndex]) {
-      const el = navRefs.current[activeIndex];
-      setIndicator({
-        left: el.offsetLeft,
-        width: el.offsetWidth,
-      });
-    }
-  }, [location.pathname, menuItems]);
-
-  // Close panels/dropdowns on page change
-  useEffect(() => {
+  // Effects
+  useEffect(() => { // Close sidebar on route change
     setOpen(false);
     setLangOpenDesktop(false);
-    setLangOpenMobile(false);
   }, [location.pathname]);
 
-  // Click outside to close dropdowns
-  useEffect(() => {
+  useEffect(() => { // Close lang dropdown on outside click
     const onDocClick = (e) => {
       if (desktopLangRef.current && !desktopLangRef.current.contains(e.target)) {
         setLangOpenDesktop(false);
-      }
-      if (mobileLangRef.current && !mobileLangRef.current.contains(e.target)) {
-        setLangOpenMobile(false);
       }
     };
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  // ESC key to close panels/dropdowns
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        setLangOpenDesktop(false);
-        setLangOpenMobile(false);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  // Lock scroll when mobile panel is open
-  useEffect(() => {
-    const html = document.documentElement;
-    if (open) html.style.overflow = "hidden";
-    else html.style.overflow = "";
-    return () => {
-      html.style.overflow = "";
-    };
+  useEffect(() => { // Lock scroll when mobile sidebar open
+    if (open) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
   }, [open]);
 
-  // Simplified language change function
   const onChangeLanguage = (code) => {
-    console.log(`Changing language to: ${code}`); // Debug: Track language change
-    i18n
-      .changeLanguage(code)
-      .then(() => {
-        console.log(`Language changed successfully to: ${code}`);
-        try {
-          localStorage.setItem("i18nextLng", code);
-        } catch (err) {
-          console.error("Failed to save language to localStorage:", err);
-        }
-        setLangOpenDesktop(false);
-        setLangOpenMobile(false);
-      })
-      .catch((err) => {
-        console.error("Failed to change language:", err);
-      });
+    i18n.changeLanguage(code).then(() => {
+      try { localStorage.setItem("i18nextLng", code); } catch {}
+      setLangOpenDesktop(false);
+    });
   };
 
-  // Active indicator + styling (hilangkan after pseudo untuk animasi smooth)
-  const navBase =
-    "group relative px-3 py-2 rounded-2xl transition text-slate-700 dark:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 font-medium";
-  const navClass = (active) =>
-    cx(
-      navBase,
-      active && "text-slate-900 dark:text-slate-100 font-semibold"
-    );
-
-  const NavItem = ({ to, children, end = false, index }) => (
-    <NavLink
-      ref={(el) => (navRefs.current[index] = el)}
-      to={to}
-      end={end}
-      className={({ isActive }) => navClass(isActive)}
-    >
-      {children}
-    </NavLink>
-  );
-
-  const headerBg = cx(
-    "bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors"
-  );
-  const headerShadow = atTop ? "shadow-none" : "shadow-[0_6px_24px_rgba(2,6,23,.06)]";
+  // Styles
+  const headerBg = "bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50";
+  const headerShadow = atTop ? "" : "shadow-sm";
 
   return (
-    <header
-      className={cx("fixed top-0 left-0 right-0 z-40 transition-transform duration-300", show || atTop ? "translate-y-0" : "-translate-y-full")}
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
-    >
-      <div className={cx(headerBg, headerShadow)}>
-        <div className="container flex items-center justify-between h-16">
-          {/* LEFT: brand or admin greeting */}
-          {isAdmin ? (
-            <Link
-              to="/admin"
-              className="relative h-12 lg:h-14 flex items-center text-lg font-semibold text-slate-900 dark:text-slate-100"
-              aria-label="Admin Dashboard"
-            >
-              Halo, Admin!
-            </Link>
-          ) : (
-            <Link to="/" className="relative h-12 lg:h-14 w-[210px] select-none" aria-label="CIDIKA TRAVEL&TOUR">
-              <img
-                src="/biru.png"
-                alt="CIDIKA TRAVEL&TOUR"
-                className="absolute inset-0 h-full w-auto opacity-100 dark:opacity-0 transition-opacity duration-300"
-                draggable="false"
-              />
-              <img
-                src="/putih.png"
-                alt=""
-                className="absolute inset-0 h-full w-auto opacity-0 dark:opacity-100 transition-opacity duration-300"
-                draggable="false"
-              />
-            </Link>
-          )}
-
-          {/* RIGHT: desktop nav & mobile hamburger */}
-          <div className="flex items-center gap-2">
-            {/* Desktop Nav */}
-            <nav className="hidden lg:flex items-center gap-2 relative">
-              <div className="flex items-center gap-2 relative">
-                {menuItems.map((item, index) => (
-                  <NavItem key={item.to} to={item.to} end={item.end} index={index}>
-                    {item.label}
-                  </NavItem>
-                ))}
-                {/* Animated indicator */}
-                <motion.div
-                  className="absolute -bottom-[2px] h-[2px] bg-sky-500 rounded-full"
-                  style={{ originX: 0 }}
-                  animate={{
-                    left: indicator.left,
-                    width: indicator.width,
-                  }}
-                  transition={{
-                    duration: reduced ? 0.01 : 0.3,
-                    ease: "easeInOut",
-                  }}
-                  initial={false}
-                />
-              </div>
-
-              {/* Theme toggle */}
-              <button
-                className="p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                aria-label={t("misc.toggleTheme", { defaultValue: "Toggle theme" })}
-                title={t("misc.toggleTheme", { defaultValue: "Toggle theme" })}
-              >
-                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-
-              {/* Language dropdown (Desktop) */}
-              <div className="relative" ref={desktopLangRef} key={activeLang.code}>
-                <button
-                  className="px-2 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition inline-flex items-center gap-1"
-                  onClick={() => {
-                    console.log("Desktop lang button clicked");
-                    setLangOpenDesktop((v) => !v);
-                  }}
-                  aria-haspopup="menu"
-                  aria-expanded={langOpenDesktop}
-                  aria-label={`${t("nav.language", { defaultValue: "Language" })}: ${activeLang.label}`}
-                  title={`${activeLang.label}`}
-                >
-                  <ReactCountryFlag
-                    countryCode={activeLang.country}
-                    svg
-                    style={{ width: "1.2em", height: "1.2em", borderRadius: 4 }}
-                    aria-label={`${activeLang.label} flag`}
-                  />
-                  <span className="hidden xl:inline text-xs uppercase opacity-70">{activeLang.code}</span>
-                  <ChevronDown size={14} className="opacity-70" />
-                </button>
-                <AnimatePresence mode="wait">
-                  {langOpenDesktop && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6, pointerEvents: "none" }}
-                      transition={{ duration: reduced ? 0.01 : 0.16 }}
-                      className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-smooth p-1 z-50"
-                      role="menu"
-                    >
-                      {LANGS.map(({ code, label, country }) => (
-                        <button
-                          key={code}
-                          onClick={() => {
-                            console.log(`Desktop lang change to ${code}`);
-                            onChangeLanguage(code);
-                          }}
-                          className="px-3 py-2 w-full text-left hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-2"
-                          role="menuitem"
-                        >
-                          <ReactCountryFlag
-                            countryCode={country}
-                            svg
-                            style={{ width: "1.2em", height: "1.2em", borderRadius: 4 }}
-                            aria-label={`${label} flag`}
-                            title={label}
-                          />
-                          <span className="flex-1">{label}</span>
-                          <span className="text-xs text-slate-400 uppercase">{code}</span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Auth */}
-              {!session ? (
-                <NavLink to="/admin/login" className={navBase} aria-label="Login">
-                  <UserRound size={18} />
-                </NavLink>
+    <>
+      <header
+        className={cx("fixed top-0 left-0 right-0 z-40 transition-transform duration-300 will-change-transform", show || atTop ? "translate-y-0" : "-translate-y-full")}
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <div className={cx(headerBg, headerShadow)}>
+          <div className="container flex items-center justify-between h-16">
+            
+            {/* --- LEFT: LOGO (ANIMATED) --- */}
+            <div className="flex-shrink-0 w-[140px] md:w-[180px]">
+              {isAdmin ? (
+                <Link to="/admin" className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-1">
+                  <LayoutDashboard className="text-sky-500" size={20}/>
+                  <span>Admin<span className="text-sky-500">Panel</span></span>
+                </Link>
               ) : (
-                <button
-                  className={navBase}
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    window.location.href = "/";
-                  }}
-                  title="Logout"
-                  aria-label="Logout"
-                >
-                  <LogOut size={18} />
-                </button>
+                <Link to="/">
+                  <motion.div 
+                    className="relative block h-10 w-full"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    aria-label="CIDIKA TRAVEL"
+                  >
+                    <img src="/biru.png" alt="CIDIKA" className="absolute h-full w-auto object-contain left-0 dark:opacity-0 transition-opacity duration-300" />
+                    <img src="/putih.png" alt="CIDIKA" className="absolute h-full w-auto object-contain left-0 opacity-0 dark:opacity-100 transition-opacity duration-300" />
+                  </motion.div>
+                </Link>
               )}
-            </nav>
-
-            {/* Mobile: Theme Toggle + Language Button + Hamburger */}
-            <div className="flex items-center gap-2 lg:hidden">
-              {/* Mobile Theme Toggle */}
-              <button
-                className="p-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                aria-label={t("misc.toggleTheme", { defaultValue: "Toggle theme" })}
-                title={t("misc.toggleTheme", { defaultValue: "Toggle theme" })}
-              >
-                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-              </button>
-
-              {/* Mobile Language Button (with flag) */}
-              <div className="relative" ref={mobileLangRef} key={activeLang.code}>
-                <button
-                  className="px-2 py-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition inline-flex items-center gap-1"
-                  onClick={() => {
-                    console.log("Mobile lang button clicked");
-                    setLangOpenMobile((v) => !v);
-                  }}
-                  aria-haspopup="menu"
-                  aria-expanded={langOpenMobile}
-                  aria-label={`${t("nav.language", { defaultValue: "Language" })}: ${activeLang.label}`}
-                  title={`${activeLang.label}`}
-                >
-                  <ReactCountryFlag
-                    countryCode={activeLang.country}
-                    svg
-                    style={{ width: "1.2em", height: "1.2em", borderRadius: 4 }}
-                    aria-label={`${activeLang.label} flag`}
-                  />
-                  <ChevronDown size={14} className="opacity-70" />
-                </button>
-                <AnimatePresence mode="wait">
-                  {langOpenMobile && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -6, scale: 0.95, pointerEvents: "none" }}
-                      transition={{ duration: reduced ? 0.01 : 0.16 }}
-                      className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-smooth p-1 z-50"
-                      role="menu"
-                    >
-                      {LANGS.map(({ code, label, country }) => (
-                        <button
-                          key={code}
-                          onClick={() => {
-                            console.log(`Mobile lang change to ${code}`);
-                            onChangeLanguage(code);
-                          }}
-                          className="px-3 py-2 w-full text-left hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl flex items-center gap-2 text-sm"
-                          role="menuitem"
-                        >
-                          <ReactCountryFlag
-                            countryCode={country}
-                            svg
-                            style={{ width: "1em", height: "1em", borderRadius: 3 }}
-                            aria-label={`${label} flag`}
-                            title={label}
-                          />
-                          <span className="flex-1">{label}</span>
-                          <span className="text-xs text-slate-400 uppercase">{code}</span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Mobile Hamburger */}
-              <button
-                className={cx(
-                  "inline-flex h-10 w-10 items-center justify-center rounded-2xl border leading-none transition shadow-smooth",
-                  open
-                    ? "border-sky-300/60 bg-sky-50/70 dark:border-sky-500/30 dark:bg-sky-400/10"
-                    : "border-slate-200 dark:border-slate-700 hover:bg-slate-100/70 dark:hover:bg-slate-800/70"
-                )}
-                onClick={() => setOpen((v) => !v)}
-                aria-label={open ? t("misc.close", { defaultValue: "Close menu" }) : t("misc.open", { defaultValue: "Open menu" })}
-                aria-pressed={open}
-                aria-expanded={open}
-                aria-controls="mobile-menu"
-              >
-                <BurgerIcon open={open} reduced={reduced} />
-              </button>
             </div>
+
+            {/* --- CENTER: DESKTOP PILL NAV --- */}
+            <div className="hidden lg:flex flex-1 justify-center">
+              <nav className="flex items-center gap-1 p-1 rounded-full bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-700/50 shadow-inner backdrop-blur-sm">
+                {menuItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    className="relative px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {isActive && (
+                          <motion.span
+                            layoutId="nav-pill"
+                            className="absolute inset-0 bg-white dark:bg-slate-700 rounded-full shadow-sm border border-black/5 dark:border-white/10"
+                            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                          />
+                        )}
+                        <span className={`relative z-10 ${isActive ? "text-sky-700 dark:text-sky-400 font-bold" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}>
+                          {item.label}
+                        </span>
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+
+            {/* --- RIGHT: ACTIONS (ANIMATED) --- */}
+            <div className="hidden lg:flex items-center justify-end gap-3 w-[180px]">
+               {/* Theme (Animated Rotation) */}
+               <motion.button
+                  whileHover={{ rotate: 45, scale: 1.1 }}
+                  whileTap={{ rotate: -45, scale: 0.9 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  title={t("misc.toggleTheme")}
+                >
+                  {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+                </motion.button>
+
+                {/* Lang (Dropdown) */}
+                <div className="relative" ref={desktopLangRef}>
+                  <button
+                    onClick={() => setLangOpenDesktop(!langOpenDesktop)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all text-sm font-medium"
+                  >
+                    <ReactCountryFlag countryCode={activeLang.country} svg style={{ width: '1.2em', height: '1.2em', borderRadius: '50%' }} />
+                    <span className="uppercase text-xs text-slate-600 dark:text-slate-300">{activeLang.code}</span>
+                    <ChevronDown size={12} className={`text-slate-400 transition-transform ${langOpenDesktop ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  <AnimatePresence>
+                    {langOpenDesktop && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-1.5 z-50 origin-top-right"
+                      >
+                        {LANGS.map((l) => (
+                          <button
+                            key={l.code}
+                            onClick={() => onChangeLanguage(l.code)}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors ${activeLang.code === l.code ? 'bg-sky-50 dark:bg-sky-900/20 text-sky-600 font-medium' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'}`}
+                          >
+                            <ReactCountryFlag countryCode={l.country} svg style={{ borderRadius: '2px' }} />
+                            <span>{l.label}</span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Auth Toggle (Animated Scale) */}
+                {session ? (
+                   <motion.button 
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={handleLogout} 
+                      className="p-2 rounded-full text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" 
+                      title="Logout"
+                   >
+                      <LogOut size={18} />
+                   </motion.button>
+                ) : (
+                   <Link to="/admin/login">
+                      <motion.div 
+                         whileHover={{ scale: 1.1 }}
+                         whileTap={{ scale: 0.9 }}
+                         className="p-2 rounded-full text-slate-500 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors"
+                      >
+                        <UserRound size={18} />
+                      </motion.div>
+                   </Link>
+                )}
+            </div>
+
+            {/* --- MOBILE TRIGGER --- */}
+            <button 
+              onClick={() => setOpen(true)} 
+              className="lg:hidden p-2 -mr-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+            >
+               <div className="flex flex-col gap-1.5 w-6 items-end">
+                <span className="h-0.5 w-full bg-current rounded-full" />
+                <span className="h-0.5 w-3/4 bg-current rounded-full" />
+                <span className="h-0.5 w-full bg-current rounded-full" />
+              </div>
+            </button>
+
           </div>
         </div>
+      </header>
 
-        <AnimatePresence>
-          {open && (
+      {/* ====== MOBILE SIDEBAR (DRAWER) ====== */}
+      <AnimatePresence>
+        {open && (
+          <>
+            {/* Backdrop Overlay */}
             <motion.div
-              id="mobile-menu"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: reduced ? 0.1 : 0.3, ease: "easeInOut" }}
-              className="lg:hidden overflow-hidden border-t border-slate-200/50 dark:border-slate-800/50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 z-[9998] bg-slate-900/20 backdrop-blur-sm"
+              onClick={() => setOpen(false)}
+            />
+
+            {/* Sidebar Panel */}
+            <motion.aside
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed inset-y-0 right-0 z-[9999] w-[85%] max-w-[300px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl shadow-2xl border-l border-slate-200/50 dark:border-slate-800/50 flex flex-col"
             >
-              <div className="p-4 space-y-1">
-                {/* Navigation Links */}
-                <nav className="space-y-1">
-                  {!isAdmin ? (
-                    <>
-                      <Link
-                        to="/"
-                        onClick={() => setOpen(false)}
-                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
-                      >
-                        {t("nav.home", { defaultValue: "Home" })}
-                      </Link>
-                      <Link
-                        to="/explore"
-                        onClick={() => setOpen(false)}
-                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
-                      >
-                        {t("nav.explore", { defaultValue: "Explore" })}
-                      </Link>
-                      <Link
-                        to="/destinasi"
-                        onClick={() => setOpen(false)}
-                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
-                      >
-                        {t("nav.destinasi", { defaultValue: "Destinations" })}
-                      </Link>
-                      <Link
-                        to="/faq"
-                        onClick={() => setOpen(false)}
-                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
-                      >
-                        {t("nav.faq", { defaultValue: "FAQ" })}
-                      </Link>
-                      <Link
-                        to="/contact"
-                        onClick={() => setOpen(false)}
-                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
-                      >
-                        {t("nav.contact", { defaultValue: "Contact" })}
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      <Link
-                        to="/admin"
-                        onClick={() => setOpen(false)}
-                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
-                      >
-                        {adminLabels.dashboard}
-                      </Link>
-                      <Link
-                        to="/admin/orderan"
-                        onClick={() => setOpen(false)}
-                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
-                      >
-                        {adminLabels.orders}
-                      </Link>
-                      <Link
-                        to="/admin/kustomisasi"
-                        onClick={() => setOpen(false)}
-                        className="block px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
-                      >
-                        {adminLabels.customize}
-                      </Link>
-                    </>
-                  )}
-                </nav>
-
-                {/* Divider */}
-                <div className="my-3 h-px bg-slate-200 dark:bg-slate-700" />
-
-                {/* Actions Section */}
-                <div className="space-y-2">
-                  {/* Theme Toggle */}
-                  <button
-                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    className="w-full px-4 py-3 rounded-xl hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-3"
-                  >
-                    <span className="w-6 h-6 flex items-center justify-center rounded-md bg-sky-100/50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400">
-                      {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-                    </span>
-                    {theme === "dark" ? t("nav.theme.light", { defaultValue: "Light Mode" }) : t("nav.theme.dark", { defaultValue: "Dark Mode" })}
-                  </button>
-
-                  {/* Auth Button */}
-                  {session ? (
-                    <button
-                      onClick={async () => {
-                        await supabase.auth.signOut();
-                        window.location.href = "/";
-                      }}
-                      className="w-full btn btn-outline flex items-center justify-center gap-2 text-sm"
-                    >
-                      <LogOut size={16} />
-                      {t("nav.logout", { defaultValue: "Logout" })}
-                    </button>
-                  ) : (
-                    <Link
-                      to="/admin/login"
-                      onClick={() => setOpen(false)}
-                      className="w-full btn btn-outline flex items-center justify-center gap-2 text-sm"
-                      aria-label="Login"
-                    >
-                      <UserRound size={16} />
-                      {t("nav.login", { defaultValue: "Login" })}
-                    </Link>
-                  )}
-                </div>
+              {/* Sidebar Header */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800/50">
+                <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Menu</span>
+                <motion.button 
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setOpen(false)}
+                  className="p-2 -mr-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500"
+                >
+                  <X size={24} />
+                </motion.button>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </header>
+
+              {/* Sidebar Links */}
+              <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
+                {menuItems.map((item) => {
+                  const Icon = ICONS[item.to] || ChevronDown;
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.end}
+                      className={({ isActive }) => cx(
+                        "flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200",
+                        isActive 
+                          ? "bg-sky-50 dark:bg-sky-900/20 text-sky-700 dark:text-sky-400 font-semibold" 
+                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      )}
+                      onClick={() => setOpen(false)} // Close sidebar on link click
+                    >
+                      <Icon size={20} className="opacity-70" />
+                      <span className="text-base">{item.label}</span>
+                    </NavLink>
+                  )
+                })}
+              </div>
+
+              {/* Sidebar Footer */}
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/30 space-y-4">
+                {/* Theme Switcher */}
+                <div className="flex items-center justify-between px-2">
+                   <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Appearance</span>
+                   <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-lg">
+                      <button 
+                        onClick={() => setTheme('light')} 
+                        className={`p-1.5 rounded-md transition-all ${theme === 'light' ? 'bg-white text-sky-600 shadow-sm' : 'text-slate-500'}`}
+                      >
+                        <Sun size={16}/>
+                      </button>
+                      <button 
+                        onClick={() => setTheme('dark')} 
+                        className={`p-1.5 rounded-md transition-all ${theme === 'dark' ? 'bg-slate-700 text-sky-400 shadow-sm' : 'text-slate-500'}`}
+                      >
+                        <Moon size={16}/>
+                      </button>
+                   </div>
+                </div>
+
+                {/* Language Grid */}
+                <div className="grid grid-cols-3 gap-2">
+                   {LANGS.map(l => (
+                     <button
+                       key={l.code}
+                       onClick={() => onChangeLanguage(l.code)}
+                       className={`flex flex-col items-center justify-center gap-1 py-2 rounded-xl border transition-all ${
+                         activeLang.code === l.code
+                           ? "border-sky-200 bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:border-sky-800 dark:text-sky-300"
+                           : "border-transparent hover:bg-white dark:hover:bg-slate-800"
+                       }`}
+                     >
+                        <ReactCountryFlag countryCode={l.country} svg style={{ borderRadius: '4px', width: '1.2em' }} />
+                        <span className="text-[10px] font-bold uppercase">{l.code}</span>
+                     </button>
+                   ))}
+                </div>
+
+                {/* Auth Action */}
+                {session ? (
+                  <button 
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors text-sm font-semibold"
+                  >
+                    <LogOut size={16}/> Logout
+                  </button>
+                ) : (
+                  <Link 
+                    to="/admin/login"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 transition-opacity text-sm font-bold"
+                  >
+                    <UserRound size={16}/> Login
+                  </Link>
+                )}
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
