@@ -171,7 +171,6 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
   }, [reduced, images.length]);
 
   return (
-    // Rounded semua sisi (rounded-[2rem])
     <section className="relative h-[75vh] md:h-[80vh] overflow-hidden shadow-xl bg-slate-900 rounded-[2rem] mt-2 mx-2 md:mx-0">
       <motion.div style={{ y }} className="absolute inset-0 z-0 will-change-transform">
         <AnimatePresence mode="popLayout">
@@ -217,7 +216,7 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
                 delay={40}
                 animateBy="words"
                 direction="top"
-                className="font-hero font-extrabold text-white leading-[1.1] drop-shadow-2xl text-[clamp(32px,7vw,64px)] tracking-tight text-center mx-auto w-full flex flex-wrap justify-center gap-x-2.5 gap-y-0"
+                className="font-hero font-extrabold text-white leading-[1.1] drop-shadow-2xl text-[clamp(28px,6vw,50px)] tracking-tight text-center mx-auto w-full flex flex-wrap justify-center gap-x-2.5 gap-y-0"
              />
           </div>
         )}
@@ -327,36 +326,40 @@ function Stats({ trips = 0, photos = 0, rating = 4.9 }) {
   const rv = useCountUp({ to: Math.round(rating * 10), duration: 2000, start });
 
   return (
-    <section className="container mt-20">
+    <section className="container mt-16 md:mt-20 relative z-10">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 50 }}
-        whileInView={{ opacity: 1, scale: 1, y: 0 }}
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.3 }}
-        transition={{ type: "spring", bounce: 0.5, duration: 1 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
         onViewportEnter={() => setStart(true)}
-        className="p-8 md:p-12 bg-slate-900 rounded-[2rem] shadow-xl relative overflow-hidden text-white text-center border-4 border-slate-800"
+        // UPDATED VISUALS & THEME ADAPTABILITY
+        className="relative overflow-hidden rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl transition-all duration-500"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950" />
-        <div className="absolute -top-40 -left-40 w-[400px] h-[400px] bg-sky-600/20 rounded-full blur-[100px]" />
-        <div className="absolute -bottom-40 -right-40 w-[400px] h-[400px] bg-indigo-600/20 rounded-full blur-[100px]" />
+        {/* Soft Background Blobs (Adaptive) */}
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-sky-400/20 dark:bg-sky-600/20 rounded-full blur-[80px] mix-blend-multiply dark:mix-blend-screen transition-colors duration-500" />
+        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-indigo-400/20 dark:bg-indigo-600/20 rounded-full blur-[80px] mix-blend-multiply dark:mix-blend-screen transition-colors duration-500" />
 
-        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-8 divide-y sm:divide-y-0 sm:divide-x divide-white/10">
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-0 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-800 p-8 md:p-12 transition-colors duration-500">
           {[
-            { num: tv.toLocaleString() + "+", label: t("home.stats.travelers", { defaultValue: "Happy Travelers" }), icon: Users },
-            { num: pv.toLocaleString() + "+", label: t("home.stats.media", { defaultValue: "Photos & Videos" }), icon: Star },
-            { num: (rv / 10).toFixed(1), label: t("home.stats.rating", { defaultValue: "Average Rating" }), icon: BadgeCheck },
+            { num: tv.toLocaleString() + "+", label: t("home.stats.travelers", { defaultValue: "Happy Travelers" }), icon: Users, color: "text-sky-500" },
+            { num: pv.toLocaleString() + "+", label: t("home.stats.media", { defaultValue: "Photos & Videos" }), icon: Star, color: "text-amber-400" },
+            { num: (rv / 10).toFixed(1), label: t("home.stats.rating", { defaultValue: "Average Rating" }), icon: BadgeCheck, color: "text-emerald-500" },
           ].map((stat, i) => (
             <motion.div 
               key={i}
-              className="pt-6 sm:pt-0 px-4 flex flex-col items-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={start ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: i * 0.2, duration: 0.5 }}
+              className="flex flex-col items-center justify-center px-4 py-4 sm:py-0"
             >
-              <div className="w-14 h-14 mb-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
-                 <stat.icon className="text-sky-400" size={28} />
+              <div className={`mb-4 p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/50 ${stat.color} transition-colors duration-500`}>
+                 <stat.icon size={32} strokeWidth={2} />
               </div>
-              <div className="text-3xl md:text-4xl font-black mb-1 tracking-tighter tabular-nums text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60">
+              <div className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-1 transition-colors duration-500 tabular-nums">
                 {stat.num}
               </div>
-              <div className="text-xs text-sky-200/80 font-bold uppercase tracking-widest">
+              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">
                 {stat.label}
               </div>
             </motion.div>
