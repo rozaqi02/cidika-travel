@@ -15,13 +15,13 @@ export default function usePackages({ live = true } = {}) {
     setLoad(true);
     setError(null);
 
-    const { data, error } = await supabase
-      .from("packages")
-      .select(`
-        id, slug, is_active, default_image, created_at,
-        price_tiers ( pax, price_idr, audience ),
-        locales:package_locales ( lang, title, summary, spots, itinerary, include, note )
-        `)
+const { data, error } = await supabase
+  .from("packages")
+  .select(`
+    id, slug, is_active, default_image, created_at, destination_key, trip_type, 
+    price_tiers ( pax, price_idr, audience ),
+    locales:package_locales ( lang, title, summary, spots, itinerary, include, note )
+    `)
       .eq("is_active", true)
       .order("created_at", { ascending: true });
 
@@ -32,17 +32,17 @@ export default function usePackages({ live = true } = {}) {
       return;
     }
 
- const pickLocale = (L, code) => {
-   const pick = (c) => L.find((l) => (l.lang || "").slice(0,2) === c);
-   const c = (code || "id").slice(0,2);
-   return pick(c) || pick("id") || pick("en") || L[0] || {};
- };
+    const pickLocale = (L, code) => {
+      const pick = (c) => L.find((l) => (l.lang || "").slice(0, 2) === c);
+      const c = (code || "id").slice(0, 2);
+      return pick(c) || pick("id") || pick("en") || L[0] || {};
+    };
 
- const mapped = (data || []).map((p) => {
-   const L = Array.isArray(p.locales) ? p.locales : [];
-   const loc = pickLocale(L, lang);
+    const mapped = (data || []).map((p) => {
+      const L = Array.isArray(p.locales) ? p.locales : [];
+      const loc = pickLocale(L, lang);
 
-      // >>> TIDAK mem-filter audience. Bawa semua tier & normalisasi tipe.
+      // Normalisasi tipe data tiers
       const tiers = Array.isArray(p.price_tiers)
         ? p.price_tiers.map((t) => ({
             pax: Number(t.pax),
@@ -54,9 +54,11 @@ export default function usePackages({ live = true } = {}) {
       return {
         id: p.id,
         slug: p.slug,
+        destination_key: p.destination_key, // REVISI: Pastikan ini dikembalikan ke component
+        trip_type: p.trip_type,
         default_image: p.default_image,
-        locale: L,
-        locale: loc,
+        locales: L, // Raw locales jika butuh debug
+        locale: loc, // Locale yang sudah dipilih sesuai bahasa
         price_tiers: tiers,
       };
     });

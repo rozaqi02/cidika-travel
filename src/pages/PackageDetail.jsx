@@ -2,8 +2,8 @@
 import React, { useMemo, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion"; // Animate
-import { ArrowLeft, Calendar, Check, Info, MapPin, DollarSign } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowLeft, Calendar, Check, Info, MapPin, DollarSign, Users } from "lucide-react"; // Import Users icon
 import usePackages from "../hooks/usePackages";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
@@ -188,6 +188,18 @@ export default function PackageDetail() {
     );
   }
 
+  // --- LOGIC TRIP TYPE ---
+  const isOpenTrip = pkg.trip_type === "open";
+  const tripTypeLabel = isOpenTrip ? "Open Trip" : t("explore.privateTour", { defaultValue: "Private Trip" });
+  const tripTypeColor = isOpenTrip ? "bg-amber-500 text-white" : "bg-sky-500 text-white";
+  const tripTypeBadge = (
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${tripTypeColor}`}>
+          {isOpenTrip && <Users size={12} />}
+          {tripTypeLabel}
+      </span>
+  );
+  // -----------------------
+
   const cover = getPkgImage(pkg);
   const gallery = getGalleryList(pkg);
 
@@ -203,6 +215,7 @@ export default function PackageDetail() {
       t("checkout.wa.header", { defaultValue: "Halo Admin CIDIKA, saya ingin bertanya." }),
       "",
       `Paket: ${title}`,
+      `Jenis Trip: ${tripTypeLabel}`,
       `${t("home.pax")}: ${pax}`,
       `Tipe: ${audienceLabel}`,
       t("checkout.wa.footer", { defaultValue: "Mohon info lebih lanjut ya 🙏" }),
@@ -218,6 +231,7 @@ export default function PackageDetail() {
       pax,
       qty: 1,
       audience,
+      trip_type: pkg.trip_type, // Passing trip type info
     };
     nav("/checkout", { state: { items: [item] } });
   };
@@ -251,6 +265,15 @@ export default function PackageDetail() {
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="flex-1">
+              {/* Trip Type Badge Hero */}
+              <motion.div 
+                 initial={{ opacity: 0, y: 10 }} 
+                 animate={{ opacity: 1, y: 0 }} 
+                 className="mb-3"
+              >
+                  {tripTypeBadge}
+              </motion.div>
+
               <motion.h1 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -388,6 +411,14 @@ export default function PackageDetail() {
             </div>
 
             <div className="space-y-4">
+              {/* Trip Type Info */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                  <span className="text-xs font-semibold text-gray-500 uppercase">Trip Type</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${isOpenTrip ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'}`}>
+                      {tripTypeLabel}
+                  </span>
+              </div>
+
               <div>
                  <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Traveler Type</label>
                  <div className="grid grid-cols-2 gap-2">

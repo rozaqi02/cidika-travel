@@ -1,13 +1,13 @@
 // src/pages/Explore.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useScroll, useTransform, motion, AnimatePresence } from "framer-motion"; // Tambahkan motion & AnimatePresence
+import { useScroll, useTransform, motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import usePackages from "../hooks/usePackages";
 import usePageSections from "../hooks/usePageSections";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
-import { LayoutGrid, Rows, Star, Heart, MapPin } from "lucide-react";
+import { LayoutGrid, Rows, Star, Heart, MapPin, Users } from "lucide-react"; // Tambah icon Users
 
 /* ===============================
    Animation Variants
@@ -17,7 +17,7 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1, // Jeda 0.1 detik antar item
+      staggerChildren: 0.1,
       delayChildren: 0.2,
     },
   },
@@ -25,12 +25,12 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
-    transition: { type: "spring", stiffness: 50, damping: 20 } 
+    transition: { type: "spring", stiffness: 50, damping: 20 },
   },
-  exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } }
+  exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } },
 };
 
 /* ===============================
@@ -52,14 +52,13 @@ function getPkgImage(p) {
 }
 
 function normalizeLocale(p, lang2) {
-  if (p?.locale && p.locale.title) return p.locale; 
+  if (p?.locale && p.locale.title) return p.locale;
   const L = Array.isArray(p?.locales) ? p.locales : [];
   const pick = (code) => L.find((l) => (l.lang || "").slice(0, 2) === code);
   return pick((lang2 || "id").slice(0, 2)) || pick("id") || pick("en") || L[0] || {};
 }
 
-// Ubah ke motion.article agar bisa menerima variants
-const MotionArticle = motion.article; 
+const MotionArticle = motion.article;
 
 function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }) {
   const nav = useNavigate();
@@ -76,6 +75,11 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
   const loc = normalizeLocale(p, lang);
   const audienceLabel = audience === "domestic" ? t("explore.domestic") : t("explore.foreign");
 
+  // Logic Open Trip vs Private
+  const isOpenTrip = p.trip_type === "open";
+  const labelColor = isOpenTrip ? "bg-amber-500/90" : "bg-sky-500/90";
+  const labelText = isOpenTrip ? "Open Trip" : t("explore.privateTour", { defaultValue: "Private Tour" });
+
   const goOrder = () => {
     const item = {
       id: p.id,
@@ -84,6 +88,7 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
       pax,
       qty: 1,
       audience,
+      trip_type: p.trip_type, // Bawa info ini ke checkout jika perlu
     };
     nav("/checkout", { state: { items: [item] } });
   };
@@ -95,12 +100,12 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
 
   return (
     <MotionArticle
-      layout // Animasi layout saat filter berubah
+      layout
       variants={itemVariants}
       initial="hidden"
       animate="visible"
       exit="exit"
-      whileHover={{ y: -8, transition: { duration: 0.3 } }} // Animasi hover naik sedikit
+      whileHover={{ y: -8, transition: { duration: 0.3 } }}
       id={`pkg-${p.id}`}
       className="group relative overflow-hidden rounded-xl border border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-xl transition-shadow duration-300 bg-white dark:bg-gray-900"
     >
@@ -111,12 +116,16 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
           alt={loc?.title}
           loading="lazy"
           className="w-full h-full object-cover"
-          whileHover={{ scale: 1.1 }} // Zoom in halus saat hover image
+          whileHover={{ scale: 1.1 }}
           transition={{ duration: 0.6 }}
         />
-        <div className="absolute top-3 left-3 z-10 bg-sky-500/90 text-white px-2 py-1 rounded-full text-xs font-medium shadow-sm">
-          {t("explore.privateTour")}
+        
+        {/* DYNAMIC LABEL (DATABASE) */}
+        <div className={`absolute top-3 left-3 z-10 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 ${labelColor}`}>
+          {isOpenTrip && <Users size={12} />}
+          {labelText}
         </div>
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <button className="absolute top-3 right-3 z-10 p-2 bg-white/90 dark:bg-gray-800/90 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 active:scale-95">
           <Heart size={18} className="text-gray-600 dark:text-gray-300" />
@@ -164,7 +173,7 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
           >
             {t("home.viewDetails")}
           </button>
-          
+
           <div className="flex items-center gap-2">
             <select
               value={pax}
@@ -200,39 +209,51 @@ export default function Explore() {
 
   const location = useLocation();
   const qs = new URLSearchParams(location.search);
-  const qsDest = qs.get("dest");
   const initialPax = Number(location.state?.pax) || 6;
 
+  // Inisialisasi dest langsung dari URL
+  const [dest, setDest] = useState(qs.get("dest") || "all");
+  
   const [pax, setPax] = useState(initialPax);
   const [audience, setAudience] = useState("domestic");
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("price");
   const [compact, setCompact] = useState(false);
-  const [dest, setDest] = useState(qsDest || "all");
 
-  // Ambil opsi destinasi dari DB
-  const S = useMemo(
-    () => Object.fromEntries((destSections || []).map((s) => [s.section_key, s])),
-    [destSections]
-  );
-  const destinationOptions = useMemo(() => {
-    const items = S.cards?.locale?.extra?.items || S.cards?.data?.items || [];
-    const opts = (items || []).map((it) => ({
-      key:
-        it.key ||
-        it.slug ||
-        it.id ||
-        (it.title || it.name || "dest").toLowerCase().replace(/\s+/g, "-"),
-      label: it.title || it.name || it.key,
-    }));
-    if (!opts.find((o) => o.key === "nusa-penida")) {
-      opts.push({
-        key: "nusa-penida",
-        label: t("dest.penidaTitle", { defaultValue: "Nusa Penida" }),
-      });
+  useEffect(() => {
+    const currentDest = qs.get("dest");
+    if (currentDest) {
+      setDest(currentDest);
+    } else {
+      setDest("all");
     }
-    return [{ key: "all", label: t("explore.all", { defaultValue: "Semua" }) }, ...opts];
-  }, [S, t]);
+  }, [location.search]);
+
+  // Logic pembuatan Dropdown
+  const destinationOptions = useMemo(() => {
+    const opts = [
+        { key: "all", label: t("explore.all", { defaultValue: "Semua" }) }
+    ];
+
+    const hasNusa = destSections.some(s => s.section_key === 'nusa-penida');
+    if (!hasNusa) {
+        opts.push({ 
+            key: "nusa-penida", 
+            label: t("dest.penidaTitle", { defaultValue: "Nusa Penida" }) 
+        });
+    }
+
+    const ignored = ['hero', 'intro', 'cards', 'all']; 
+    
+    const dynamicOpts = destSections
+        .filter(s => !ignored.includes(s.section_key))
+        .map(s => ({
+            key: s.section_key, 
+            label: s.locale?.title || s.title || s.section_key
+        }));
+
+    return [...opts, ...dynamicOpts];
+  }, [destSections, t]);
 
   // Theme & scroll
   const [isDark, setIsDark] = useState(() =>
@@ -240,7 +261,7 @@ export default function Explore() {
   );
   const lastScrollYRef = useRef(0);
   const [hideToolbar, setHideToolbar] = useState(false);
-  
+
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY || 0;
@@ -266,15 +287,6 @@ export default function Explore() {
     return () => obs.disconnect();
   }, []);
 
-  const { scrollY } = useScroll();
-  const barH = useTransform(scrollY, [0, 120], ["6.25rem", "4.75rem"]);
-  const barShadow = useTransform(scrollY, [0, 80], ["0 6px 24px rgba(2,6,23,.06)", "0 4px 18px rgba(2,6,23,.12)"]);
-  const bgFrom = isDark ? "rgba(2,6,23,0.45)" : "rgba(255,255,255,0.60)";
-  const bgTo = isDark ? "rgba(2,6,23,0.72)" : "rgba(255,255,255,0.90)";
-  const barBg = useTransform(scrollY, [0, 80], [bgFrom, bgTo]);
-
-  const sortPriceLabel = t("explore.sortPrice");
-  const sortNameLabel = t("explore.sortName");
   const domesticLabel = t("explore.domestic");
   const foreignLabel = t("explore.foreign");
 
@@ -291,13 +303,8 @@ export default function Explore() {
       dest === "all"
         ? list0
         : list0.filter((p) => {
-            const k =
-              p.destination_key ||
-              p.destination ||
-              p.data?.destination ||
-              p.data?.dest ||
-              (dest === "nusa-penida" ? "nusa-penida" : null);
-            return k === dest;
+            const pkgDest = p.destination_key || "nusa-penida";
+            return pkgDest === dest;
           });
 
     const searched = q
@@ -329,79 +336,74 @@ export default function Explore() {
     });
   }, [data, query, pax, sortBy, audience, dest, lang]);
 
-  const SHOW_TOOLBAR = false;
-
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="container mt-2 space-y-6"
     >
-      {SHOW_TOOLBAR && (
-        // ... (Kode toolbar tetap sama, saya sembunyikan untuk menghemat karakter) ...
-        <></>
-      )}
-
-      {/* Controls (Filters) - Animated entrance */}
-      <motion.div 
+      {/* Controls */}
+      <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
         className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm"
       >
-          {/* Search & Dest */}
-          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1">
-            <div className="relative flex-1 max-w-xs">
-               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-               <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={t("explore.searchPlaceholder", { defaultValue: "Search..." })}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-transparent focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all"
-                />
-            </div>
-            <select
-                value={dest}
-                onChange={(e) => setDest(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-transparent text-sm"
-            >
-              {destinationOptions.map((o) => (
-                <option key={o.key} value={o.key}>{o.label}</option>
-              ))}
-            </select>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1">
+          <div className="relative flex-1 max-w-xs">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("explore.searchPlaceholder", { defaultValue: "Search..." })}
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-transparent focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all"
+            />
+          </div>
+          <select
+            value={dest}
+            onChange={(e) => {
+                setDest(e.target.value);
+            }}
+            className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-transparent text-sm"
+          >
+            {destinationOptions.map((o) => (
+              <option key={o.key} value={o.key}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
+            {["domestic", "foreign"].map((k) => (
+              <button
+                key={k}
+                onClick={() => setAudience(k)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                  audience === k
+                    ? "bg-white dark:bg-gray-700 shadow text-sky-600 dark:text-sky-400"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
+                }`}
+              >
+                {k === "domestic" ? domesticLabel : foreignLabel}
+              </button>
+            ))}
           </div>
 
-          {/* Audience & Layout */}
-          <div className="flex gap-3 w-full sm:w-auto justify-between sm:justify-end">
-             <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-                {["domestic", "foreign"].map((k) => (
-                  <button
-                    key={k}
-                    onClick={() => setAudience(k)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                      audience === k 
-                        ? "bg-white dark:bg-gray-700 shadow text-sky-600 dark:text-sky-400" 
-                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
-                    }`}
-                  >
-                    {k === "domestic" ? domesticLabel : foreignLabel}
-                  </button>
-                ))}
-             </div>
-             
-             <button
-                className="btn btn-outline !p-2 rounded-xl"
-                onClick={() => setCompact((v) => !v)}
-              >
-                {compact ? <LayoutGrid size={18} /> : <Rows size={18} />}
-              </button>
-          </div>
+          <button
+            className="btn btn-outline !p-2 rounded-xl"
+            onClick={() => setCompact((v) => !v)}
+          >
+            {compact ? <LayoutGrid size={18} /> : <Rows size={18} />}
+          </button>
+        </div>
       </motion.div>
 
-      {/* Grid with AnimatePresence for filtering transitions */}
-      <motion.div 
+      {/* Grid */}
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -424,8 +426,9 @@ export default function Explore() {
               />
             ))
           ) : (
-            <motion.div 
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               className="col-span-full text-center py-16 text-gray-500 dark:text-gray-400"
             >
               <p className="text-lg mb-4">
