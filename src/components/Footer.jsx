@@ -52,7 +52,8 @@ export default function Footer() {
 
       {/* Main Footer */}
       <div className="mt-10 border-t border-slate-200 dark:border-slate-800">
-        <div className="container py-12 md:py-14 grid gap-10 md:grid-cols-4">
+        {/* Grid diubah jadi 3 kolom (md:grid-cols-3) karena newsletter dihapus */}
+        <div className="container py-12 md:py-14 grid gap-10 md:grid-cols-3">
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3">
@@ -127,38 +128,10 @@ export default function Footer() {
               <li className="flex items-center gap-2.5">
                 <Phone size={18} className="text-sky-600 dark:text-sky-400" />
                 <a className="hover:underline" href="https://wa.me/62895630193926" target="_blank" rel="noreferrer">
-                  +62895630193926(WA)
+                  +62895630193926 (WA)
                 </a>
               </li>
             </ul>
-          </div>
-
-          {/* Newsletter (dummy) */}
-          <div>
-            <h4 className="font-semibold text-slate-900 dark:text-slate-100">{t("footer.newsletter.title")}</h4>
-            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-              {t("footer.newsletter.desc")}
-            </p>
-            <form
-              className="mt-3 flex items-center gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                alert(t("footer.newsletter.thanks"));
-              }}
-            >
-              <input
-                type="email"
-                required
-                placeholder={t("footer.newsletter.placeholder")}
-                className="flex-1 rounded-2xl border border-slate-300 dark:border-slate-700 px-3 py-2 bg-white dark:bg-slate-900"
-              />
-              <button className="rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-2 font-semibold hover:opacity-90 transition">
-                {t("footer.newsletter.submit")}
-              </button>
-            </form>
-            <p className="mt-2 text-xs text-slate-500">
-              {t("footer.newsletter.note")}
-            </p>
           </div>
         </div>
       </div>

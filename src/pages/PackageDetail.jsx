@@ -1,14 +1,14 @@
 // src/pages/PackageDetail.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, Check, Info, MapPin, DollarSign, Users } from "lucide-react"; // Import Users icon
+import { ArrowLeft, Calendar, Check, Info, MapPin, DollarSign, Users, ArrowRight, Star } from "lucide-react";
 import usePackages from "../hooks/usePackages";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
 
-/* ===== util (sama seperti Explore) ===== */
+/* ===== util ===== */
 function getPkgImage(p) {
   const raw =
     p?.default_image ||
@@ -23,6 +23,7 @@ function getPkgImage(p) {
   if (/^https?:\/\//i.test(raw)) return raw;
   return raw.startsWith("/") ? raw : `/${raw}`;
 }
+
 function getGalleryList(p) {
   const urls = new Set();
   const push = (u) => {
@@ -38,6 +39,7 @@ function getGalleryList(p) {
   if (p?.thumb_url) push(p.thumb_url);
   return Array.from(urls).slice(0, 12);
 }
+
 function normalizeLocale(p, currentLang) {
   const byCtx = p?.locale || (Array.isArray(p?.locales) ? p.locales.find((l) => l.lang === currentLang) : null);
   return byCtx || p?.locales?.[0] || {};
@@ -51,8 +53,53 @@ const SectionTitle = ({ icon: Icon, children }) => (
   </div>
 );
 
+// --- KOMPONEN KARTU REKOMENDASI BARU ---
+function RecommendationCard({ p, currency, fx, locale, lang, t }) {
+  const nav = useNavigate();
+  const cover = getPkgImage(p);
+  const loc = normalizeLocale(p, lang);
+  
+  // Ambil harga terendah untuk display "Starts from"
+  const lowestPrice = (p.price_tiers || []).reduce((min, t) => (t.price_idr < min ? t.price_idr : min), Infinity);
+  const displayPrice = lowestPrice === Infinity ? 0 : lowestPrice;
+
+  // Scroll ke atas saat pindah halaman
+  const handleClick = () => {
+    nav(`/packages/${p.id}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <motion.div 
+      whileHover={{ y: -5 }}
+      className="group cursor-pointer rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-gray-900 overflow-hidden shadow-sm hover:shadow-md transition-all"
+      onClick={handleClick}
+    >
+      <div className="relative h-40 overflow-hidden">
+        <img src={cover} alt={loc.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+        <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full font-medium uppercase">
+           {p.trip_type === 'open' ? 'Open Trip' : 'Private'}
+        </div>
+      </div>
+      <div className="p-4">
+        <h4 className="font-bold text-gray-900 dark:text-white line-clamp-1 mb-1" title={loc.title || p.slug}>
+          {loc.title || p.slug}
+        </h4>
+        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-3">
+           <MapPin size={12} /> {p.destination_key ? p.destination_key.replace('-', ' ') : 'Indonesia'}
+        </div>
+        <div className="flex items-center justify-between">
+           <div className="text-xs text-gray-400">From</div>
+           <div className="font-bold text-sky-600 dark:text-sky-400 text-sm">
+              {formatMoneyFromIDR(displayPrice, currency, fx, locale)}
+           </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 function ItineraryTimeline({ data }) {
-  const { t } = useTranslation();
   const steps = Array.isArray(data) ? data : [];
   if (!steps.length) return null;
   return (
@@ -162,18 +209,31 @@ function NoteSection({ note }) {
 
 /* ===== page ===== */
 export default function PackageDetail() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const nav = useNavigate();
   const { id } = useParams();
   const location = useLocation();
   const { rows: data = [] } = usePackages();
   const { fx, currency, locale } = useCurrency();
+  const lang = (i18n.language || "id").slice(0, 2);
 
   const pkg = useMemo(() => data.find((p) => p.id === id || p.slug === id), [data, id]);
   const loc = normalizeLocale(pkg, locale?.slice(0, 2));
 
   const [audience, setAudience] = useState(location.state?.audience || "domestic");
   const [pax, setPax] = useState(location.state?.pax || 1);
+
+  // --- LOGIC REKOMENDASI ---
+  const recommendations = useMemo(() => {
+    if (!data.length || !pkg) return [];
+    // Filter paket agar tidak menampilkan paket yang sedang dilihat
+    const otherPackages = data.filter(p => p.id !== pkg.id);
+    // Acak urutan array
+    const shuffled = [...otherPackages].sort(() => 0.5 - Math.random());
+    // Ambil 3 pertama
+    return shuffled.slice(0, 3);
+  }, [data, pkg]);
+  // -------------------------
 
   if (!pkg) {
     return (
@@ -231,7 +291,7 @@ export default function PackageDetail() {
       pax,
       qty: 1,
       audience,
-      trip_type: pkg.trip_type, // Passing trip type info
+      trip_type: pkg.trip_type,
     };
     nav("/checkout", { state: { items: [item] } });
   };
@@ -488,6 +548,35 @@ export default function PackageDetail() {
           </motion.aside>
         </div>
       </div>
+
+      {/* --- RECOMMENDATIONS SECTION (BARU) --- */}
+      {recommendations.length > 0 && (
+        <div className="mt-20 pt-10 border-t border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between mb-6">
+             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+               {t("explore.recommended", { defaultValue: "Other Trips You Might Like" })}
+             </h2>
+             <button onClick={() => nav('/explore')} className="text-sm font-semibold text-sky-600 hover:underline flex items-center gap-1">
+                See All <ArrowRight size={14}/>
+             </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+             {recommendations.map(p => (
+                <RecommendationCard 
+                   key={p.id} 
+                   p={p} 
+                   currency={currency} 
+                   fx={fx} 
+                   locale={locale} 
+                   lang={lang} 
+                   t={t}
+                />
+             ))}
+          </div>
+        </div>
+      )}
+      {/* -------------------------------------- */}
+
     </div>
   );
 }

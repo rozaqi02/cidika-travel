@@ -7,7 +7,7 @@ import usePackages from "../hooks/usePackages";
 import usePageSections from "../hooks/usePageSections";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
-import { LayoutGrid, Rows, Star, Heart, MapPin, Users } from "lucide-react"; // Tambah icon Users
+import { LayoutGrid, Rows, Star, Heart, MapPin, Users, Search, ChevronDown, Globe } from "lucide-react";
 
 /* ===============================
    Animation Variants
@@ -88,7 +88,7 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
       pax,
       qty: 1,
       audience,
-      trip_type: p.trip_type, // Bawa info ini ke checkout jika perlu
+      trip_type: p.trip_type,
     };
     nav("/checkout", { state: { items: [item] } });
   };
@@ -211,9 +211,7 @@ export default function Explore() {
   const qs = new URLSearchParams(location.search);
   const initialPax = Number(location.state?.pax) || 6;
 
-  // Inisialisasi dest langsung dari URL
   const [dest, setDest] = useState(qs.get("dest") || "all");
-  
   const [pax, setPax] = useState(initialPax);
   const [audience, setAudience] = useState("domestic");
   const [query, setQuery] = useState("");
@@ -341,66 +339,91 @@ export default function Explore() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="container mt-2 space-y-6"
+      className="container mt-6 space-y-8"
     >
-      {/* Controls */}
+      {/* Controls (PROFESSIONAL TOOLBAR) */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
-        className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm"
+        // Hapus sticky, pakai static layout. Styling diperbagus.
+        className="bg-white dark:bg-gray-900 p-3 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col lg:flex-row gap-4 items-center justify-between"
       >
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1">
-          <div className="relative flex-1 max-w-xs">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+        
+        {/* Left Side: Filters Group */}
+        <div className="flex flex-col md:flex-row gap-3 w-full lg:w-auto flex-1">
+          
+          {/* Search Input */}
+          <div className="relative flex-1 group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-sky-500 transition-colors" size={18} />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("explore.searchPlaceholder", { defaultValue: "Search..." })}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-transparent focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all"
+              placeholder={t("explore.searchPlaceholder", { defaultValue: "Search packages..." })}
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-transparent focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all outline-none text-sm"
             />
           </div>
-          <select
-            value={dest}
-            onChange={(e) => {
-                setDest(e.target.value);
-            }}
-            className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-transparent text-sm"
-          >
-            {destinationOptions.map((o) => (
-              <option key={o.key} value={o.key}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+
+          {/* Destination Dropdown (Custom Style) */}
+          <div className="relative w-full md:w-56 group">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-sky-500 transition-colors" size={18} />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+            <select
+              value={dest}
+              onChange={(e) => setDest(e.target.value)}
+              className="w-full pl-10 pr-8 py-2.5 appearance-none rounded-xl bg-gray-50 dark:bg-gray-800 border border-transparent focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all outline-none text-sm cursor-pointer"
+            >
+              {destinationOptions.map((o) => (
+                <option key={o.key} value={o.key}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="flex gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
-            {["domestic", "foreign"].map((k) => (
-              <button
-                key={k}
-                onClick={() => setAudience(k)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  audience === k
-                    ? "bg-white dark:bg-gray-700 shadow text-sky-600 dark:text-sky-400"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700"
-                }`}
-              >
-                {k === "domestic" ? domesticLabel : foreignLabel}
-              </button>
-            ))}
+        {/* Right Side: Toggles */}
+        <div className="flex items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+          
+          {/* Audience Segmented Control */}
+          <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl flex items-center">
+            {["domestic", "foreign"].map((k) => {
+               const active = audience === k;
+               return (
+                <button
+                  key={k}
+                  onClick={() => setAudience(k)}
+                  className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+                    active
+                      ? "bg-white dark:bg-gray-700 text-sky-600 dark:text-sky-400 shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  }`}
+                >
+                  {k === "foreign" && <Globe size={14} />}
+                  {k === "domestic" ? domesticLabel : foreignLabel}
+                </button>
+               )
+            })}
           </div>
 
+          {/* Layout Toggle */}
           <button
-            className="btn btn-outline !p-2 rounded-xl"
+            className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors text-gray-600 dark:text-gray-300"
             onClick={() => setCompact((v) => !v)}
+            title="Toggle Layout"
           >
             {compact ? <LayoutGrid size={18} /> : <Rows size={18} />}
           </button>
         </div>
       </motion.div>
+
+      {/* Result Count & Sort (Optional info bar) */}
+      <div className="flex items-center justify-between px-2">
+         <span className="text-sm text-gray-500 dark:text-gray-400">
+            Found <b>{filtered.length}</b> packages
+         </span>
+      </div>
 
       {/* Grid */}
       <motion.div
@@ -431,9 +454,13 @@ export default function Explore() {
               animate={{ opacity: 1 }}
               className="col-span-full text-center py-16 text-gray-500 dark:text-gray-400"
             >
-              <p className="text-lg mb-4">
-                {t("explore.empty", { defaultValue: "No packages match your filters." })}
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+                 <Search size={24} className="opacity-50" />
+              </div>
+              <p className="text-lg font-medium">
+                {t("explore.empty", { defaultValue: "No packages found." })}
               </p>
+              <p className="text-sm mt-1 opacity-70">Try adjusting your search or filters.</p>
             </motion.div>
           )}
         </AnimatePresence>

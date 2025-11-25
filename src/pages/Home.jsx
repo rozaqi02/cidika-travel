@@ -513,7 +513,7 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
         </div>
 
         <motion.div variants={bouncyUp} className="mt-10 text-center">
-          <Link to="/explore" className="btn btn-outline rounded-full px-8 py-3 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm hover:shadow-md">
+          <Link to="/destinasi" className="btn btn-outline rounded-full px-8 py-3 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm hover:shadow-md">
             {t("home.viewAllPackages")} <ChevronRight size={14} className="ml-1" />
           </Link>
         </motion.div>
