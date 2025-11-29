@@ -5,8 +5,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import {
   MapPin, Calendar, Users, BadgeCheck,
-  MessageCircle, Star, ChevronRight,
-  Search, Phone, Send, Quote, ArrowRight
+  MessageCircle, Star, ChevronRight, ChevronLeft,
+  Search, Quote, ArrowRight, Send, Camera, Instagram
 } from "lucide-react";
 import BlurText from "../components/BlurText";
 import usePackages from "../hooks/usePackages";
@@ -19,18 +19,15 @@ import "slick-carousel/slick/slick-theme.css";
 
 const FALLBACK_HERO_IMAGES = ["/hero2.jpg", "/hero1.jpg", "/hero3.jpg", "/hero4.jpg", "/hero5.jpg", "/hero6.jpg"];
 
-/* ===============================
-   ANIMATION VARIANTS
-================================= */
 const bouncyUp = {
-  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  hidden: { opacity: 0, y: 50, scale: 0.9 },
   visible: { 
     opacity: 1, 
     y: 0, 
     scale: 1,
     transition: { 
       type: "spring", 
-      stiffness: 200, 
+      stiffness: 100, 
       damping: 15,    
       mass: 1
     } 
@@ -42,15 +39,12 @@ const staggerContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.15, 
       delayChildren: 0.1
     }
   }
 };
 
-/* ===============================
-   HELPERS
-================================= */
 function usePreload(images) {
   useEffect(() => {
     images?.forEach(src => {
@@ -150,28 +144,30 @@ function Marquee({ speed = 35, children }) {
   );
 }
 
-/* ===============================
-   COMPONENTS & SECTIONS
-================================= */
-
 function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaContactLabel }) {
   const reduced = usePrefersReducedMotion();
   const [idx, setIdx] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   
   const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 1000], [0, 300]); 
+  const y = useTransform(scrollY, [0, 1000], [0, 200]); 
 
   usePreload(images);
+
   useEffect(() => {
     setIsLoaded(true);
     if (reduced || images.length <= 1) return;
-    const id = setInterval(() => setIdx(i => (i + 1) % images.length), 5000);
+    const id = setInterval(() => setIdx(i => (i + 1) % images.length), 6000);
     return () => clearInterval(id);
   }, [reduced, images.length]);
 
+  const nextSlide = () => setIdx((prev) => (prev + 1) % images.length);
+  const prevSlide = () => setIdx((prev) => (prev - 1 + images.length) % images.length);
+
   return (
-    <section className="relative h-[75vh] md:h-[80vh] overflow-hidden shadow-xl bg-slate-900 rounded-[2rem] mt-2 mx-2 md:mx-0">
+    <section className="relative h-screen w-full overflow-hidden bg-slate-900 group">
+      
+      {/* --- BACKGROUND SLIDER --- */}
       <motion.div style={{ y }} className="absolute inset-0 z-0 will-change-transform">
         <AnimatePresence mode="popLayout">
           {images.map((raw, i) => {
@@ -182,19 +178,34 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
                 src={src}
                 alt="Hero"
                 className="absolute inset-0 w-full h-full object-cover"
-                initial={{ opacity: 0, scale: 1.1 }}
-                animate={{ opacity: i === idx ? 1 : 0, scale: i === idx ? 1 : 1.1 }}
+                initial={{ opacity: 0, scale: 1.08 }}
+                animate={{ opacity: i === idx ? 1 : 0, scale: i === idx ? 1 : 1.08 }}
                 transition={{ duration: 1.5, ease: "easeInOut" }}
                 loading={i === 0 ? "eager" : "lazy"}
               />
             );
           })}
         </AnimatePresence>
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/50 via-slate-900/20 to-slate-950" />
-        <div className="absolute inset-0 bg-black/20" />
+        
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
         <SpotlightOverlay />
       </motion.div>
 
+      {/* --- NAVIGASI PANAH MANUAL --- */}
+      {images.length > 1 && (
+        <>
+          <div className="absolute top-1/2 left-4 md:left-8 z-20 -translate-y-1/2 p-3 cursor-pointer text-white/50 hover:text-white transition-colors duration-300 hidden md:block rounded-full hover:bg-white/10" onClick={prevSlide}>
+            <ChevronLeft size={48} strokeWidth={1} />
+          </div>
+          <div className="absolute top-1/2 right-4 md:right-8 z-20 -translate-y-1/2 p-3 cursor-pointer text-white/50 hover:text-white transition-colors duration-300 hidden md:block rounded-full hover:bg-white/10" onClick={nextSlide}>
+            <ChevronRight size={48} strokeWidth={1} />
+          </div>
+        </>
+      )}
+
+      {/* --- KONTEN TENGAH --- */}
       <motion.div
         className="relative z-10 container h-full flex flex-col justify-center items-center text-center px-4"
         initial="hidden"
@@ -202,21 +213,21 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
         variants={staggerContainer}
       >
         {subtitle && (
-          <motion.div variants={bouncyUp} className="mb-4">
-            <span className="inline-block px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-[10px] md:text-xs font-bold tracking-[0.2em] text-sky-300 uppercase shadow-lg">
+          <motion.div variants={bouncyUp} className="mb-6">
+            <span className="text-[10px] md:text-sm text-white font-medium tracking-[0.2em] md:tracking-[0.3em] uppercase drop-shadow-md bg-white/10 px-3 py-1 md:px-4 md:py-1 rounded-full backdrop-blur-sm border border-white/10">
               {subtitle}
             </span>
           </motion.div>
         )}
         
         {title && (
-          <div className="mb-4 max-w-4xl w-full mx-auto flex flex-col items-center justify-center text-center">
+          <div className="mb-6 md:mb-8 w-full max-w-5xl mx-auto flex justify-center">
              <BlurText
                 text={title}
                 delay={40}
                 animateBy="words"
                 direction="top"
-                className="font-hero font-extrabold text-white leading-[1.1] drop-shadow-2xl text-[clamp(28px,6vw,50px)] tracking-tight text-center mx-auto w-full flex flex-wrap justify-center gap-x-2.5 gap-y-0"
+                className="font-serif font-semibold text-white leading-tight drop-shadow-2xl text-[clamp(32px,8vw,64px)] tracking-wide text-center w-full"
              />
           </div>
         )}
@@ -224,7 +235,7 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
         {desc && (
           <motion.p 
             variants={bouncyUp} 
-            className="max-w-xl mx-auto text-sm md:text-base text-slate-100 leading-relaxed mb-8 drop-shadow-md font-light text-center opacity-90"
+            className="max-w-xl md:max-w-2xl mx-auto text-sm md:text-lg text-slate-200 leading-relaxed mb-8 md:mb-10 drop-shadow-md font-light text-center opacity-90 hidden sm:block"
           >
             {desc}
           </motion.p>
@@ -232,24 +243,58 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
 
         {ctaContactLabel && (
           <motion.div 
-            variants={bouncyUp} 
-            whileHover={{ scale: 1.05 }} 
-            whileTap={{ scale: 0.95 }}
+            variants={bouncyUp}
+            className="w-full flex justify-center"
           >
-            <ShimmerButton 
-              as="a" 
+            {/* --- TOMBOL RESPONSIF (GLASS + GLOW) --- */}
+            <motion.a 
               href="#popular" 
-              className="!bg-sky-600 hover:!bg-sky-500 text-white !border-none !px-6 !py-3 !rounded-full shadow-lg shadow-sky-900/50 text-sm md:text-base font-bold tracking-wide"
+              className="
+                group relative inline-flex items-center justify-center
+                gap-3 md:gap-4
+                px-6 py-3 md:px-10 md:py-4
+                bg-white/5 backdrop-blur-md border border-white/30
+                rounded-full text-white font-semibold
+                tracking-[0.15em] md:tracking-[0.2em]
+                text-xs md:text-sm uppercase overflow-hidden
+                transition-all duration-300
+              "
+              whileHover={{ 
+                scale: 1.05, 
+                backgroundColor: "rgba(255, 255, 255, 0.15)",
+                borderColor: "rgba(255, 255, 255, 0.8)",
+                boxShadow: "0 0 30px rgba(255,255,255,0.3)"
+              }}
+              whileTap={{ scale: 0.95 }}
             >
-              {ctaContactLabel} <ChevronRight size={18} />
-            </ShimmerButton>
+              {/* Text Label */}
+              <span className="relative z-10 drop-shadow-sm whitespace-nowrap">{ctaContactLabel}</span>
+              
+              {/* Arrow Icon */}
+              <motion.span
+                initial={{ x: 0 }}
+                whileHover={{ x: 5 }}
+                className="relative z-10"
+              >
+                <ChevronRight size={16} className="md:w-[18px] md:h-[18px]" strokeWidth={2} />
+              </motion.span>
+
+              {/* Shine Animation Effect */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 z-0"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.6, ease: "easeInOut" }}
+              />
+            </motion.a>
+            {/* ---------------------------------------------------- */}
           </motion.div>
         )}
 
         {!!chips?.length && (
           <motion.div 
             variants={bouncyUp} 
-            className="absolute bottom-6 w-full max-w-lg mx-auto left-0 right-0 px-4"
+            className="absolute bottom-6 md:bottom-8 w-full max-w-lg mx-auto left-0 right-0 px-4"
           >
             <p className="text-[10px] text-white/60 mb-2 uppercase tracking-widest font-semibold text-center">Pencarian Populer</p>
             <Marquee speed={40}>
@@ -259,12 +304,60 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
                   onClick={() => onSearch?.(c.q)}
                   className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-[10px] md:text-xs text-white transition-all flex items-center gap-1.5 shadow-sm hover:shadow-md"
                 >
-                  <Search size={10} className="text-sky-300" /> {c.label}
+                  <Search size={10} className="text-white/70" /> {c.label}
                 </button>
               ))}
             </Marquee>
           </motion.div>
         )}
+      </motion.div>
+    </section>
+  );
+}
+
+function DestinationsSection({ title, subtitle, items = [] }) {
+  const nav = useNavigate();
+  return (
+    <section className="container mt-20 relative z-10">
+      <motion.div 
+        initial="hidden" 
+        whileInView="visible" 
+        viewport={{ once: true, amount: 0.1 }} 
+        variants={staggerContainer}
+      >
+        <div className="text-center mb-10 px-4">
+          <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">{title}</motion.h2>
+          <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 mt-2 text-sm md:text-base">{subtitle}</motion.p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 md:px-0">
+          {items.map((item, i) => (
+            <motion.div
+              key={item.key}
+              variants={bouncyUp}
+              whileHover={{ y: -10 }}
+              onClick={() => nav(`/explore?dest=${item.key}`)}
+              className="group cursor-pointer relative h-64 md:h-80 rounded-[2rem] overflow-hidden shadow-lg"
+            >
+              <img 
+                src={item.image || "/23.jpg"} 
+                alt={item.key} 
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+              <div className="absolute bottom-0 left-0 p-8">
+                <div className="bg-white/20 backdrop-blur-md w-fit px-3 py-1 rounded-full text-xs font-bold text-white mb-3 border border-white/20 flex items-center gap-1">
+                   <MapPin size={12} /> Destination
+                </div>
+                <h3 className="text-3xl font-extrabold text-white uppercase tracking-wide">{item.key.replace("-", " ")}</h3>
+                <div className="h-1 w-12 bg-sky-500 mt-3 transition-all duration-300 group-hover:w-24" />
+              </div>
+              <div className="absolute top-6 right-6 bg-white/90 dark:bg-slate-900/90 p-3 rounded-full opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg">
+                 <ArrowRight size={20} className="text-sky-600 dark:text-sky-400" />
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </motion.div>
     </section>
   );
@@ -295,11 +388,11 @@ function FeatureCard({ iconName, title, text }) {
 
 function WhyUs({ title, subtitle, items = [] }) {
   return (
-    <section className="container mt-16 relative z-10">
+    <section className="container mt-20 relative z-10">
       <motion.div 
         initial="hidden" 
         whileInView="visible" 
-        viewport={{ once: true, margin: "-50px", amount: 0.2 }}
+        viewport={{ once: true, amount: 0.1 }}
         variants={staggerContainer}
       >
         <div className="text-center mb-10 max-w-3xl mx-auto px-4">
@@ -326,17 +419,15 @@ function Stats({ trips = 0, photos = 0, rating = 4.9 }) {
   const rv = useCountUp({ to: Math.round(rating * 10), duration: 2000, start });
 
   return (
-    <section className="container mt-16 md:mt-20 relative z-10">
+    <section className="container mt-20 relative z-10">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.3 }}
+        viewport={{ once: true, amount: 0.2 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         onViewportEnter={() => setStart(true)}
-        // UPDATED VISUALS & THEME ADAPTABILITY
         className="relative overflow-hidden rounded-[2.5rem] border border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl transition-all duration-500"
       >
-        {/* Soft Background Blobs (Adaptive) */}
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-sky-400/20 dark:bg-sky-600/20 rounded-full blur-[80px] mix-blend-multiply dark:mix-blend-screen transition-colors duration-500" />
         <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-indigo-400/20 dark:bg-indigo-600/20 rounded-full blur-[80px] mix-blend-multiply dark:mix-blend-screen transition-colors duration-500" />
 
@@ -364,6 +455,30 @@ function Stats({ trips = 0, photos = 0, rating = 4.9 }) {
               </div>
             </motion.div>
           ))}
+        </div>
+      </motion.div>
+    </section>
+  );
+}
+
+function PromoSection({ title, subtitle, bgImage }) {
+  return (
+    <section className="container mt-20 px-4 md:px-0">
+      <motion.div 
+        initial="hidden" 
+        whileInView="visible" 
+        viewport={{ once: true, amount: 0.2 }} 
+        variants={bouncyUp}
+        className="relative rounded-[2.5rem] overflow-hidden h-[400px] md:h-[500px] flex items-center justify-center text-center shadow-2xl"
+      >
+        <img src={bgImage || "/hero4.jpg"} alt="Promo" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="relative z-10 max-w-2xl px-6">
+          <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-4 tracking-tight drop-shadow-lg">{title}</h2>
+          <p className="text-lg md:text-xl text-slate-100 mb-8 font-medium drop-shadow-md">{subtitle}</p>
+          <Link to="/contact" className="inline-flex items-center gap-2 bg-white text-slate-900 px-8 py-3.5 rounded-full font-bold text-sm md:text-base hover:bg-slate-100 transition-colors shadow-xl">
+             Contact Us Now <ArrowRight size={18} />
+          </Link>
         </div>
       </motion.div>
     </section>
@@ -465,7 +580,7 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
       <motion.div
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true, amount: 0.1 }} 
+        viewport={{ once: true, amount: 0.1 }}
         variants={staggerContainer}
       >
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 px-4 md:px-0">
@@ -522,6 +637,155 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
   );
 }
 
+function HowItWorks({ title, subtitle, steps = [] }) {
+  const { t } = useTranslation();
+  const fallback = [
+    { icon: "search", title: t("home.whyItems.0.title"), text: t("home.whyItems.0.text") },
+    { icon: "message", title: t("home.whyItems.1.title"), text: t("home.whyItems.1.text") },
+    { icon: "calendar", title: t("home.whyItems.2.title"), text: t("home.whyItems.2.text") },
+    { icon: "badge-check", title: t("home.whyItems.3.title"), text: t("home.whyItems.3.text") },
+  ];
+  const list = steps.length ? steps : fallback;
+
+  return (
+    <section className="container mt-20 md:mt-24 mb-16">
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={staggerContainer}
+      >
+        <div className="text-center mb-10">
+          {title && <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">{title}</motion.h2>}
+          {subtitle && <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 text-sm md:text-base">{subtitle}</motion.p>}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative px-4 md:px-0">
+          <div className="hidden lg:block absolute top-8 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent -z-10" />
+
+          {list.map((s, i) => (
+            <motion.div
+              key={i}
+              variants={bouncyUp}
+              whileHover={{ y: -5 }}
+              className="group flex flex-col items-center text-center bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all duration-300 relative h-full"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-sky-50 dark:bg-slate-800 flex items-center justify-center mb-4 shadow-inner group-hover:bg-sky-500 group-hover:text-white transition-colors duration-300 relative z-10">
+                <span className="text-xl font-bold">{i + 1}</span>
+              </div>
+              <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{s.title}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{s.text}</p>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+    </section>
+  );
+}
+
+function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
+  const galleryImages = useMemo(() => {
+    // 1. Prioritaskan gambar manual dari Kustomisasi jika ada
+    if (manualImages && manualImages.length > 0) {
+      return manualImages.slice(0, 12);
+    }
+
+    // 2. Fallback: Ambil dari paket aktif
+    const all = [];
+    packages.forEach((p) => {
+      if (p.default_image) all.push(p.default_image);
+      if (Array.isArray(p.images)) all.push(...p.images);
+    });
+    // Acak dan ambil maksimal 12
+    return all.sort(() => 0.5 - Math.random()).slice(0, 12);
+  }, [packages, manualImages]);
+
+  if (galleryImages.length === 0) return null;
+
+  return (
+    // Margin disamakan dengan section lain (container mt-20)
+    <section className="container mt-20 relative z-10">
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={staggerContainer}
+      >
+        <div className="flex flex-col md:flex-row items-end justify-between mb-8 gap-4 px-4 md:px-0">
+          <div className="text-center md:text-left">
+            <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+              {title}
+            </motion.h2>
+            <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 mt-2 text-sm md:text-base">
+              {subtitle}
+            </motion.p>
+          </div>
+          <motion.div variants={bouncyUp} className="hidden md:block">
+            <a
+              href="https://instagram.com/cidikatravel"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 bg-white dark:bg-slate-800 px-5 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200 hover:text-pink-600 dark:hover:text-pink-400"
+            >
+              <Instagram size={16} /> Follow on Instagram
+            </a>
+          </motion.div>
+        </div>
+
+        {/* BENTO GRID LAYOUT (Max 12 items) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[150px] md:auto-rows-[200px]">
+          {galleryImages.map((src, i) => {
+            // Pola Grid Estetik
+            // Item 0: Besar (2x2)
+            // Item 5 & 9: Lebar (2x1)
+            const isLarge = i === 0;
+            const isWide = i === 5 || i === 9;
+            
+            return (
+              <motion.div
+                key={i}
+                variants={bouncyUp}
+                className={`relative rounded-2xl overflow-hidden group shadow-sm hover:shadow-xl transition-all duration-500 ${
+                  isLarge ? "col-span-2 row-span-2" : isWide ? "col-span-2 row-span-1" : "col-span-1 row-span-1"
+                }`}
+              >
+                <img
+                  src={src}
+                  alt={`Gallery ${i}`}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                
+                {/* Ikon kamera hanya di foto pertama */}
+                {i === 0 && (
+                  <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
+                    <div className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white border border-white/20">
+                      <Camera size={20} />
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+        
+        {/* Tombol Mobile Instagram */}
+        <div className="mt-8 text-center md:hidden">
+           <a
+              href="https://instagram.com/cidikatravel"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 btn btn-outline rounded-full text-xs font-bold"
+            >
+              <Instagram size={16} /> Follow on Instagram
+            </a>
+        </div>
+      </motion.div>
+    </section>
+  );
+}
+
 function TestimonialCard({ item, lang, currentIndex, total, isActive }) {
   const getStars = (n) => {
     const s = Math.max(1, Math.min(5, Number(n || 5)));
@@ -538,17 +802,14 @@ function TestimonialCard({ item, lang, currentIndex, total, isActive }) {
       <div className="absolute top-4 right-4 opacity-10">
         <Quote size={32} className="text-sky-600" />
       </div>
-      
       <div className="flex items-center gap-1 mb-4">
         {getStars(item.stars)}
       </div>
-      
       <div className="flex-grow overflow-y-auto custom-scrollbar pr-2">
         <p className="text-slate-700 dark:text-slate-300 text-sm md:text-base leading-relaxed mb-4 font-medium italic">
           "{item.text}"
         </p>
       </div>
-      
       {lang !== item.lang && (
         <a
           href={`https://translate.google.com/?sl=${item.lang}&tl=${lang}&text=${encodeURIComponent(item.text)}&op=translate`}
@@ -559,7 +820,6 @@ function TestimonialCard({ item, lang, currentIndex, total, isActive }) {
           Translate to {lang.toUpperCase()}
         </a>
       )}
-      
       <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-auto">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0">
           {item.name.charAt(0).toUpperCase()}
@@ -702,7 +962,6 @@ function Testimonials({ title, allItems = [] }) {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
-            {/* Height reduced */}
             <div className="relative h-[450px] sm:h-[350px] md:h-[320px] w-full">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -746,52 +1005,6 @@ function Testimonials({ title, allItems = [] }) {
           <div className="w-full">
             <TestimonialForm onSubmit={handleTestimonialSubmit} />
           </div>
-        </div>
-      </motion.div>
-    </section>
-  );
-}
-
-function HowItWorks({ title, subtitle, steps = [] }) {
-  const { t } = useTranslation();
-  const fallback = [
-    { icon: "search", title: t("home.whyItems.0.title"), text: t("home.whyItems.0.text") },
-    { icon: "message", title: t("home.whyItems.1.title"), text: t("home.whyItems.1.text") },
-    { icon: "calendar", title: t("home.whyItems.2.title"), text: t("home.whyItems.2.text") },
-    { icon: "badge-check", title: t("home.whyItems.3.title"), text: t("home.whyItems.3.text") },
-  ];
-  const list = steps.length ? steps : fallback;
-
-  return (
-    <section className="container mt-20 md:mt-24 mb-16">
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.1 }} 
-        variants={staggerContainer}
-      >
-        <div className="text-center mb-10">
-          {title && <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">{title}</motion.h2>}
-          {subtitle && <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 text-sm md:text-base">{subtitle}</motion.p>}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative px-4 md:px-0">
-          <div className="hidden lg:block absolute top-8 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-800 to-transparent -z-10" />
-
-          {list.map((s, i) => (
-            <motion.div
-              key={i}
-              variants={bouncyUp}
-              whileHover={{ y: -5 }}
-              className="group flex flex-col items-center text-center bg-white dark:bg-slate-900 p-6 rounded-[1.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all duration-300 relative h-full"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-sky-50 dark:bg-slate-800 flex items-center justify-center mb-4 shadow-inner group-hover:bg-sky-500 group-hover:text-white transition-colors duration-300 relative z-10">
-                <span className="text-xl font-bold">{i + 1}</span>
-              </div>
-              <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{s.title}</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{s.text}</p>
-            </motion.div>
-          ))}
         </div>
       </motion.div>
     </section>
@@ -867,6 +1080,8 @@ export default function Home() {
   const heroCTA = S.hero?.locale?.extra?.cta_contact_label || "";
   const heroChips = Array.isArray(S.hero?.data?.chips) ? S.hero.data.chips : [];
 
+  const galleryManualImages = Array.isArray(S.gallery?.data?.images) ? S.gallery.data.images : [];
+
   const [allTestimonials, setAllTestimonials] = useState([]);
   useEffect(() => {
     const fetchAllTestimonials = async () => {
@@ -902,6 +1117,11 @@ export default function Home() {
         photos={Number(S.stats?.data?.photos) || 1300}
         rating={Number(S.stats?.data?.rating) || 4.9}
       />
+      <PromoSection
+        title={S.promo?.locale?.title || "Ready for Adventure?"}
+        subtitle={S.promo?.locale?.body_md || "Book your trip now and create unforgettable memories."}
+        bgImage={S.promo?.data?.bg_image}
+      />
       <PopularPackages
         heading={S.popular?.locale?.title || t("home.popular")}
         subheading={S.popular?.locale?.body_md || t("home.popularSub")}
@@ -914,6 +1134,12 @@ export default function Home() {
         title={S.how?.locale?.title || t("home.howTitle")}
         subtitle={S.how?.locale?.body_md || t("home.howSubtitle")}
         steps={S.how?.locale?.extra?.steps || []}
+      />
+      <GallerySection
+        title={S.gallery?.locale?.title || "Our Gallery"}
+        subtitle={S.gallery?.locale?.body_md || "Moments captured from our travelers."}
+        packages={packages}
+        manualImages={galleryManualImages}
       />
       <Testimonials
         title={S.testimonials?.locale?.title || t("home.testimonialsTitle")}

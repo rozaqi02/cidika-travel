@@ -1,6 +1,5 @@
-// src/pages/admin/Kustomisasi.jsx
 import React, { useEffect, useMemo, useState, useRef, useDeferredValue, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion"; // <-- TAMBAHKAN BARIS INI
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../lib/supabaseClient";
 import { useTranslation } from "react-i18next";
 import {
@@ -11,7 +10,6 @@ import { toast } from "react-hot-toast";
 
 const LANGS = ["id", "en", "ja"];
 
-// Hoisted helper components
 const Labeled = ({ label, htmlFor, children }) => (
   <div className="block text-sm mb-1">
     {label && (
@@ -33,7 +31,6 @@ const DataTextArea = React.memo(({ s, updateDataText, validateDataText }) => (
   />
 ));
 
-// Hoisted editor components
 const HeroEditor = ({ s, activeLang, updateLocal, updateLocaleExtra, readData, writeData, onUploadToImages }) => {
   const d = readData(s);
   const chips = Array.isArray(d.chips) ? d.chips : [];
@@ -122,6 +119,71 @@ const HeroEditor = ({ s, activeLang, updateLocal, updateLocaleExtra, readData, w
   );
 };
 
+const GalleryEditor = ({ s, activeLang, updateLocal, readData, writeData, onUploadToImages }) => {
+  const d = readData(s);
+  const images = Array.isArray(d.images) ? d.images : [];
+  const setImages = (arr) => writeData(s, { ...d, images: arr });
+
+  return (
+    <div className="grid lg:grid-cols-2 gap-6">
+      <div className="space-y-4">
+        <div className="font-medium border-b pb-2">Teks (per bahasa): {activeLang.toUpperCase()}</div>
+        <Labeled label="Judul Section (title)">
+          <input className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+            value={s.locales[activeLang].title}
+            onChange={(e) => updateLocal(s.id, activeLang, "title", e.target.value)} />
+        </Labeled>
+        <Labeled label="Deskripsi Singkat (body_md)">
+          <textarea rows="3" className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900"
+            value={s.locales[activeLang].body_md}
+            onChange={(e) => updateLocal(s.id, activeLang, "body_md", e.target.value)} />
+        </Labeled>
+        
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+          <p className="font-bold mb-1">Tips Galeri:</p>
+          <ul className="list-disc pl-4 space-y-1">
+            <li>Disarankan upload <strong>8 - 12 foto</strong> untuk hasil layout terbaik.</li>
+            <li>Jika dikosongkan, galeri akan otomatis mengambil foto acak dari Paket Wisata.</li>
+            <li>Foto pertama akan tampil paling besar (Highlight).</li>
+          </ul>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Images size={16} /> <span className="font-medium">Foto Galeri</span>
+            <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-full">{images.length} items</span>
+          </div>
+          <label className="btn btn-outline !py-1.5 !px-3 cursor-pointer text-xs">
+            <Upload size={14} className="mr-1"/> Tambah Foto
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onUploadToImages(s.id, e.target.files[0])} />
+          </label>
+        </div>
+
+        {images.length === 0 ? (
+          <div className="text-sm text-slate-500 italic border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl p-6 text-center">
+            Belum ada foto manual. Menggunakan mode otomatis dari paket.
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-2">
+            {images.map((url, idx) => (
+              <div key={idx} className={`relative group rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 ${idx === 0 ? 'col-span-2 row-span-2' : 'col-span-1 aspect-square'}`}>
+                <img src={url} alt="" className="w-full h-full object-cover bg-slate-100" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                   <button className="p-1.5 rounded bg-white text-slate-700 hover:bg-slate-100" onClick={() => { const arr = images.slice(); if (idx > 0) { [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; } setImages(arr); }} title="Geser Kiri/Atas"><ArrowUp size={12} /></button>
+                   <button className="p-1.5 rounded bg-white text-rose-600 hover:bg-rose-50" onClick={() => { const arr = images.slice(); arr.splice(idx, 1); setImages(arr); }} title="Hapus"><Trash2 size={12} /></button>
+                </div>
+                <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/50 text-[10px] text-white rounded backdrop-blur-sm">#{idx + 1}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const TestimonialsEditor = ({ items, setItems, loading }) => {
   const updateTestimonial = async (id, patch) => {
   const { error } = await supabase.from('testimonials').update(patch).eq('id', id);
@@ -149,7 +211,7 @@ const deleteTestimonial = async (id) => {
   const handleFieldChange = (id, field, value) => {
     setItems(prev => prev.map(t => t.id === id ? { ...t, [field]: value } : t));
   };
-  
+
   if (loading) return <div className="text-sm text-slate-500">Memuat testimoni...</div>;
 
   return (
@@ -181,7 +243,7 @@ const deleteTestimonial = async (id) => {
               </div>
 
               <textarea rows="3" className="mt-2 w-full border rounded-xl px-3 py-2 dark:bg-slate-900" placeholder="Teks" value={it.text || ""} onChange={(e) => handleFieldChange(it.id, "text", e.target.value)} />
-              
+
               <div className="mt-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Star size={16} className="text-amber-500" />
@@ -912,7 +974,7 @@ export default function Kustomisasi() {
   const [saving, setSaving] = useState(false);
   const [activeLang, setActiveLang] = useState(LANGS[0]);
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState("simple"); // simple | advanced
+  const [mode, setMode] = useState("simple");
   const [compactToolbar, setCompactToolbar] = useState(false);
   const lastScrollYRef = useRef(0);
   const [hideToolbar, setHideToolbar] = useState(false);
@@ -1005,7 +1067,6 @@ if (error) {
     setSections(mapped);
     setOriginal(mapped);
     setLoading(false);
-    // Default collapsed for all sections
     const expandedState = mapped.reduce((acc, s) => {
       acc[s.id] = false;
       return acc;
@@ -1036,7 +1097,6 @@ if (error) {
   acc[l] = {
     title: r.title || "",
     summary: r.summary || "",
-    // tambahan agar admin bisa edit semua
     spots: Array.isArray(r.spots) ? r.spots : [],
     itinerary: Array.isArray(r.itinerary) ? r.itinerary : [],
     include: Array.isArray(r.include) ? r.include : [],
@@ -1067,15 +1127,12 @@ if (error) {
     load();
     if (page === "explore") loadPackages();
     if (page === "home") loadTestimonials();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  // mark dirty field paket
   const updatePkgField = (id, key, value) => {
     setPkgList(prev => prev.map(p => p.id === id ? ({ ...p, [key]: value, _dirty: true }) : p));
   };
 
-  // mark dirty field lokal
   const updatePkgLocale = (id, lang, key, value) => {
     setPkgList(prev => prev.map(p => p.id === id ? ({
       ...p,
@@ -1084,7 +1141,6 @@ if (error) {
     }) : p));
   };
 
-  // upload gambar default paket
   const onUploadPkgImage = async (p, file) => {
     if (!file) return;
     const ext = file.name.split(".").pop();
@@ -1099,7 +1155,6 @@ try {
 
   };
 
-  // ===== Price Tiers helpers =====
   const updateTier = (pkgId, idx, patch) => {
     setPkgList((prev) =>
       prev.map((p) =>
@@ -1192,7 +1247,6 @@ const payload = {
   lang,
   title: L.title || "",
   summary: L.summary || null,
-  // simpan field tambahan
   spots: Array.isArray(L.spots) ? L.spots : null,
   itinerary: Array.isArray(L.itinerary) ? L.itinerary : null,
   include: Array.isArray(L.include) ? L.include : null,
@@ -1248,7 +1302,6 @@ await loadPackages();
     }
   };
 
-  // buat paket baru
   const addPackage = async () => {
     const slug = prompt("Slug paket (tanpa spasi, unik):");
     if (!slug) return;
@@ -1266,7 +1319,6 @@ await loadPackages();
     await loadPackages();
   };
 
-  // hapus paket
   const deletePackageRow = async (id) => {
     if (!confirm("Hapus paket ini?")) return;
 const { error } = await supabase.from("packages").delete().eq("id", id);
@@ -1276,7 +1328,6 @@ toast.success("Paket dihapus");
 
   };
 
-  // === UPDATE HELPERS (langsung, tanpa startTransition) ===
   const updateLocal = (sid, lang, field, value) => {
     setSections((prev) =>
       prev.map((s) =>
@@ -1441,7 +1492,6 @@ toast.success("Section dihapus");
 } finally { setSaving(false); }
   };
 
-  // === UPLOAD HELPERS ===
   const uploadToBucket = async (file, path) => {
     const { error: upErr } = await supabase.storage.from("assets").upload(path, file, { cacheControl: "3600", upsert: false });
     if (upErr) throw upErr;
@@ -1484,7 +1534,6 @@ toast.success("Section dihapus");
     } catch (e) { alert(e.message); }
   };
 
-  // === FILTERED (menggunakan 'sections' langsung) ===
   const sorted = useMemo(
     () =>
       sections.slice()
@@ -1499,17 +1548,14 @@ toast.success("Section dihapus");
   );
 
 
-  // Helpers to read/write JSON path in dataText
   const readData = (s) => { try { return JSON.parse(s.dataText || "{}"); } catch { return {}; } };
   const writeData = (s, obj) => updateDataText(s.id, JSON.stringify(obj || {}, null, 2));
 
-  // ======= RENDER =======
   if (loading) return <div className="container mt-6">{t("misc.loading")}</div>;
   const hasInvalid = sections.some((s) => !s.dataValid);
 
   return (
     <div className="container mt-3 space-y-4">
-      {/* STICKY TOOLBAR */}
       <div
         className={`sticky top-16 z-[5] transition-transform duration-200 ${hideToolbar ? "-translate-y-[120%]" : "translate-y-0"
           }`}
@@ -1535,7 +1581,6 @@ toast.success("Section dihapus");
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {/* Mode toggle */}
                 <div className="hidden sm:flex items-center gap-1 mr-2">
                   <button
                     className={`btn ${mode === "simple" ? "btn-primary" : "btn-outline"} ${compactToolbar ? "!py-1.5 !px-2.5" : "!py-2 !px-3"
@@ -1577,7 +1622,6 @@ toast.success("Section dihapus");
               </div>
             </div>
 
-            {/* Row 2: filters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">Halaman</span>
@@ -1619,7 +1663,6 @@ toast.success("Section dihapus");
               </div>
             </div>
 
-            {/* Mobile quick add */}
             <div className="sm:hidden">
               <div className="flex gap-2">
                 <button
@@ -1643,7 +1686,6 @@ toast.success("Section dihapus");
         </div>
       </div>
 
-      {/* ===== Explore: kelola Packages & Price Tiers ===== */}
       {page === "explore" && (
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
@@ -1701,7 +1743,6 @@ toast.success("Section dihapus");
                     onChange={(e) => updatePkgField(p.id, "slug", e.target.value)}
                   />
 
-                  {/* Default image */}
                   <div>
                     <div className="text-xs mb-1">Default Image</div>
                     {p.default_image && (
@@ -1730,11 +1771,9 @@ toast.success("Section dihapus");
                     </div>
                   </div>
 
-{/* Locale fields */}
 <div>
   <div className="text-xs mb-1">Bahasa: {activeLang.toUpperCase()}</div>
 
-  {/* Title */}
   <input
     className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-2"
     placeholder="Title"
@@ -1742,7 +1781,6 @@ toast.success("Section dihapus");
     onChange={(e) => updatePkgLocale(p.id, activeLang, "title", e.target.value)}
   />
 
-  {/* Summary */}
   <textarea
     rows={2}
     className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-3"
@@ -1751,7 +1789,6 @@ toast.success("Section dihapus");
     onChange={(e) => updatePkgLocale(p.id, activeLang, "summary", e.target.value)}
   />
 
-  {/* Spots */}
   <label className="text-xs text-slate-500">Spots (satu baris = satu item)</label>
   <textarea
     rows={3}
@@ -1761,7 +1798,6 @@ toast.success("Section dihapus");
     onChange={(e) => updatePkgLocale(p.id, activeLang, "spots", textToArr(e.target.value))}
   />
 
-  {/* Itinerary */}
   <label className="text-xs text-slate-500">Itinerary (satu baris = satu langkah)</label>
   <textarea
     rows={6}
@@ -1771,7 +1807,6 @@ toast.success("Section dihapus");
     onChange={(e) => updatePkgLocale(p.id, activeLang, "itinerary", textToArr(e.target.value))}
   />
 
-  {/* Include */}
   <label className="text-xs text-slate-500">Include (satu baris = satu item)</label>
   <textarea
     rows={4}
@@ -1781,7 +1816,6 @@ toast.success("Section dihapus");
     onChange={(e) => updatePkgLocale(p.id, activeLang, "include", textToArr(e.target.value))}
   />
 
-  {/* Note */}
   <label className="text-xs text-slate-500">Note</label>
   <textarea
     rows={3}
@@ -1793,7 +1827,6 @@ toast.success("Section dihapus");
 </div>
 
 
-                  {/* Price Tiers */}
                   <div className="mt-3">
                     <div className="flex items-center justify-between">
                       <div className="font-medium text-sm">Price Tiers</div>
@@ -1878,7 +1911,6 @@ toast.success("Section dihapus");
                     </div>
                   </div>
 
-                  {/* penanda dirty */}
                   {p._dirty && (
                     <div className="text-[11px] text-amber-600 mt-1">• belum disimpan</div>
                   )}
@@ -1893,12 +1925,10 @@ toast.success("Section dihapus");
         </div>
       )}
 
-      {/* ===== Sections ===== */}
       <div className="space-y-6">
         {sorted.map((s) => {
           const isExpanded = expandedSections[s.id];
 
-          // Header bar per section
           const HeaderBar = () => (
             <div className="flex flex-wrap items-center justify-between gap-2 cursor-pointer" onClick={() => toggleSection(s.id)}>
               <div className="flex items-center gap-2 flex-1">
@@ -1912,7 +1942,7 @@ toast.success("Section dihapus");
                       )
                     );
                   }}
-                  onClick={(e) => e.stopPropagation()} // Prevent toggle on input click
+                  onClick={(e) => e.stopPropagation()}
                   className="px-2 py-1 rounded-xl border dark:bg-slate-900"
                   placeholder="section_key"
                 />
@@ -1958,13 +1988,12 @@ toast.success("Section dihapus");
             </div>
           );
 
-          // SIMPLE editors
           const renderSimple = () => {
 switch (s.section_key) {
   case "hero":
-  case "hero_contact":  // Tambahkan ini agar hero contact pakai editor sama seperti hero (dengan unggah gambar)
+  case "hero_contact":
     return <HeroEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} readData={readData} writeData={writeData} onUploadToImages={onUploadToImages} />;
-  case "whyus":           
+  case "whyus":
     return <WhyUsEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} />;
   case "testimonials":
     return (
@@ -1974,7 +2003,7 @@ switch (s.section_key) {
         <TestimonialsEditor items={testimonials} setItems={setTestimonials} loading={testimonialsLoading} />
       </div>
     );
-  case "stats":           
+  case "stats":
     return <StatsEditor s={s} readData={readData} writeData={writeData} />;
   case "stats":
     return <StatsEditor s={s} activeLang={activeLang} updateLocal={updateLocal} />;
@@ -1995,20 +2024,20 @@ switch (s.section_key) {
     return <FaqListEditor s={s} activeLang={activeLang} updateLocaleExtra={updateLocaleExtra} />;
   case "popular":
   case "about":
+    case "gallery":
+  return <GalleryEditor s={s} activeLang={activeLang} updateLocal={updateLocal} readData={readData} writeData={writeData} onUploadToImages={onUploadToImages} />;
   case "destinations_intro":
   default:
     return <SimpleTitleBody s={s} activeLang={activeLang} updateLocal={updateLocal} />;
 }
           };
 
-          // ADVANCED JSON editor
           const renderAdvanced = () => {
             const obj = readData(s);
             const images = Array.isArray(obj.images) ? obj.images : [];
 
             return (
               <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-4 mt-4">
-                {/* Data JSON */}
                 <div>
                   <div className="flex items-center justify-between">
                     <label className="text-sm">Data JSON</label>
@@ -2063,7 +2092,6 @@ switch (s.section_key) {
                   </div>
                 </div>
 
-                {/* Localized title/body */}
                 <div className="space-y-2">
                   <div className="font-medium uppercase">{activeLang}</div>
                   <label className="text-sm">Title</label>
@@ -2081,7 +2109,6 @@ switch (s.section_key) {
                   />
                 </div>
 
-                {/* Gallery quick controls */}
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <Images size={16} />{" "}
@@ -2152,6 +2179,14 @@ switch (s.section_key) {
             );
           };
 
+          if (mode === "advanced" && s.section_key === "faq_list") {
+            return (
+              <div className="mt-4">
+                <FaqListEditor s={s} activeLang={activeLang} updateLocaleExtra={updateLocaleExtra} />
+              </div>
+            );
+          }
+
           return (
             <div key={s.id} className="card p-4">
               <HeaderBar />
@@ -2166,7 +2201,6 @@ switch (s.section_key) {
                   >
                     <div className="mt-4">{mode === "simple" ? renderSimple() : renderAdvanced()}</div>
 
-                    {/* Editor FAQ (Advanced) */}
                     {mode === "advanced" && s.section_key === "faq_list" && (
                       <div className="mt-4">
                         <FaqListEditor s={s} activeLang={activeLang} updateLocaleExtra={updateLocaleExtra} />
