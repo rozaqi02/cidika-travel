@@ -55,5 +55,9 @@
   },
   "devDependencies": {
     "eslint-plugin-react-hooks": "^7.0.1"
+  },
+  "resolutions": {
+    "@vitest/mocker": "^2.1.2",
+    "@vitest/mocker/browser": "^2.1.2"
   }
 }

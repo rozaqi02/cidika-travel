@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
@@ -235,7 +234,7 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
         {desc && (
           <motion.p 
             variants={bouncyUp} 
-            className="max-w-xl md:max-w-2xl mx-auto text-sm md:text-lg text-slate-200 leading-relaxed mb-8 md:mb-10 drop-shadow-md font-light text-center opacity-90 hidden sm:block"
+            className="max-w-xl md:max-w-2xl mx-auto text-sm md:text-lg text-slate-200 leading-relaxed mb-8 md:mb-10 drop-shadow-md font-light text-center opacity-90"
           >
             {desc}
           </motion.p>
@@ -386,6 +385,90 @@ function FeatureCard({ iconName, title, text }) {
   );
 }
 
+function FeaturedDestinationsSection({ items = [] }) {
+  const navigate = useNavigate();
+  
+  if (!items || items.length < 2) return null;
+
+  const featuredDests = items.slice(0, 2);
+
+  return (
+    <section className="container mt-20 md:mt-28 relative z-10">
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={staggerContainer}
+      >
+        <div className="text-center mb-12 px-4 md:px-0">
+          <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-3">
+            Featured Destinations
+          </motion.h2>
+          <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
+            Explore handpicked destinations for your next adventure
+          </motion.p>
+        </div>
+
+        <div className="max-w-6xl mx-auto">
+          {featuredDests.map((item, idx) => {
+            const isEven = idx % 2 === 0;
+            return (
+              <motion.div
+                key={item.id || idx}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className={`flex flex-col ${isEven ? "lg:flex-row" : "lg:flex-row-reverse"} gap-8 lg:gap-16 items-center mb-20 lg:mb-24 px-4 md:px-0`}
+              >
+                {/* Image Side */}
+                <div className="w-full lg:w-1/2 group">
+                  <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl aspect-[4/3] lg:aspect-[5/4]">
+                    <div className="absolute inset-0 bg-slate-900/20 group-hover:bg-slate-900/0 transition-colors duration-500 z-10" />
+                    <img
+                      src={item.image || "/23.jpg"}
+                      alt={item.title}
+                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-out"
+                      loading="lazy"
+                    />
+                    {/* Floating Badge */}
+                    <div className="absolute top-6 left-6 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full text-sm font-bold text-slate-900 dark:text-white shadow-lg flex items-center gap-2">
+                      <MapPin size={16} className="text-sky-500" />
+                      {item.title}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Text Side */}
+                <div className="w-full lg:w-1/2 space-y-6 text-center lg:text-left">
+                  <motion.h3 variants={bouncyUp} className="text-3xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                    {item.title}
+                  </motion.h3>
+                  <motion.p variants={bouncyUp} className="text-base lg:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {item.description || item.desc || ""}
+                  </motion.p>
+
+                  <motion.div variants={bouncyUp} className="pt-4 flex justify-center lg:justify-start">
+                    <button
+                      onClick={() => navigate(`/explore?dest=${item.key || item.id}`)}
+                      className="group relative inline-flex items-center gap-3 px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold text-base shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+                    >
+                      <span>Explore {item.title}</span>
+                      <span className="bg-white/20 dark:bg-slate-900/10 p-1 rounded-full">
+                        <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                      </span>
+                    </button>
+                  </motion.div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </motion.div>
+    </section>
+  );
+}
+
 function WhyUs({ title, subtitle, items = [] }) {
   return (
     <section className="container mt-20 relative z-10">
@@ -461,35 +544,11 @@ function Stats({ trips = 0, photos = 0, rating = 4.9 }) {
   );
 }
 
-function PromoSection({ title, subtitle, bgImage }) {
-  return (
-    <section className="container mt-20 px-4 md:px-0">
-      <motion.div 
-        initial="hidden" 
-        whileInView="visible" 
-        viewport={{ once: true, amount: 0.2 }} 
-        variants={bouncyUp}
-        className="relative rounded-[2.5rem] overflow-hidden h-[400px] md:h-[500px] flex items-center justify-center text-center shadow-2xl"
-      >
-        <img src={bgImage || "/hero4.jpg"} alt="Promo" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/10" />
-        <div className="relative z-10 max-w-2xl px-6">
-          <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-4 tracking-tight drop-shadow-lg">{title}</h2>
-          <p className="text-lg md:text-xl text-slate-100 mb-8 font-medium drop-shadow-md">{subtitle}</p>
-          <Link to="/contact" className="inline-flex items-center gap-2 bg-white text-slate-900 px-8 py-3.5 rounded-full font-bold text-sm md:text-base hover:bg-slate-100 transition-colors shadow-xl">
-             Contact Us Now <ArrowRight size={18} />
-          </Link>
-        </div>
-      </motion.div>
-    </section>
-  );
-}
-
 function PopularCard({ pkg, price, pax, currency, fx, locale, audience }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const cover = getPkgImage(pkg);
-  const title = pkg?.locale?.title || pkg.slug || "Open Trip";
+  const title = pkg?.locale?.title || pkg.slug || t("explore.openTrip");
   const spots = (pkg?.locale?.spots || []).slice(0, 4).join(" • ");
   const priceLabel = formatMoneyFromIDR(price, currency, fx, locale);
 
@@ -583,15 +642,15 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
         viewport={{ once: true, amount: 0.1 }}
         variants={staggerContainer}
       >
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4 px-4 md:px-0">
-          <div className="text-center md:text-left">
-            <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {heading || t("home.popular")}
-            </motion.h2>
-            {subheading && <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 mt-2 text-sm md:text-base max-w-lg">{subheading}</motion.p>}
-          </div>
-          
-          <motion.div variants={bouncyUp} className="flex flex-col sm:flex-row items-center gap-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-xl shadow-sm self-center md:self-auto">
+        <div className="flex flex-col items-center justify-center mb-10 px-4 md:px-0">
+          <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight text-center">
+            {heading || t("home.popular")}
+          </motion.h2>
+          {subheading && <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 mt-2 text-sm md:text-base max-w-2xl text-center">{subheading}</motion.p>}
+        </div>
+
+        <div className="flex justify-center mb-8 px-4 md:px-0">
+          <motion.div variants={bouncyUp} className="flex flex-col sm:flex-row items-center gap-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-xl shadow-sm">
             <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
               {["domestic", "foreign"].map((k) => (
                 <button
@@ -603,7 +662,7 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
                       : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 bg-transparent shadow-none"
                   }`}
                 >
-                  {k === "domestic" ? t("explore.domestic", { defaultValue: "Domestic" }) : "Foreign"}
+                  {k === "domestic" ? t("explore.domestic", { defaultValue: "Domestic" }) : t("explore.foreign", { defaultValue: "Foreign" })}
                 </button>
               ))}
             </div>
@@ -711,16 +770,17 @@ function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
         viewport={{ once: true, amount: 0.1 }}
         variants={staggerContainer}
       >
-        <div className="flex flex-col md:flex-row items-end justify-between mb-8 gap-4 px-4 md:px-0">
-          <div className="text-center md:text-left">
-            <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {title}
-            </motion.h2>
-            <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 mt-2 text-sm md:text-base">
-              {subtitle}
-            </motion.p>
-          </div>
-          <motion.div variants={bouncyUp} className="hidden md:block">
+        <div className="text-center mb-10 px-4 md:px-0">
+          <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+            {title}
+          </motion.h2>
+          <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 mt-2 text-sm md:text-base">
+            {subtitle}
+          </motion.p>
+        </div>
+
+        <div className="flex justify-center mb-8 px-4 md:px-0">
+          <motion.div variants={bouncyUp}>
             <a
               href="https://instagram.com/cidikatravel"
               target="_blank"
@@ -913,7 +973,7 @@ function TestimonialForm({ onSubmit }) {
           disabled={isSubmitting}
           className="w-full btn btn-primary py-3 rounded-xl font-bold shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2 hover:shadow-sky-500/40 transition-all text-xs md:text-sm active:scale-[0.98]"
         >
-          {isSubmitting ? "Sending..." : <> {t("home.submit", { defaultValue: "Send Review" })} <Send size={16}/></>}
+          {isSubmitting ? t("home.sending") : <> {t("home.submit", { defaultValue: "Send Review" })} <Send size={16}/></>}
         </button>
       </form>
     </div>
@@ -1066,8 +1126,9 @@ export default function Home() {
   const { fx, currency, locale } = useCurrency();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { sections } = usePageSections("home");
-  const S = useMemo(() => Object.fromEntries((sections || []).map(s => [s.section_key, s])), [sections]);
+  const { sections: homeSections } = usePageSections("home");
+  const { sections: destSections } = usePageSections("destinations");
+  const S = useMemo(() => Object.fromEntries((homeSections || []).map(s => [s.section_key, s])), [homeSections]);
 
   const onQuickSearch = (q) => navigate(`/explore?tag=${encodeURIComponent(q)}`);
 
@@ -1081,6 +1142,32 @@ export default function Home() {
   const heroChips = Array.isArray(S.hero?.data?.chips) ? S.hero.data.chips : [];
 
   const galleryManualImages = Array.isArray(S.gallery?.data?.images) ? S.gallery.data.images : [];
+
+  // Featured destinations (dari page_sections destinations page)
+  const featuredDestinations = useMemo(() => {
+    const dests = (destSections || [])
+      .filter(s => !['intro'].includes(s.section_key))
+      .map(s => ({
+        id: s.id,
+        key: s.section_key,
+        title: s.locale?.title || s.section_key,
+        description: s.locale?.body_md || "",
+        image: Array.isArray(s.data?.images) && s.data.images[0] ? s.data.images[0] : "/23.jpg"
+      }));
+    
+    // Pastikan ada minimal 2 destinasi (tambahkan Nusa Penida jika perlu)
+    if (dests.length < 2) {
+      dests.push({
+        id: "nusa-penida-fallback",
+        key: "nusa-penida",
+        title: "Nusa Penida",
+        description: "Pulau dengan pantai dan tebing ikonik di Bali Tenggara, terkenal dengan Kelingking Beach dan pemandangan spektakuler.",
+        image: "/23.jpg"
+      });
+    }
+    
+    return dests.slice(0, 2);
+  }, [destSections]);
 
   const [allTestimonials, setAllTestimonials] = useState([]);
   useEffect(() => {
@@ -1117,11 +1204,7 @@ export default function Home() {
         photos={Number(S.stats?.data?.photos) || 1300}
         rating={Number(S.stats?.data?.rating) || 4.9}
       />
-      <PromoSection
-        title={S.promo?.locale?.title || "Ready for Adventure?"}
-        subtitle={S.promo?.locale?.body_md || "Book your trip now and create unforgettable memories."}
-        bgImage={S.promo?.data?.bg_image}
-      />
+      <FeaturedDestinationsSection items={featuredDestinations} />
       <PopularPackages
         heading={S.popular?.locale?.title || t("home.popular")}
         subheading={S.popular?.locale?.body_md || t("home.popularSub")}

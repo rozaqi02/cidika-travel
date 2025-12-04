@@ -75,10 +75,10 @@ function RecommendationCard({ p, currency, fx, locale, lang, t }) {
       className="group cursor-pointer rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-gray-900 overflow-hidden shadow-sm hover:shadow-md transition-all"
       onClick={handleClick}
     >
-      <div className="relative h-40 overflow-hidden">
+        <div className="relative h-40 overflow-hidden">
         <img src={cover} alt={loc.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
         <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full font-medium uppercase">
-           {p.trip_type === 'open' ? 'Open Trip' : 'Private'}
+           {p.trip_type === 'open' ? t("explore.openTrip") : t("explore.private")}
         </div>
       </div>
       <div className="p-4">
@@ -250,7 +250,7 @@ export default function PackageDetail() {
 
   // --- LOGIC TRIP TYPE ---
   const isOpenTrip = pkg.trip_type === "open";
-  const tripTypeLabel = isOpenTrip ? "Open Trip" : t("explore.privateTour", { defaultValue: "Private Trip" });
+  const tripTypeLabel = isOpenTrip ? t("explore.openTrip") : t("explore.privateTour", { defaultValue: "Private Trip" });
   const tripTypeColor = isOpenTrip ? "bg-amber-500 text-white" : "bg-sky-500 text-white";
   const tripTypeBadge = (
       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${tripTypeColor}`}>
@@ -267,7 +267,7 @@ export default function PackageDetail() {
   const selectedTier = tiers.find((pt) => pt.pax === pax) || tiers[0];
   const price = selectedTier?.price_idr || 0;
 
-  const audienceLabel = audience === "domestic" ? t("explore.domestic", { defaultValue: "Domestik" }) : "Foreign";
+  const audienceLabel = audience === "domestic" ? t("explore.domestic", { defaultValue: "Domestik" }) : t("explore.foreign", { defaultValue: "Foreign" });
 
   const buildAskWAMessage = () => {
     const title = loc?.title || pkg.slug;
@@ -492,7 +492,7 @@ export default function PackageDetail() {
                           : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                       }`}
                     >
-                      {k === "domestic" ? t("explore.domestic", { defaultValue: "Domestik" }) : "Foreign"}
+                      {k === "domestic" ? t("explore.domestic", { defaultValue: "Domestik" }) : t("explore.foreign", { defaultValue: "Foreign" })}
                     </button>
                   ))}
                 </div>

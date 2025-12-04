@@ -1,5 +1,4 @@
-# --- Dependencies
-/node_modules/
+node_modules/
 
 # --- Build artifacts (Netlify build sendiri)
 /build/
@@ -37,3 +36,5 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+*storybook.log
+storybook-static

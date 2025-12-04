@@ -44,7 +44,7 @@ export default function Login() {
 
   const onForgot = async () => {
     if (!email) {
-      setErr(t("admin.login.email") + " required.");
+      setErr(t("admin.login.email") + " " + t("admin.login.required"));
       return;
     }
     setErr("");
@@ -62,7 +62,7 @@ export default function Login() {
       setErr(error.message);
       setMsg("");
     } else {
-      setMsg("Check email for reset link.");
+      setMsg(t("admin.login.resetLink"));
     }
   };
 
@@ -123,7 +123,7 @@ export default function Login() {
           className="w-full max-w-[400px]"
         >
           <div className="lg:hidden mb-8 text-center">
-             <h1 className="text-2xl font-bold text-slate-900 dark:text-white font-hero">Cidika Admin</h1>
+             <h1 className="text-2xl font-bold text-slate-900 dark:text-white font-hero">{t("admin.brand")}</h1>
           </div>
 
           <div className="mb-8">
@@ -176,7 +176,7 @@ export default function Login() {
               <div className="flex items-center justify-between ml-1">
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t("admin.login.password")}</label>
                 <button type="button" onClick={onForgot} className="text-xs font-medium text-sky-600 hover:text-sky-500 dark:text-sky-400 transition-colors">
-                  Forgot?
+                  {t("admin.login.forgot")}
                 </button>
               </div>
               <div className="relative group">
@@ -210,7 +210,7 @@ export default function Login() {
                 className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500/20 bg-slate-50 dark:bg-slate-900 dark:border-slate-700 cursor-pointer"
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-slate-600 dark:text-slate-400 cursor-pointer select-none">
-                Remember Email
+                {t("admin.login.rememberEmail")}
               </label>
             </div>
 
@@ -231,7 +231,7 @@ export default function Login() {
           
           <div className="mt-10 text-center">
             <p className="text-xs text-slate-400">
-              © {new Date().getFullYear()} Cidika Travel. Admin Portal.
+              © {new Date().getFullYear()} {t("admin.portalTitle")}
             </p>
           </div>
         </motion.div>

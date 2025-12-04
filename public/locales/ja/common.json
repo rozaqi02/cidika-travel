@@ -5,13 +5,14 @@
     "destinasi": "目的地",
     "faq": "FAQ",
     "contact": "お問い合わせ",
-    "login": "管理者ログイン",
-    "language": "言語",
     "login": "ログイン",
     "logout": "ログアウト",
+    "language": "言語",
     "theme": "テーマ",
     "light": "ライト",
-    "dark": "ダーク"
+    "dark": "ダーク",
+    "menu": "メニュー",
+    "appearance": "外観"
   },
   "hero": {
     "tag": "BEST OFFERS",
@@ -22,6 +23,14 @@
     "ctaContact": "人気パッケージを見る"
   },
   "home": {
+    "popularSearch": "人気の検索",
+    "featuredTitle": "注目の目的地",
+    "featuredDesc": "次の冒険のために厳選された目的地を探索しましょう",
+    "exploreDest": "{{name}} を探索",
+    "galleryDefaultTitle": "ギャラリー",
+    "galleryDefaultSub": "旅行者の思い出の瞬間。",
+    "followIg": "Instagramをフォロー",
+    "helpImprove": "レビューを投稿してサービスの向上にご協力ください！",
     "popular": "人気パッケージ",
     "popularSub": "旅行者に人気のプラン。",
     "calcFor": "人数別の料金",
@@ -30,13 +39,9 @@
     "flexible": "フレキシブル",
     "viewDetails": "詳細を見る",
     "orderViaWA": "WhatsAppで予約",
-    
-  "submitTestimonial": "あなたの体験をシェア",
-  "namePlaceholder": "お名前を入力",
-  "cityPlaceholder": "都市（任意）",
-  "testimonialPlaceholder": "冒険について教えてください...",
     "viewAllPackages": "すべてのプランを見る",
     "ctaPopular": "人気パッケージを見る",
+    "noPackages": "現在利用可能な人気パッケージはありません。",
     "aboutTitle": "快適にヌサ・ペニダへ",
     "aboutBody": "CIDIKA TRAVEL&TOUR はヌサ・ペニダ専門。陸路ツアー、シュノーケリング、宿泊付きなど、快適さ・温かさ・プロ意識を大切にしています。予約はメール／Instagram／WhatsApp／電話で簡単・安心。",
     "point1": "充実のプラン：日帰り、半日、1泊＋シュノーケリング、2日1泊。",
@@ -69,7 +74,13 @@
     "helpCTA": "お困りですか？WhatsAppで相談",
     "addToCart": "カートに追加",
     "ctaTitle": "ヌサ・ペニダへ行きませんか？",
-    "ctaDesc": "WhatsApp／Instagram／Emailでご連絡ください。時間とご予算に合う最適行程をご提案します。"
+    "ctaDesc": "WhatsApp／Instagram／Emailでご連絡ください。時間とご予算に合う最適行程をご提案します。",
+    "submit": "レビューを送信",
+    "sending": "送信中...",
+    "submitTestimonial": "あなたの体験をシェア",
+    "namePlaceholder": "お名前を入力",
+    "cityPlaceholder": "都市（任意）",
+    "testimonialPlaceholder": "冒険について教えてください..."
   },
   "explore": {
     "title": "パッケージ一覧",
@@ -87,15 +98,21 @@
     "foreign": "海外",
     "empty": "条件に一致するプランが見つかりません。",
     "all": "すべて",
-"destinations": "目的地",
-"compact": "コンパクト",
-"cozy": "ゆったり",
-"compactGrid": "コンパクトグリッド",
-"cozyGrid": "ゆったりグリッド",
-"privateTour": "プライベートツアー",
-"sortPrice": "最安",
-"sortName": "A–Z"
-
+    "destinations": "目的地",
+    "compact": "コンパクト",
+    "cozy": "ゆったり",
+    "compactGrid": "コンパクトグリッド",
+    "cozyGrid": "ゆったりグリッド",
+    "privateTour": "プライベートツアー",
+    "openTrip": "オープンツアー",
+    "private": "プライベート",
+    "sortPrice": "最安",
+    "sortName": "A–Z",
+    "notes": "追加注記",
+    "pricingTable": "料金詳細",
+    "pricePerPax": "人数別料金",
+    "totalPrice": "合計",
+    "recommended": "おすすめのツアー"
   },
   "actions": {
     "order": "注文する",
@@ -103,26 +120,29 @@
   },
   "faq": {
     "title": "よくある質問",
+    "subtitle": "ツアー予約についての一般的な質問。",
+    "search": "質問を検索…",
+    "noResults": "検索に該当する質問がありません。",
     "list": [
       { "q": "予約方法は？", "a": "パッケージをカートに追加してチェックアウト、または直接ご連絡ください。" },
       { "q": "プライベートツアーですか？", "a": "はい、すべてプライベート（相乗りなし）です。" },
       { "q": "行程のカスタムは可能？", "a": "可能です。ご希望をお問い合わせ時にお知らせください。" }
     ]
   },
-"dest": {
-  "title": "目的地",
-  "heroDesc": "バリ南東部の美しい島々を探検",
-  "penidaTitle": "ヌサ・ペニダ",
-  "penidaDesc": "バリ南東部の象徴的なビーチと崖の島。ケリンキングビーチとブロークンビーチで有名。",
-  "lembonganTitle": "ヌサ・レンボンガン",
-  "lembonganDesc": "白い砂浜の小さな島。シュノーケリングやデビルズ・ティアーズに最適。",
-  "ceninganTitle": "ヌサ・チェニンガン",
-  "ceninganDesc": "ブルーラグーンと穏やかな雰囲気の最も小さな島。リラックスした冒険にぴったり。",
-  "empty": "検索に一致する目的地が見つかりません。",
-  "search": "目的地を検索...",
-  "cardsTitle": "注目の目的地",
-  "explore": "探索"
-},
+  "dest": {
+    "title": "目的地",
+    "heroDesc": "バリ南東部の美しい島々を探検",
+    "penidaTitle": "ヌサ・ペニダ",
+    "penidaDesc": "バリ南東部の象徴的なビーチと崖の島。ケリンキングビーチとブロークンビーチで有名。",
+    "lembonganTitle": "ヌサ・レンボンガン",
+    "lembonganDesc": "白い砂浜の小さな島。シュノーケリングやデビルズ・ティアーズに最適。",
+    "ceninganTitle": "ヌサ・チェニンガン",
+    "ceninganDesc": "ブルーラグーンと穏やかな雰囲気の最も小さな島。リラックスした冒険にぴったり。",
+    "empty": "検索に一致する目的地が見つかりません。",
+    "search": "目的地を検索...",
+    "cardsTitle": "注目の目的地",
+    "explore": "探索"
+  },
   "contact": {
     "title": "お問い合わせ",
     "subtitle": "ご質問やカスタム手配のご相談はお気軽に。WhatsApp ならすぐ返信します。",
@@ -137,55 +157,60 @@
     "addressLabel": "住所",
     "emailLabel": "メール",
     "phoneLabel": "電話／WA",
-    "instagramLabel": "インスタ"
+    "instagramLabel": "インスタ",
+    "error": {
+      "name": "名前は必須です",
+      "contact": "連絡先は必須です",
+      "message": "メッセージは必須です"
+    }
   },
-"checkout": {
-  "title": "チェックアウト",
-  "details": "ご予約者情報",
-  "itemsCount": "{{count}} 件",
-  "name": "氏名",
-  "email": "メール",
-  "phone": "電話／WA",
-  "date": "旅行日 (YYYY-MM-DD)",
-  "notes": "備考",
-  "submit": "注文を確定",
-  "processing": "処理中...",
-  "summary": "サマリー",
-  "cartEmptyShort": "カートは空です",
-  "cartEmpty": "カートは空です。",
-  "creating": "注文を作成中...",
-  "failed": "注文の作成に失敗しました",
-  "noteForeign": "海外旅行者向けの調整込み。",
-  "noteDomestic": "国内旅行者向けの特別料金。",
-  "audienceDomestic": "国内",
-  "audienceForeign": "海外",
-  "rateLimit": "リクエストが多すぎます。しばらくしてから再度お試しください。",
-  "wa": {
-    "header": "CIDIKA管理者さま、予約を希望します。",
-    "name": "名前",
-    "phone": "WA",
+  "checkout": {
+    "title": "チェックアウト",
+    "details": "ご予約者情報",
+    "itemsCount": "{{count}} 件",
+    "name": "氏名",
     "email": "メール",
-    "date": "日付",
-    "audience": "区分",
-    "items": "内容:",
-    "total": "合計",
-    "code": "コード",
-    "footer": "ご確認をお願いします 🙏"
+    "phone": "電話／WA",
+    "date": "旅行日 (YYYY-MM-DD)",
+    "notes": "備考",
+    "submit": "注文を確定",
+    "processing": "処理中...",
+    "summary": "サマリー",
+    "cartEmptyShort": "カートは空です",
+    "cartEmpty": "カートは空です。",
+    "creating": "注文を作成中...",
+    "failed": "注文の作成に失敗しました",
+    "noteForeign": "海外旅行者向けの調整込み。",
+    "noteDomestic": "国内旅行者向けの特別料金。",
+    "audienceDomestic": "国内",
+    "audienceForeign": "海外",
+    "rateLimit": "リクエストが多すぎます。しばらくしてから再度お試しください。",
+    "wa": {
+      "header": "CIDIKA管理者さま、予約を希望します。",
+      "name": "名前",
+      "phone": "WA",
+      "email": "メール",
+      "date": "日付",
+      "audience": "区分",
+      "items": "内容:",
+      "total": "合計",
+      "code": "コード",
+      "footer": "ご確認をお願いします 🙏"
+    },
+    "success": {
+      "title": "ご注文を受け付けました！",
+      "body": "まもなく担当者が対応します。",
+      "code": "注文コード",
+      "total": "合計",
+      "contactAdmin": "管理者に確認する",
+      "goHome": "ホームへ戻る",
+      "mustConfirm": "ホームへ戻る前に「管理者に確認する」をタップしてください。",
+      "mustConfirmHint": "先に「管理者に確認する」をタップ",
+      "confirmNote": "確認：上記内容で問題ありません。手配をお願いします。🙏",
+      "fallback": "WhatsAppが使えない場合、このメッセージをコピーして手動で管理者にお送りください。"
+    }
   },
-  "success": {
-    "title": "ご注文を受け付けました！",
-    "body": "まもなく担当者が対応します。",
-    "code": "注文コード",
-    "total": "合計",
-    "contactAdmin": "管理者に確認する",
-    "goHome": "ホームへ戻る",
-    "mustConfirm": "ホームへ戻る前に「管理者に確認する」をタップしてください。",
-    "mustConfirmHint": "先に「管理者に確認する」をタップ",
-    "confirmNote": "確認：上記内容で問題ありません。手配をお願いします。🙏",
-    "fallback": "WhatsAppが使えない場合、このメッセージをコピーして手動で管理者にお送りください。"
-  }
-},
-    "footer": {
+  "footer": {
     "cta": {
       "kicker": "準備はいい？",
       "title": "ヌサ・ペニダの旅、手配は私たちにお任せ。",
@@ -222,6 +247,8 @@
     }
   },
   "admin": {
+    "brand": "Cidika Admin",
+    "portalTitle": "Cidika Travel. 管理ポータル。",
     "menu": {
       "dashboard": "ダッシュボード",
       "orders": "注文一覧",
@@ -235,7 +262,11 @@
       "email": "メール",
       "password": "パスワード",
       "submit": "ログイン",
-      "loggingIn": "ログイン中..."
+      "loggingIn": "ログイン中...",
+      "required": "必須",
+      "forgot": "パスワード忘れ？",
+      "rememberEmail": "メール保存",
+      "resetLink": "メールでリセットリンクをご確認ください。"
     },
     "dashboard": {
       "stats": {
@@ -266,6 +297,7 @@
     },
     "orders": {
       "title": "注文一覧",
+      "saved": "保存しました",
       "table": {
         "date": "日時",
         "package": "パッケージ",
@@ -292,22 +324,22 @@
       }
     },
     "reset": {
-    "title": "パスワード再設定",
-    "subtitle": "新しい強力なパスワードを作成してください。",
-    "newPass": "新しいパスワード",
-    "confirmPass": "パスワード（確認）",
-    "mismatch": "パスワードが一致しません。",
-    "minChar": "パスワードは6文字以上必要です。",
-    "btn": "パスワードを更新",
-    "success": "成功！リダイレクト中...",
-    "process": "アカウントを保護中..."
-  },
-  "loginHero": {
-    "title": "旅行管理を\nもっと簡単に。",
-    "desc": "Cidika Travel管理ダッシュボードにアクセスして、注文、ツアーパッケージ、分析を一元管理しましょう。",
-    "secure": "安全",
-    "monitoring": "監視中"
-  }
+      "title": "パスワード再設定",
+      "subtitle": "新しい強力なパスワードを作成してください。",
+      "newPass": "新しいパスワード",
+      "confirmPass": "パスワード（確認）",
+      "mismatch": "パスワードが一致しません。",
+      "minChar": "パスワードは6文字以上必要です。",
+      "btn": "パスワードを更新",
+      "success": "成功！リダイレクト中...",
+      "process": "アカウントを保護中..."
+    },
+    "loginHero": {
+      "title": "旅行管理を\nもっと簡単に。",
+      "desc": "Cidika Travel管理ダッシュボードにアクセスして、注文、ツアーパッケージ、分析を一元管理しましょう。",
+      "secure": "安全",
+      "monitoring": "監視中"
+    }
   },
   "misc": {
     "loading": "読み込み中...",

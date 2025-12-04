@@ -78,7 +78,7 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
   // Logic Open Trip vs Private
   const isOpenTrip = p.trip_type === "open";
   const labelColor = isOpenTrip ? "bg-amber-500/90" : "bg-sky-500/90";
-  const labelText = isOpenTrip ? "Open Trip" : t("explore.privateTour", { defaultValue: "Private Tour" });
+  const labelText = isOpenTrip ? t("explore.openTrip") : t("explore.privateTour", { defaultValue: "Private Tour" });
 
   const goOrder = () => {
     const item = {
@@ -201,7 +201,7 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
 ================================= */
 export default function Explore() {
   const { t, i18n } = useTranslation();
-  const { rows: data = [] } = usePackages();
+  const { rows: data = [], loading } = usePackages();
   const { fx, currency, locale } = useCurrency();
   const lang = (i18n.language || "id").slice(0, 2);
 
@@ -433,7 +433,41 @@ export default function Explore() {
         className={`grid gap-6 ${compact ? "sm:grid-cols-3 lg:grid-cols-4" : "md:grid-cols-2 lg:grid-cols-3"}`}
       >
         <AnimatePresence mode="popLayout">
-          {filtered.length ? (
+          {loading ? (
+            // Render 6 skeleton placeholders while loading
+            Array.from({ length: 6 }).map((_, i) => (
+              <motion.div
+                key={`ph-${i}`}
+                variants={itemVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="group relative overflow-hidden rounded-xl border border-gray-200/40 dark:border-gray-700/40 shadow-sm bg-white dark:bg-gray-900"
+              >
+                <div className="relative h-48 overflow-hidden bg-gray-200 dark:bg-gray-800" style={{background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.06) 100%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s linear infinite'}}>
+                  <div className="absolute top-3 left-3 z-10 w-20 h-6 rounded-full bg-gray-300 dark:bg-gray-700/60" />
+                </div>
+
+                <div className="p-4">
+                  <div className="h-4 w-3/4 mb-3 rounded bg-gray-200 dark:bg-gray-800" style={{backgroundSize: '200% 100%', animation: 'shimmer 1.2s linear infinite'}} />
+                  <div className="flex gap-2 mb-3">
+                    <div className="h-3 w-16 rounded bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
+                    <div className="h-3 w-12 rounded bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
+                  </div>
+                  <div className="h-3 w-20 mb-3 rounded bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
+
+                  <div className="mb-4">
+                    <div className="h-6 w-1/2 rounded bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="h-9 w-24 rounded-lg bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
+                    <div className="h-9 w-20 rounded-lg bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
+                  </div>
+                </div>
+              </motion.div>
+            ))
+          ) : filtered.length ? (
             filtered.map((p) => (
               <PackageCard
                 key={p.id}
