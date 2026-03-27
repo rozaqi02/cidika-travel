@@ -102,8 +102,7 @@ export default function FAQ() {
             delay={150}
             animateBy="words"
             direction="top"
-            className="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-4"
-            style={{ fontFamily: 'var(--font-hero, "Cinzel", "EB Garamond", ui-serif, Georgia, serif)' }}
+            className="home-hero-title text-white text-[clamp(34px,8vw,72px)] text-center w-full px-2 sm:px-0 mb-4"
           />
           <motion.p
             initial={{ opacity: 0, y: 20 }}

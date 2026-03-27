@@ -33,7 +33,7 @@ function SpotlightOverlay({ className = "" }) {
   );
 }
 
-function DestinationCard({ item, index, onExplore }) {
+function DestinationCard({ item, index, onExplore, t }) {
   const isEven = index % 2 === 0;
   
   return (
@@ -76,7 +76,12 @@ function DestinationCard({ item, index, onExplore }) {
               onClick={() => onExplore(item.key)}
               className="group relative inline-flex items-center gap-3 px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold text-base shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
             >
-              <span>Explore {item.title}</span>
+              <span>
+                {t("home.exploreDest", {
+                  name: item.title,
+                  defaultValue: "Explore {{name}}",
+                })}
+              </span>
               <span className="bg-white/20 dark:bg-slate-900/10 p-1 rounded-full">
                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </span>
@@ -137,7 +142,11 @@ export default function Destinasi() {
 
   // Hero Data
   const heroTitle = S.hero?.locale?.title || t("dest.title", { defaultValue: "Destinations" });
-  const heroSub = S.hero?.locale?.body_md || "Discover the hidden gems of Indonesia";
+  const heroSub =
+    S.hero?.locale?.body_md ||
+    t("dest.heroDesc", {
+      defaultValue: "Discover the hidden gems of Indonesia",
+    });
   const heroBg = S.hero?.data?.images?.[0] || "/23.jpg";
 
   return (
@@ -167,8 +176,7 @@ export default function Destinasi() {
                delay={150}
                animateBy="words"
                direction="top"
-               className="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-4"
-               style={{ fontFamily: 'var(--font-hero, "Cinzel", "EB Garamond", ui-serif, Georgia, serif)' }}
+               className="home-hero-title text-white text-[clamp(34px,8vw,72px)] text-center w-full px-2 sm:px-0 mb-4"
             />
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -191,7 +199,9 @@ export default function Destinasi() {
                  type="text" 
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
-                 placeholder="Search destination..." 
+                 placeholder={t("dest.search", {
+                   defaultValue: "Search destination...",
+                 })}
                  className="w-full rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200/60 dark:border-gray-700/60 px-12 py-3 text-gray-900 dark:text-white focus:ring-4 focus:ring-sky-500/30 outline-none transition-all"
                />
             </motion.div>
@@ -212,13 +222,23 @@ export default function Destinasi() {
                      key={item.key} 
                      item={item} 
                      index={idx} 
+                     t={t}
                      onExplore={(key) => nav(`/explore?dest=${key}`)} 
                   />
                ))
             ) : (
                <div className="text-center py-20">
-                  <p className="text-2xl text-slate-400 font-bold">No destinations found.</p>
-                  <button onClick={() => setSearchQuery("")} className="mt-4 text-sky-500 hover:underline">Clear search</button>
+                  <p className="text-2xl text-slate-400 font-bold">
+                    {t("dest.empty", {
+                      defaultValue: "No destinations found.",
+                    })}
+                  </p>
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="mt-4 text-sky-500 hover:underline"
+                  >
+                    {t("misc.clearSearch", { defaultValue: "Clear search" })}
+                  </button>
                </div>
             )}
          </div>

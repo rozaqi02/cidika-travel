@@ -1,79 +1,430 @@
-// src/pages/admin/Orderan.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useTranslation } from "react-i18next";
 import {
-  Search, Filter, ArrowUpDown, Download, RotateCcw, FileText, Save,
-  CheckCircle2, XCircle, ChevronDown, CheckSquare, Square, Calendar as CalendarIcon,
-  MoreHorizontal, FileDown, Loader2
+  ArrowUpDown,
+  BadgeCheck,
+  Calendar as CalendarIcon,
+  CalendarDays,
+  CheckCircle2,
+  CheckSquare,
+  ChevronDown,
+  CircleAlert,
+  Download,
+  Eye,
+  FileDown,
+  Hash,
+  Loader2,
+  Mail,
+  Package2,
+  Phone,
+  RotateCcw,
+  Save,
+  Search,
+  Square,
+  Users,
+  X,
+  XCircle,
 } from "lucide-react";
 import ReactCountryFlag from "react-country-flag";
+import { toast } from "react-hot-toast";
 
-/* =========================
-   DATE PICKER HELPERS
-   ========================= */
-function formatYMD(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+function formatYMD(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
-function parseYMD(str) {
-  if (!str) return null;
-  const [y, m, d] = str.split("-").map(Number);
-  if (!y || !m || !d) return null;
-  const dt = new Date(y, m - 1, d);
-  return isNaN(dt) ? null : dt;
+
+function parseYMD(value) {
+  if (!value) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
-function Calendar({ value, onSelect, startOnMonday = false }) {
-  const sel = parseYMD(value);
-  const today = new Date();
-  const [month, setMonth] = useState(() => (sel ? new Date(sel) : new Date()));
+
+const UI_COPY = {
+  id: {
+    dateLocale: "id-ID",
+    weekdays: ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
+    search: "Cari kode booking, nama, email, atau paket",
+    allStatus: "Semua status",
+    from: "Mulai",
+    to: "Sampai",
+    reset: "Reset",
+    refresh: "Muat ulang",
+    exportCsv: "Export CSV",
+    confirmSelected: "Konfirmasi",
+    cancelSelected: "Batalkan",
+    totalOrders: "Total order",
+    pendingOrders: "Menunggu",
+    confirmedOrders: "Terkonfirmasi",
+    selectedOrders: "Terpilih",
+    confirmedRevenue: "Omzet confirmed",
+    loading: "Memuat order...",
+    noData: "Belum ada order yang cocok dengan filter ini.",
+    showRows: "Baris",
+    prev: "Sebelumnya",
+    next: "Berikutnya",
+    details: "Detail",
+    close: "Tutup",
+    date: "Tanggal",
+    customer: "Pelanggan",
+    pax: "Pax",
+    total: "Total",
+    status: "Status",
+    invoice: "Invoice",
+    actions: "Aksi",
+    package: "Paket",
+    audience: "Audiens",
+    notes: "Catatan",
+    lineItems: "Item booking",
+    invoiceNumber: "Nomor invoice",
+    bookingCode: "Kode booking",
+    createdAt: "Dibuat",
+    tourDate: "Tanggal tour",
+    customerInfo: "Informasi pelanggan",
+    unitPrice: "Harga satuan",
+    qty: "Qty",
+    save: "Simpan",
+    saving: "Menyimpan...",
+    saveSuccess: "Perubahan order tersimpan.",
+    saveFailed: "Gagal menyimpan order.",
+    download: "Download",
+    chooseLanguage: "Pilih bahasa invoice",
+    confirmFirst: "Konfirmasi dulu",
+    downloadFailed: "Gagal membuat invoice.",
+    bulkConfirmed: "Order terpilih berhasil dikonfirmasi.",
+    bulkCancelled: "Order terpilih berhasil dibatalkan.",
+    exportReady: "CSV berhasil dibuat.",
+    exportEmpty: "Tidak ada data untuk diexport.",
+    loadFailed: "Gagal memuat data order.",
+    pageSummary: "Halaman {{page}} dari {{total}}",
+    defaultPackage: "Paket wisata",
+    audienceDomestic: "Domestik",
+    audienceForeign: "Mancanegara",
+    audienceUnknown: "Tidak diketahui",
+    statusPending: "Pending",
+    statusConfirmed: "Confirmed",
+    statusCancelled: "Cancelled",
+    languageIndonesia: "Indonesia",
+    languageEnglish: "English",
+    languageJapanese: "Japanese",
+    noNotes: "Tidak ada catatan tambahan.",
+    noPhone: "Nomor telepon belum diisi",
+    noEmail: "Email belum diisi",
+    clearDate: "Kosong",
+  },
+  en: {
+    dateLocale: "en-US",
+    weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    search: "Search booking code, customer, email, or package",
+    allStatus: "All status",
+    from: "From",
+    to: "To",
+    reset: "Reset",
+    refresh: "Refresh",
+    exportCsv: "Export CSV",
+    confirmSelected: "Confirm",
+    cancelSelected: "Cancel",
+    totalOrders: "Total orders",
+    pendingOrders: "Pending",
+    confirmedOrders: "Confirmed",
+    selectedOrders: "Selected",
+    confirmedRevenue: "Confirmed revenue",
+    loading: "Loading orders...",
+    noData: "No orders match the current filters.",
+    showRows: "Rows",
+    prev: "Prev",
+    next: "Next",
+    details: "Details",
+    close: "Close",
+    date: "Date",
+    customer: "Customer",
+    pax: "Pax",
+    total: "Total",
+    status: "Status",
+    invoice: "Invoice",
+    actions: "Actions",
+    package: "Package",
+    audience: "Audience",
+    notes: "Notes",
+    lineItems: "Booking items",
+    invoiceNumber: "Invoice number",
+    bookingCode: "Booking code",
+    createdAt: "Created at",
+    tourDate: "Tour date",
+    customerInfo: "Customer info",
+    unitPrice: "Unit price",
+    qty: "Qty",
+    save: "Save",
+    saving: "Saving...",
+    saveSuccess: "Order changes saved.",
+    saveFailed: "Failed to save the order.",
+    download: "Download",
+    chooseLanguage: "Invoice language",
+    confirmFirst: "Confirm booking first",
+    downloadFailed: "Failed to generate invoice.",
+    bulkConfirmed: "Selected orders have been confirmed.",
+    bulkCancelled: "Selected orders have been cancelled.",
+    exportReady: "CSV export is ready.",
+    exportEmpty: "There is no data to export.",
+    loadFailed: "Failed to load orders.",
+    pageSummary: "Page {{page}} of {{total}}",
+    defaultPackage: "Tour package",
+    audienceDomestic: "Domestic",
+    audienceForeign: "Foreign",
+    audienceUnknown: "Unknown",
+    statusPending: "Pending",
+    statusConfirmed: "Confirmed",
+    statusCancelled: "Cancelled",
+    languageIndonesia: "Indonesia",
+    languageEnglish: "English",
+    languageJapanese: "Japanese",
+    noNotes: "No extra notes.",
+    noPhone: "Phone number not provided",
+    noEmail: "Email not provided",
+    clearDate: "Clear",
+  },
+  ja: {
+    dateLocale: "ja-JP",
+    weekdays: ["日", "月", "火", "水", "木", "金", "土"],
+    search: "予約コード、氏名、メール、またはパッケージ名で検索",
+    allStatus: "すべてのステータス",
+    from: "開始日",
+    to: "終了日",
+    reset: "リセット",
+    refresh: "再読み込み",
+    exportCsv: "CSV出力",
+    confirmSelected: "確定",
+    cancelSelected: "キャンセル",
+    totalOrders: "注文数",
+    pendingOrders: "保留中",
+    confirmedOrders: "確定済み",
+    selectedOrders: "選択中",
+    confirmedRevenue: "確定売上",
+    loading: "注文を読み込み中...",
+    noData: "条件に一致する注文はありません。",
+    showRows: "表示件数",
+    prev: "前へ",
+    next: "次へ",
+    details: "詳細",
+    close: "閉じる",
+    date: "日時",
+    customer: "顧客",
+    pax: "人数",
+    total: "合計",
+    status: "ステータス",
+    invoice: "請求書",
+    actions: "操作",
+    package: "パッケージ",
+    audience: "対象",
+    notes: "メモ",
+    lineItems: "予約項目",
+    invoiceNumber: "請求書番号",
+    bookingCode: "予約コード",
+    createdAt: "作成日時",
+    tourDate: "ツアー日",
+    customerInfo: "顧客情報",
+    unitPrice: "単価",
+    qty: "数量",
+    save: "保存",
+    saving: "保存中...",
+    saveSuccess: "注文内容を保存しました。",
+    saveFailed: "注文の保存に失敗しました。",
+    download: "ダウンロード",
+    chooseLanguage: "請求書の言語",
+    confirmFirst: "先に確定してください",
+    downloadFailed: "請求書の生成に失敗しました。",
+    bulkConfirmed: "選択した注文を確定しました。",
+    bulkCancelled: "選択した注文をキャンセルしました。",
+    exportReady: "CSVを出力しました。",
+    exportEmpty: "出力できるデータがありません。",
+    loadFailed: "注文の読み込みに失敗しました。",
+    pageSummary: "{{total}}ページ中 {{page}}ページ",
+    defaultPackage: "ツアーパッケージ",
+    audienceDomestic: "国内",
+    audienceForeign: "海外",
+    audienceUnknown: "不明",
+    statusPending: "保留",
+    statusConfirmed: "確定",
+    statusCancelled: "キャンセル",
+    languageIndonesia: "Indonesia",
+    languageEnglish: "English",
+    languageJapanese: "Japanese",
+    noNotes: "追加メモはありません。",
+    noPhone: "電話番号は未登録です",
+    noEmail: "メールは未登録です",
+    clearDate: "クリア",
+  },
+};
+
+const STATUS_OPTIONS = ["pending", "confirmed", "cancelled"];
+
+const INVOICE_LANG = {
+  id: {
+    title: "INVOICE",
+    billedTo: "DITAGIH KEPADA",
+    details: "DETAIL PESANAN",
+    invNo: "Nomor Invoice",
+    issueDate: "Tanggal Terbit",
+    tourDate: "Tanggal Tour",
+    desc: "Deskripsi",
+    qty: "Pax",
+    price: "Harga Satuan",
+    subtotal: "Subtotal",
+    total: "TOTAL PEMBAYARAN",
+    confirmed: "LUNAS",
+    pending: "BELUM LUNAS",
+    cancelled: "DIBATALKAN",
+    footer1: "Terima kasih telah mempercayakan perjalanan Anda kepada Cidika Travel.",
+    contact: "Butuh bantuan? Hubungi WhatsApp kami.",
+  },
+  en: {
+    title: "INVOICE",
+    billedTo: "BILLED TO",
+    details: "ORDER DETAILS",
+    invNo: "Invoice Number",
+    issueDate: "Issue Date",
+    tourDate: "Tour Date",
+    desc: "Description",
+    qty: "Pax",
+    price: "Unit Price",
+    subtotal: "Subtotal",
+    total: "TOTAL AMOUNT",
+    confirmed: "PAID",
+    pending: "UNPAID",
+    cancelled: "CANCELLED",
+    footer1: "Thank you for choosing Cidika Travel for your journey.",
+    contact: "Need help? Contact our WhatsApp.",
+  },
+  ja: {
+    title: "請求書",
+    billedTo: "請求先",
+    details: "注文詳細",
+    invNo: "請求書番号",
+    issueDate: "発行日",
+    tourDate: "ツアー日",
+    desc: "内容",
+    qty: "人数",
+    price: "単価",
+    subtotal: "小計",
+    total: "合計金額",
+    confirmed: "支払済",
+    pending: "未払い",
+    cancelled: "キャンセル",
+    footer1: "Cidika Travel をご利用いただきありがとうございます。",
+    contact: "サポートが必要な場合は WhatsApp までご連絡ください。",
+  },
+};
+
+function getLocaleKey(language) {
+  const short = language?.slice(0, 2);
+  return UI_COPY[short] ? short : "en";
+}
+
+function chooseTripTitle(titles, language, fallback) {
+  return (
+    titles?.[language] ||
+    titles?.en ||
+    titles?.id ||
+    Object.values(titles || {}).find(Boolean) ||
+    fallback
+  );
+}
+
+function normalizeItems(items, row, language, fallback) {
+  if (Array.isArray(items) && items.length > 0) {
+    return items.map((item) => ({
+      id: item.id,
+      item_name: item.item_name || chooseTripTitle(row.trip_titles, language, fallback),
+      qty: Number(item.qty || 1),
+      price_idr: Number(item.price_idr || 0),
+      total_idr: Number(item.total_idr || 0),
+    }));
+  }
+
+  const pax = Math.max(1, Number(row.pax || 1));
+  const total = Number(row.total_idr || 0);
+  return [
+    {
+      id: `fallback-${row.id}`,
+      item_name: chooseTripTitle(row.trip_titles, language, fallback),
+      qty: pax,
+      price_idr: Math.round(total / pax),
+      total_idr: total,
+    },
+  ];
+}
+
+function formatDateLabel(value, locale) {
+  const parsed = parseYMD(value);
+  if (!parsed) return "";
+  return parsed.toLocaleDateString(locale, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function Calendar({ locale, weekdays, value, onSelect }) {
+  const selected = parseYMD(value);
+  const [month, setMonth] = useState(() => (selected ? new Date(selected) : new Date()));
   month.setDate(1);
 
-  const dow = startOnMonday ? ["Mo","Tu","We","Th","Fr","Sa","Su"] : ["Su","Mo","Tu","We","Th","Fr","Sa"];
-  const firstDay = (month.getDay() + (startOnMonday ? 6 : 0)) % 7;
+  const firstDay = month.getDay();
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-
-  const prevMonth = () => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1));
-  const nextMonth = () => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1));
-
   const cells = [];
-  for (let i = 0; i < firstDay; i++) {
-    const dt = new Date(month.getFullYear(), month.getMonth(), 0 - (firstDay - 1 - i));
-    cells.push({ dt, outside: true });
+
+  for (let index = 0; index < firstDay; index += 1) {
+    const date = new Date(month.getFullYear(), month.getMonth(), 0 - (firstDay - 1 - index));
+    cells.push({ date, outside: true });
   }
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ dt: new Date(month.getFullYear(), month.getMonth(), d), outside: false });
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    cells.push({ date: new Date(month.getFullYear(), month.getMonth(), day), outside: false });
   }
   while (cells.length % 7 !== 0) {
-    const last = cells[cells.length - 1].dt;
-    cells.push({ dt: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), outside: true });
+    const last = cells[cells.length - 1].date;
+    cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), outside: true });
   }
 
   return (
     <div className="w-[280px] select-none">
       <div className="flex items-center justify-between p-2">
-        <button onClick={prevMonth} className="btn btn-outline !py-1 !px-2">{'‹'}</button>
+        <button type="button" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="btn btn-outline !py-1 !px-2">
+          {"<"}
+        </button>
         <div className="text-sm font-semibold">
-          {month.toLocaleString("id-ID", { month: "long", year: "numeric" })}
+          {month.toLocaleString(locale, { month: "long", year: "numeric" })}
         </div>
-        <button onClick={nextMonth} className="btn btn-outline !py-1 !px-2">{'›'}</button>
+        <button type="button" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="btn btn-outline !py-1 !px-2">
+          {">"}
+        </button>
       </div>
-      <div className="grid grid-cols-7 text-center text-xs text-slate-500 dark:text-slate-400 px-2">
-        {dow.map((d) => <div key={d} className="py-1">{d}</div>)}
+      <div className="grid grid-cols-7 px-2 text-center text-xs text-slate-500 dark:text-slate-400">
+        {weekdays.map((label) => (
+          <div key={label} className="py-1">
+            {label}
+          </div>
+        ))}
       </div>
       <div className="grid grid-cols-7 gap-1 p-2">
-        {cells.map(({ dt, outside }, i) => {
-          const isSel = sel && dt.toDateString() === sel.toDateString() && !outside;
+        {cells.map(({ date, outside }, index) => {
+          const isSelected = selected && !outside && date.toDateString() === selected.toDateString();
           return (
             <button
-              key={i}
-              onClick={() => !outside && onSelect(formatYMD(dt))}
+              key={`${date.toISOString()}-${index}`}
+              type="button"
+              onClick={() => !outside && onSelect(formatYMD(date))}
               disabled={outside}
-              className={`py-1.5 rounded-xl border text-sm ${outside ? "border-transparent text-slate-400/60" : "border-slate-200 dark:border-slate-700"} ${isSel ? "bg-sky-100 text-sky-800" : "bg-white dark:bg-slate-900"}`}
+              className={[
+                "rounded-xl border py-1.5 text-sm",
+                outside ? "border-transparent text-slate-400/60" : "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100",
+                isSelected ? "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200" : "",
+              ].join(" ")}
             >
-              {dt.getDate()}
+              {date.getDate()}
             </button>
           );
         })}
@@ -81,609 +432,910 @@ function Calendar({ value, onSelect, startOnMonday = false }) {
     </div>
   );
 }
-function DatePicker({ label, value, onChange }) {
+
+function DatePicker({ copy, label, value, onChange }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+
   useEffect(() => {
-    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
+    const handleClick = (event) => {
+      if (ref.current && !ref.current.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
   return (
     <div className="relative" ref={ref}>
-      <button className="w-full px-3 py-2 rounded-2xl border flex items-center justify-between gap-2 bg-white dark:bg-slate-900" onClick={() => setOpen((v) => !v)} type="button">
-        <span className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200"><CalendarIcon size={16} /> {label}</span>
-        <span className="text-xs text-slate-500">{value || "—"}</span>
+      <button type="button" className="flex w-full items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900" onClick={() => setOpen((current) => !current)}>
+        <span className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+          <CalendarIcon size={16} />
+          {label}
+        </span>
+        <span className="text-xs text-slate-500">{value ? formatDateLabel(value, copy.dateLocale) : copy.clearDate}</span>
       </button>
-      {open && <div className="absolute z-20 mt-1 right-0 bg-white dark:bg-slate-900 border rounded-2xl shadow-smooth p-2"><Calendar value={value} onSelect={(d) => { onChange(d); setOpen(false); }} /></div>}
+      {open ? (
+        <div className="absolute right-0 z-20 mt-1 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+          <div className="mb-2 flex justify-end">
+            <button type="button" className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-200" onClick={() => { onChange(""); setOpen(false); }}>
+              {copy.clearDate}
+            </button>
+          </div>
+          <Calendar locale={copy.dateLocale} weekdays={copy.weekdays} value={value} onSelect={(nextValue) => { onChange(nextValue); setOpen(false); }} />
+        </div>
+      ) : null}
     </div>
   );
 }
 
-/* =========================
-   INVOICE DICTIONARY
-   ========================= */
-const INVOICE_LANG = {
-  id: {
-    title: "INVOICE", billedTo: "DITAGIH KEPADA", details: "DETAIL PESANAN", invNo: "Nomor Invoice", issueDate: "Tanggal Terbit", tourDate: "Tanggal Tour",
-    desc: "Deskripsi", qty: "Pax", price: "Harga Satuan", subtotal: "Subtotal", total: "TOTAL PEMBAYARAN", status: "STATUS", confirmed: "LUNAS", pending: "BELUM LUNAS",
-    footer1: "Terima kasih telah mempercayakan perjalanan Anda kepada Cidika Travel.", footer2: "Simpan dokumen ini sebagai bukti pembayaran yang sah.", contact: "Butuh bantuan? Hubungi WhatsApp kami."
-  },
-  en: {
-    title: "INVOICE", billedTo: "BILLED TO", details: "ORDER DETAILS", invNo: "Invoice Number", issueDate: "Issue Date", tourDate: "Tour Date",
-    desc: "Description", qty: "Pax", price: "Unit Price", subtotal: "Subtotal", total: "TOTAL AMOUNT", status: "STATUS", confirmed: "PAID", pending: "UNPAID",
-    footer1: "Thank you for choosing Cidika Travel for your journey.", footer2: "Please keep this document as valid proof of payment.", contact: "Need help? Contact our WhatsApp."
-  },
-  ja: {
-    title: "請求書", billedTo: "請求先", details: "注文詳細", invNo: "請求書番号", issueDate: "発行日", tourDate: "ツアー日",
-    desc: "内容", qty: "人数", price: "単価", subtotal: "小計", total: "合計金額", status: "ステータス", confirmed: "支払済", pending: "未払",
-    footer1: "Cidika Travelをご利用いただきありがとうございます。", footer2: "この請求書は大切に保管してください。", contact: "サポートが必要な場合はWhatsAppまでご連絡ください。"
-  }
-};
+function StatCard({ icon: Icon, label, value, tone = "slate" }) {
+  const toneClass = {
+    slate: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100",
+    amber: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200",
+    emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200",
+    sky: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-200",
+    rose: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200",
+  };
 
-/* =========================
-   MAIN COMPONENT
-   ========================= */
-const STATUS_OPTIONS = ["pending", "confirmed"];
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">{label}</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{value}</div>
+        </div>
+        <div className={`rounded-2xl p-3 ${toneClass[tone] || toneClass.slate}`}>
+          <Icon size={18} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function statusTone(status) {
+  if (status === "confirmed") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200";
+  if (status === "cancelled") return "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200";
+  return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200";
+}
+
+function escapeCsvValue(value) {
+  return `"${String(value ?? "").replace(/"/g, "\"\"")}"`;
+}
 
 export default function Orderan() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
+  const language = getLocaleKey(i18n.language);
+  const copy = UI_COPY[language];
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
-
-  // Filters
-  const [q, setQ] = useState("");
+  const [bulkAction, setBulkAction] = useState("");
+  const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
-  const [dateTo,   setDateTo]   = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [sortBy, setSortBy] = useState("created_at");
   const [sortDir, setSortDir] = useState("desc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [visibleCols, setVisibleCols] = useState({
-    time: true, tourDate: true, package: true, name: true, contact: true, pax: true, total: true, status: true, invoice: true, actions: true
-  });
   const [selected, setSelected] = useState(() => new Set());
+  const [detailId, setDetailId] = useState(null);
 
-  const columnLabel = useMemo(() => {
-    const L = {
-      id: { invoice: "Invoice", actions: "Aksi", search: "Cari...", allStatus: "Semua Status", exportCsv: "CSV", save: "Simpan", saving: "..." },
-      en: { invoice: "Invoice", actions: "Actions", search: "Search...", allStatus: "All Status", exportCsv: "CSV", save: "Save", saving: "..." },
-      ja: { invoice: "インボイス", actions: "操作", search: "検索...", allStatus: "すべて", exportCsv: "CSV", save: "保存", saving: "..." },
-    };
-    return L[i18n.language?.slice(0, 2)] || L.en;
-  }, [i18n.language]);
+  const formatCurrency = useCallback((value) => Number(value || 0).toLocaleString("id-ID"), []);
+  const formatDateTime = useCallback(
+    (value, withTime = false) => {
+      if (!value) return "-";
+      const date = new Date(value);
+      return date.toLocaleString(copy.dateLocale, withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" });
+    },
+    [copy.dateLocale]
+  );
 
-// Load Data - REVISI: Prioritaskan Bahasa Inggris untuk Nama Trip
-  const load = async () => {
+  const getAudienceLabel = useCallback(
+    (audience) => {
+      if (audience === "domestic") return copy.audienceDomestic;
+      if (audience === "foreign") return copy.audienceForeign;
+      return copy.audienceUnknown;
+    },
+    [copy]
+  );
+
+  const getStatusLabel = useCallback(
+    (status) => {
+      if (status === "confirmed") return copy.statusConfirmed;
+      if (status === "cancelled") return copy.statusCancelled;
+      return copy.statusPending;
+    },
+    [copy]
+  );
+
+  const insideDateRange = useCallback(
+    (value) => {
+      if (!value) return true;
+      const timestamp = new Date(value).setHours(0, 0, 0, 0);
+      const fromOk = dateFrom ? timestamp >= new Date(dateFrom).setHours(0, 0, 0, 0) : true;
+      const toOk = dateTo ? timestamp <= new Date(dateTo).setHours(0, 0, 0, 0) : true;
+      return fromOk && toOk;
+    },
+    [dateFrom, dateTo]
+  );
+
+  const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("bookings")
-      .select(`
-        id, created_at, status, invoice:invoice_pdf_url, package_id, name:customer_name, email, phone, pax, total_idr, date, notes, invoice_no, invoice_pdf_url,
-        packages (
-          package_locales ( title, lang )
-        )
-      `)
+      .select(
+        `
+        id, public_code, created_at, status, package_id, customer_name, email, phone, pax, audience,
+        total_idr, date, notes, invoice_no, invoice_pdf_url,
+        booking_items ( id, item_name, qty, price_idr, total_idr ),
+        packages ( package_locales ( title, lang ) )
+      `
+      )
       .order("created_at", { ascending: false });
 
-    if (!error) {
-      const formattedData = (data || []).map(item => {
-        let tripTitle = "Tour Package";
-        
-        // Handle packages relation
-        const pkg = Array.isArray(item.packages) ? item.packages[0] : item.packages;
-        
-        if (pkg?.package_locales?.length > 0) {
-           const locs = pkg.package_locales;
-           
-           // --- PERBAIKAN LOGIKA DISINI ---
-           // Urutan prioritas pencarian judul:
-           // 1. Cari yang 'en' (Inggris) -> AGAR INVOICE KONSISTEN INGGRIS
-           // 2. Jika tidak ada, cari 'id' (Indonesia)
-           // 3. Jika tidak ada, pakai yang pertama ketemu
-           const found = locs.find(l => l.lang === 'en') || locs.find(l => l.lang === 'id') || locs[0];
-           
-           if (found?.title) tripTitle = found.title;
-        }
-        return { ...item, trip_name: tripTitle };
-      });
-      setRows(formattedData);
-    } else {
+    if (error) {
       console.error(error);
+      toast.error(copy.loadFailed);
+      setRows([]);
+      setLoading(false);
+      return;
     }
-    
+
+    const mapped = (data || []).map((row) => {
+      const pkg = Array.isArray(row.packages) ? row.packages[0] : row.packages;
+      const locales = Array.isArray(pkg?.package_locales) ? pkg.package_locales : [];
+      const tripTitles = locales.reduce((acc, localeRow) => {
+        if (localeRow?.lang && localeRow?.title) acc[localeRow.lang] = localeRow.title;
+        return acc;
+      }, {});
+      const baseRow = {
+        ...row,
+        name: row.customer_name,
+        trip_titles: tripTitles,
+        trip_name: chooseTripTitle(tripTitles, language, copy.defaultPackage),
+      };
+      return {
+        ...baseRow,
+        items: normalizeItems(row.booking_items, baseRow, language, copy.defaultPackage),
+      };
+    });
+
+    setRows(mapped);
     setSelected(new Set());
     setLoading(false);
-  };
+  }, [copy.defaultPackage, copy.loadFailed, language]);
 
-  useEffect(() => { load(); }, [i18n.language]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const fmtIDR = (n) => (Number(n || 0)).toLocaleString("id-ID");
-  const insideDateRange = (iso) => {
-    if (!iso) return true;
-    const d = new Date(iso).setHours(0,0,0,0);
-    const fromOk = dateFrom ? d >= new Date(dateFrom).setHours(0,0,0,0) : true;
-    const toOk   = dateTo   ? d <= new Date(dateTo).setHours(0,0,0,0)   : true;
-    return fromOk && toOk;
-  };
-  
+  useEffect(() => {
+    setPage(1);
+  }, [query, statusFilter, dateFrom, dateTo, pageSize]);
+
   const processed = useMemo(() => {
-    const text = q.trim().toLowerCase();
-    let arr = (rows || []).filter((r) => {
-      const inStatus = statusFilter ? r.status === statusFilter : true;
-      const inText = !text || [r.name, r.email, r.phone, r.package_id, r.invoice_no, r.trip_name].filter(Boolean).some((v) => String(v).toLowerCase().includes(text));
-      return inStatus && inText && insideDateRange(r.date);
+    const text = query.trim().toLowerCase();
+    const filtered = (rows || []).filter((row) => {
+      const inStatus = statusFilter ? row.status === statusFilter : true;
+      const inText =
+        !text ||
+        [row.public_code, row.name, row.email, row.phone, row.invoice_no, row.trip_name]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(text));
+      return inStatus && inText && insideDateRange(row.date);
     });
-    arr.sort((a, b) => {
-      const dir = sortDir === "asc" ? 1 : -1;
-      const val = (row, by) => {
-        if(by === "created_at") return new Date(row.created_at).getTime();
-        if(by === "date") return new Date(row.date || row.created_at).getTime();
-        if(by === "total_idr") return (row.total_idr || 0);
-        return row[by] ?? "";
+
+    filtered.sort((left, right) => {
+      const direction = sortDir === "asc" ? 1 : -1;
+      const read = (row) => {
+        if (sortBy === "created_at") return new Date(row.created_at).getTime();
+        if (sortBy === "date") return new Date(row.date || row.created_at).getTime();
+        if (sortBy === "total_idr") return Number(row.total_idr || 0);
+        if (sortBy === "name") return row.name || "";
+        return row[sortBy] ?? "";
       };
-      const va = val(a, sortBy), vb = val(b, sortBy);
-      return (typeof va === "number" ? va - vb : String(va).localeCompare(String(vb))) * dir;
+      const a = read(left);
+      const b = read(right);
+      const comparison = typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b), copy.dateLocale);
+      return comparison * direction;
     });
-    return arr;
-  }, [rows, q, statusFilter, dateFrom, dateTo, sortBy, sortDir]);
+
+    return filtered;
+  }, [copy.dateLocale, insideDateRange, query, rows, sortBy, sortDir, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / pageSize));
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
   const pageRows = processed.slice((page - 1) * pageSize, page * pageSize);
-  const setRowField = (id, patch) => setRows((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-  const toggleSelect = (id) => setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const detailRow = rows.find((row) => row.id === detailId) || null;
+  const currentPageAllSelected = pageRows.length > 0 && pageRows.every((row) => selected.has(row.id));
+
+  const stats = useMemo(() => {
+    const confirmedRows = processed.filter((row) => row.status === "confirmed");
+    return {
+      total: processed.length,
+      pending: processed.filter((row) => row.status === "pending").length,
+      confirmed: confirmedRows.length,
+      selected: selected.size,
+      revenue: confirmedRows.reduce((sum, row) => sum + Number(row.total_idr || 0), 0),
+    };
+  }, [processed, selected.size]);
+
+  const setRowField = (id, patch) => {
+    setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  };
+
+  const toggleSelect = (id) => {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const toggleSelectAllCurrent = () => {
-    const ids = pageRows.map((r) => r.id);
-    const allSelected = ids.every((id) => selected.has(id));
-    setSelected((prev) => { const n = new Set(prev); ids.forEach((id) => (allSelected ? n.delete(id) : n.add(id))); return n; });
+    const ids = pageRows.map((row) => row.id);
+    setSelected((current) => {
+      const next = new Set(current);
+      const allSelected = ids.every((id) => next.has(id));
+      ids.forEach((id) => {
+        if (allSelected) next.delete(id);
+        else next.add(id);
+      });
+      return next;
+    });
   };
 
-  const makeInvoiceNo = (r) => {
-    if (r?.invoice_no) return r.invoice_no;
-    const d = new Date(r.created_at);
-    const y = d.getFullYear();
-    const m = `${d.getMonth() + 1}`.padStart(2, "0");
-    const day = `${d.getDate()}`.padStart(2, "0");
-    const tail = String(r.id).replace(/-/g, "").slice(0, 6).toUpperCase();
-    return `INV/${y}${m}${day}/${tail}`;
+  const makeInvoiceNo = (row) => {
+    if (row?.invoice_no) return row.invoice_no;
+    const date = new Date(row.created_at);
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    const tail = String(row.id).replace(/-/g, "").slice(0, 6).toUpperCase();
+    return `INV/${year}${month}${day}/${tail}`;
   };
 
-  const fetchBookingItems = async (bookingId) => {
-    const { data } = await supabase.from("booking_items").select("*").eq("booking_id", bookingId);
-    return data || [];
-  };
+  const getInvoiceItems = useCallback(
+    (row, invoiceLanguage) => normalizeItems(row.items, row, invoiceLanguage, copy.defaultPackage),
+    [copy.defaultPackage]
+  );
 
-  const buildInvoicePdfBlob = async (orderRow, items, langCode) => {
+  const buildInvoicePdfBlob = async (row, invoiceLanguage) => {
     const { jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
-    
-    const txt = INVOICE_LANG[langCode] || INVOICE_LANG.en;
-    
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pdf = new jsPDF({ unit: "pt", format: "a4" });
+    const text = INVOICE_LANG[invoiceLanguage] || INVOICE_LANG.en;
+    const items = getInvoiceItems(row, invoiceLanguage);
+    const dateLocale = invoiceLanguage === "id" ? "id-ID" : invoiceLanguage === "ja" ? "ja-JP" : "en-US";
+    let activeFont = "helvetica";
 
-    // === FONT HANDLING (JAPANESE) ===
-    let activeFont = "helvetica"; // Default font
-    if (langCode === 'ja') {
+    if (invoiceLanguage === "ja") {
       try {
-        const fontRes = await fetch('/NotoSansJP-Regular.ttf');
-        if (fontRes.ok) {
-           const fontBlob = await fontRes.blob();
-           const reader = new FileReader();
-           await new Promise((resolve) => {
-             reader.onload = () => resolve(reader.result);
-             reader.readAsDataURL(fontBlob);
-           }).then((base64Data) => {
-             const base64Str = base64Data.split(',')[1];
-             doc.addFileToVFS('NotoSansJP.ttf', base64Str);
-             doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal');
-             activeFont = 'NotoSansJP'; // Set flag font Jepang
-             doc.setFont(activeFont); 
-           });
+        const response = await fetch("/NotoSansJP-Regular.ttf");
+        if (response.ok) {
+          const blob = await response.blob();
+          const base64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+          pdf.addFileToVFS("NotoSansJP.ttf", String(base64).split(",")[1]);
+          pdf.addFont("NotoSansJP.ttf", "NotoSansJP", "normal");
+          activeFont = "NotoSansJP";
+          pdf.setFont(activeFont);
         }
-      } catch (e) {
-        console.error("Gagal load font Jepang:", e);
+      } catch (error) {
+        console.error("Failed to load Japanese font", error);
       }
-    } else {
-      doc.setFont("helvetica");
     }
-    // =================================
 
-    // Load Logo
-    let logoBase64 = null;
-    try {
-      const res = await fetch('/biru.png');
-      const blob = await res.blob();
-      logoBase64 = await new Promise(r => { const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(blob); });
-    } catch {}
-
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
+    const invoiceNo = makeInvoiceNo(row);
+    const statusText = row.status === "confirmed" ? text.confirmed : row.status === "cancelled" ? text.cancelled : text.pending;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
     const margin = 40;
     const brandColor = "#0ea5e9";
 
-    // Header
-    doc.setFillColor(brandColor);
-    doc.rect(0, 0, pageWidth, 10, "F");
-    if (logoBase64) doc.addImage(logoBase64, 'PNG', margin, 30, 100, 50);
+    pdf.setFillColor(brandColor);
+    pdf.rect(0, 0, pageWidth, 10, "F");
+    pdf.setTextColor(30, 41, 59);
+    pdf.setFont(activeFont, "normal");
+    pdf.setFontSize(28);
+    pdf.text(text.title, pageWidth - margin, 50, { align: "right" });
+    pdf.setFontSize(12);
+    pdf.setTextColor(row.status === "confirmed" ? "#10b981" : row.status === "cancelled" ? "#ef4444" : "#f59e0b");
+    pdf.text(statusText, pageWidth - margin, 70, { align: "right" });
 
-    // Reset Color (Fix abu-abu problem)
-    doc.setTextColor(30, 41, 59); 
-    doc.setFontSize(28);
-    
-    // Gunakan bold hanya jika bukan Jepang (font Noto biasanya normal)
-    if (langCode !== 'ja') doc.setFont("helvetica", "bold");
-    else doc.setFont(activeFont, "normal");
+    let y = 135;
+    const rightColumnX = pageWidth / 2 + 20;
+    pdf.setFontSize(9);
+    pdf.setTextColor(148, 163, 184);
+    pdf.text(text.billedTo, margin, 125);
+    pdf.setFontSize(11);
+    pdf.setTextColor(30, 41, 59);
+    pdf.text(row.name || "-", margin, 142);
+    pdf.setFontSize(10);
+    pdf.setTextColor(71, 85, 105);
+    pdf.text(row.email || "-", margin, 158);
+    if (row.phone) pdf.text(row.phone, margin, 174);
 
-    doc.text(txt.title, pageWidth - margin, 50, { align: "right" });
-
-    doc.setFontSize(12);
-    doc.setTextColor(orderRow.status === "confirmed" ? "#10b981" : "#ef4444");
-    doc.text(orderRow.status === "confirmed" ? txt.confirmed : txt.pending, pageWidth - margin, 70, { align: "right" });
-
-    let y = 110;
-    doc.setDrawColor(226, 232, 240);
-    doc.line(margin, y, pageWidth - margin, y);
-    y += 25;
-
-    const col2X = pageWidth / 2 + 20;
-    
-    // --- Customer Info ---
-    // Reset font & color
-    if (langCode !== 'ja') doc.setFont("helvetica", "normal");
-    else doc.setFont(activeFont);
-    doc.setFontSize(9); 
-    doc.setTextColor(148, 163, 184); // Gray label
-
-    doc.text(txt.billedTo, margin, y);
-    y += 15;
-    doc.setFontSize(11); doc.setTextColor(30, 41, 59); // Dark text
-    doc.text(orderRow.name || "-", margin, y);
-    y += 14;
-    doc.setFontSize(10); doc.setTextColor(71, 85, 105);
-    doc.text(orderRow.email || "-", margin, y);
-    if(orderRow.phone) { y += 14; doc.text(orderRow.phone, margin, y); }
-
-    // --- Invoice Meta ---
-    y = 135;
-    doc.setFontSize(9); doc.setTextColor(148, 163, 184); // Gray label
-    doc.text(txt.invNo, col2X, y);
-    doc.setFontSize(10); doc.setTextColor(30, 41, 59); // Dark text
-    const invoiceNo = makeInvoiceNo(orderRow);
-    doc.text(invoiceNo, pageWidth - margin, y, { align: "right" });
-
+    pdf.setFontSize(9);
+    pdf.setTextColor(148, 163, 184);
+    pdf.text(text.invNo, rightColumnX, y);
+    pdf.setFontSize(10);
+    pdf.setTextColor(30, 41, 59);
+    pdf.text(invoiceNo, pageWidth - margin, y, { align: "right" });
     y += 20;
-    doc.setFontSize(9); doc.setTextColor(148, 163, 184); // Gray label
-    doc.text(txt.issueDate, col2X, y);
-    doc.setFontSize(10); doc.setTextColor(30, 41, 59); // Dark text
-    
-    const dateLocale = langCode === 'id' ? 'id-ID' : (langCode === 'ja' ? 'ja-JP' : 'en-US');
-    doc.text(new Date(orderRow.created_at).toLocaleDateString(dateLocale), pageWidth - margin, y, { align: "right" });
-
+    pdf.setFontSize(9);
+    pdf.setTextColor(148, 163, 184);
+    pdf.text(text.issueDate, rightColumnX, y);
+    pdf.setFontSize(10);
+    pdf.setTextColor(30, 41, 59);
+    pdf.text(new Date(row.created_at).toLocaleDateString(dateLocale), pageWidth - margin, y, { align: "right" });
     y += 20;
-    doc.setFontSize(9); doc.setTextColor(148, 163, 184); // Gray label
-    doc.text(txt.tourDate, col2X, y);
-    doc.setFontSize(10); doc.setTextColor(30, 41, 59); // Dark text
-    
-    if (langCode !== 'ja') doc.setFont("helvetica", "bold");
-    doc.text(new Date(orderRow.date || "").toLocaleDateString(dateLocale, { dateStyle: 'medium' }), pageWidth - margin, y, { align: "right" });
+    pdf.setFontSize(9);
+    pdf.setTextColor(148, 163, 184);
+    pdf.text(text.tourDate, rightColumnX, y);
+    pdf.setFontSize(10);
+    pdf.setTextColor(30, 41, 59);
+    pdf.text(new Date(row.date || row.created_at).toLocaleDateString(dateLocale), pageWidth - margin, y, { align: "right" });
 
-    y += 40;
-    const fmt = (n) => (Number(n || 0)).toLocaleString(dateLocale);
-    
-    const rowBody = (items?.length ? items : [{ 
-        item_name: orderRow.trip_name || "Tour Package", 
-        qty: orderRow.pax, 
-        price_idr: orderRow.total_idr/Math.max(1, orderRow.pax), 
-        total_idr: orderRow.total_idr 
-    }]).map(it => [
-        String(it.item_name || orderRow.trip_name || "-"), 
-        String(it.qty||1), 
-        fmt(it.price_idr), 
-        fmt(it.total_idr)
-    ]);
-
-// --- Table ---
-    autoTable(doc, {
-      startY: y,
-      head: [[txt.desc, txt.qty, `${txt.price} (IDR)`, `${txt.subtotal} (IDR)`]],
-      body: rowBody,
-      theme: 'plain',
-      styles: { 
-         fontSize: 10, 
-         cellPadding: 10, 
-         textColor: 50,
-         // Pastikan font Jepang dipakai di seluruh tabel
-         font: langCode === 'ja' ? 'NotoSansJP' : 'helvetica' 
-      },
-      headStyles: { 
-        fillColor: [248, 250, 252], 
-        textColor: 100, 
-        
-        // --- PERBAIKAN UTAMA DI SINI ---
-        // Jika Jepang, paksa 'normal' karena kita cuma punya font Regular.
-        // Jika Inggris/Indo, boleh 'bold'.
-        fontStyle: langCode === 'ja' ? 'normal' : 'bold', 
-        
-        lineColor: 230, 
-        lineWidth: { bottom: 1 },
-        // Pastikan font header juga diset
-        font: langCode === 'ja' ? 'NotoSansJP' : 'helvetica'
-      },
+    autoTable(pdf, {
+      startY: 220,
+      head: [[text.desc, text.qty, `${text.price} (IDR)`, `${text.subtotal} (IDR)`]],
+      body: items.map((item) => [
+        item.item_name,
+        String(item.qty || 1),
+        Number(item.price_idr || 0).toLocaleString(dateLocale),
+        Number(item.total_idr || 0).toLocaleString(dateLocale),
+      ]),
+      theme: "plain",
+      styles: { fontSize: 10, cellPadding: 10, textColor: 50, font: activeFont },
+      headStyles: { fillColor: [248, 250, 252], textColor: 100, fontStyle: "normal", lineColor: 230, lineWidth: { bottom: 1 }, font: activeFont },
       bodyStyles: { lineColor: 240, lineWidth: { bottom: 1 } },
       columnStyles: { 1: { halign: "center" }, 2: { halign: "right" }, 3: { halign: "right" } },
       margin: { left: margin, right: margin },
     });
 
-    let finalY = doc.lastAutoTable.finalY + 20;
-    doc.setFillColor(248, 250, 252);
-    
-    doc.roundedRect(pageWidth - margin - 320, finalY, 320, 40, 4, 4, "F");
-    
-    doc.setFontSize(10); 
-    if (langCode !== 'ja') doc.setFont("helvetica", "bold");
-    else doc.setFont(activeFont, "normal");
-    
-    doc.setTextColor(30, 41, 59); // Pastikan label total gelap
-    
-    doc.text(txt.total, pageWidth - margin - 300, finalY + 25);
-    
-    doc.setFontSize(14); doc.setTextColor(brandColor);
-    doc.text(`IDR ${fmt(orderRow.total_idr)}`, pageWidth - margin - 20, finalY + 25, { align: "right" });
+    const finalY = pdf.lastAutoTable.finalY + 20;
+    pdf.setFillColor(248, 250, 252);
+    pdf.roundedRect(pageWidth - margin - 320, finalY, 320, 40, 4, 4, "F");
+    pdf.setTextColor(30, 41, 59);
+    pdf.setFontSize(10);
+    pdf.text(text.total, pageWidth - margin - 300, finalY + 25);
+    pdf.setFontSize(14);
+    pdf.setTextColor(brandColor);
+    pdf.text(`IDR ${Number(row.total_idr || 0).toLocaleString(dateLocale)}`, pageWidth - margin - 20, finalY + 25, { align: "right" });
 
     const footerY = pageHeight - 60;
-    doc.setDrawColor(226, 232, 240); doc.line(margin, footerY, pageWidth - margin, footerY);
-    
-    if (langCode !== 'ja') doc.setFont("helvetica", "normal");
-    else doc.setFont(activeFont, "normal");
-
-    doc.setFontSize(9); doc.setTextColor(148, 163, 184); // Gray footer
-    doc.text(txt.footer1, pageWidth / 2, footerY + 20, { align: "center" });
-    doc.text(txt.contact, pageWidth / 2, footerY + 34, { align: "center" });
-    
-    return doc.output("blob");
+    pdf.setDrawColor(226, 232, 240);
+    pdf.line(margin, footerY, pageWidth - margin, footerY);
+    pdf.setFontSize(9);
+    pdf.setTextColor(148, 163, 184);
+    pdf.text(text.footer1, pageWidth / 2, footerY + 20, { align: "center" });
+    pdf.text(text.contact, pageWidth / 2, footerY + 34, { align: "center" });
+    return pdf.output("blob");
   };
 
-  const uploadInvoiceBlob = async (blob, orderRow, invoiceNo) => {
-    const path = `invoices/${invoiceNo.replace(/[^\w\-\/]/g, "_")}-${orderRow.id}.pdf`;
+  const uploadInvoiceBlob = async (blob, row, invoiceNo) => {
+    const path = `invoices/${invoiceNo.replace(/[^\w/-]/g, "_")}-${row.id}.pdf`;
     const { error } = await supabase.storage.from("assets").upload(path, blob, { cacheControl: "3600", upsert: true, contentType: "application/pdf" });
     if (error) throw error;
     const { data } = supabase.storage.from("assets").getPublicUrl(path);
     return data?.publicUrl;
   };
 
-  const ensureInvoiceExists = async (r) => {
-    const items = await fetchBookingItems(r.id);
-    const blob = await buildInvoicePdfBlob(r, items, "id");
-    const invoiceNo = makeInvoiceNo(r);
-    const url = await uploadInvoiceBlob(blob, r, invoiceNo);
-    
-    await supabase.from("bookings").update({ invoice_no: invoiceNo, invoice_pdf_url: url }).eq("id", r.id);
-    return { url, invoiceNo };
+  const ensureInvoiceExists = async (row) => {
+    const invoiceNo = makeInvoiceNo(row);
+    const blob = await buildInvoicePdfBlob(row, "id");
+    const url = await uploadInvoiceBlob(blob, row, invoiceNo);
+    const { error } = await supabase.from("bookings").update({ invoice_no: invoiceNo, invoice_pdf_url: url }).eq("id", row.id);
+    if (error) throw error;
+    return { invoiceNo, url };
   };
 
-  const saveRow = async (r) => {
-    setSavingId(r.id);
+  const saveRow = async (row) => {
+    setSavingId(row.id);
     try {
-      await supabase.from("bookings").update({ status: r.status }).eq("id", r.id);
-      if (r.status === "confirmed" && !r.invoice_pdf_url) {
-        await ensureInvoiceExists(r);
-      }
+      const { error } = await supabase.from("bookings").update({ status: row.status }).eq("id", row.id);
+      if (error) throw error;
+      if (row.status === "confirmed" && !row.invoice_pdf_url) await ensureInvoiceExists(row);
+      toast.success(copy.saveSuccess);
       await load();
-      alert(t("admin.orders.saved", { defaultValue: "Tersimpan" }));
-    } catch (e) { console.error(e); alert("Gagal menyimpan"); } 
-    finally { setSavingId(null); }
+    } catch (error) {
+      console.error(error);
+      toast.error(copy.saveFailed);
+    } finally {
+      setSavingId(null);
+    }
   };
 
-  const handleDownload = async (row, lang) => {
+  const handleDownload = async (row, invoiceLanguage) => {
     setDownloadingId(row.id);
     try {
-      let invNo = row.invoice_no;
-      if (!invNo && row.status === 'confirmed') {
-         const res = await ensureInvoiceExists(row);
-         invNo = res.invoiceNo;
-      }
-      if (!invNo) invNo = makeInvoiceNo(row);
-      const items = await fetchBookingItems(row.id);
-      const blob = await buildInvoicePdfBlob(row, items, lang);
+      if (!row.invoice_no && row.status === "confirmed") await ensureInvoiceExists(row);
+      const blob = await buildInvoicePdfBlob(row, invoiceLanguage);
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Invoice-${invNo}-${lang.toUpperCase()}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `Invoice-${makeInvoiceNo(row)}-${invoiceLanguage.toUpperCase()}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
       URL.revokeObjectURL(url);
-    } catch (e) { console.error(e); alert("Gagal download invoice"); } 
-    finally { setDownloadingId(null); }
+    } catch (error) {
+      console.error(error);
+      toast.error(copy.downloadFailed);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const bulkConfirm = async () => {
+    if (selected.size === 0) return;
+    setBulkAction("confirmed");
+    try {
+      const ids = Array.from(selected);
+      const { error } = await supabase.from("bookings").update({ status: "confirmed" }).in("id", ids);
+      if (error) throw error;
+      for (const row of rows.filter((item) => ids.includes(item.id) && !item.invoice_pdf_url)) {
+        await ensureInvoiceExists({ ...row, status: "confirmed" });
+      }
+      toast.success(copy.bulkConfirmed);
+      await load();
+    } catch (error) {
+      console.error(error);
+      toast.error(copy.saveFailed);
+    } finally {
+      setBulkAction("");
+    }
+  };
+
+  const bulkCancel = async () => {
+    if (selected.size === 0) return;
+    setBulkAction("cancelled");
+    try {
+      const ids = Array.from(selected);
+      const { error } = await supabase.from("bookings").update({ status: "cancelled" }).in("id", ids);
+      if (error) throw error;
+      toast.success(copy.bulkCancelled);
+      await load();
+    } catch (error) {
+      console.error(error);
+      toast.error(copy.saveFailed);
+    } finally {
+      setBulkAction("");
+    }
+  };
+
+  const exportCsv = () => {
+    const source = processed.filter((row) => selected.size === 0 || selected.has(row.id));
+    if (source.length === 0) {
+      toast.error(copy.exportEmpty);
+      return;
+    }
+    const header = [copy.bookingCode, copy.date, copy.customer, copy.package, copy.audience, copy.pax, copy.total, copy.status, copy.invoiceNumber];
+    const lines = source.map((row) => [row.public_code || "", row.date || row.created_at || "", row.name || "", row.trip_name || "", getAudienceLabel(row.audience), row.pax || "", row.total_idr || 0, getStatusLabel(row.status), makeInvoiceNo(row)]);
+    const csv = [header, ...lines].map((line) => line.map(escapeCsvValue).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "orders.csv";
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+    toast.success(copy.exportReady);
   };
 
   const InvoiceDropdown = ({ row }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const [open, setOpen] = useState(false);
     const ref = useRef(null);
+
     useEffect(() => {
-      const fn = (e) => { if (ref.current && !ref.current.contains(e.target)) setIsOpen(false); };
-      document.addEventListener('mousedown', fn);
-      return () => document.removeEventListener('mousedown', fn);
+      const handleClick = (event) => {
+        if (ref.current && !ref.current.contains(event.target)) setOpen(false);
+      };
+      document.addEventListener("mousedown", handleClick);
+      return () => document.removeEventListener("mousedown", handleClick);
     }, []);
 
-    if (row.status !== 'confirmed') return <span className="text-xs text-slate-400 italic">Confirm first</span>;
+    if (row.status !== "confirmed") {
+      return <span className="text-xs italic text-slate-400">{copy.confirmFirst}</span>;
+    }
 
     return (
       <div className="relative" ref={ref}>
-        <button 
-          onClick={() => setIsOpen(!isOpen)} 
-          className="btn btn-outline !py-1.5 !px-3 inline-flex items-center gap-2 text-sm"
-          disabled={downloadingId === row.id}
-        >
-           {downloadingId === row.id ? <Loader2 className="animate-spin" size={16}/> : <FileDown size={16}/>}
-           <span>Download</span>
-           <ChevronDown size={14}/>
+        <button type="button" onClick={() => setOpen((current) => !current)} className="btn btn-outline inline-flex items-center gap-2 !px-3 !py-1.5 text-sm" disabled={downloadingId === row.id}>
+          {downloadingId === row.id ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />}
+          <span>{copy.download}</span>
+          <ChevronDown size={14} />
         </button>
-        {isOpen && (
-          <div className="absolute right-0 mt-1 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
-            <div className="px-3 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-800">
-              Pilih Bahasa
-            </div>
-            <button onClick={() => { handleDownload(row, 'id'); setIsOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 text-sm">
-              <ReactCountryFlag countryCode="ID" svg /> Indonesia
+        {open ? (
+          <div className="absolute right-0 z-50 mt-1 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+            <div className="bg-slate-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:bg-slate-800">{copy.chooseLanguage}</div>
+            <button type="button" onClick={() => { handleDownload(row, "id"); setOpen(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
+              <ReactCountryFlag countryCode="ID" svg />
+              {copy.languageIndonesia}
             </button>
-            <button onClick={() => { handleDownload(row, 'en'); setIsOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 text-sm">
-              <ReactCountryFlag countryCode="US" svg /> English
+            <button type="button" onClick={() => { handleDownload(row, "en"); setOpen(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
+              <ReactCountryFlag countryCode="US" svg />
+              {copy.languageEnglish}
             </button>
-            <button onClick={() => { handleDownload(row, 'ja'); setIsOpen(false); }} className="w-full text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 text-sm">
-              <ReactCountryFlag countryCode="JP" svg /> Japan
+            <button type="button" onClick={() => { handleDownload(row, "ja"); setOpen(false); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-slate-50 dark:hover:bg-slate-800">
+              <ReactCountryFlag countryCode="JP" svg />
+              {copy.languageJapanese}
             </button>
           </div>
-        )}
+        ) : null}
       </div>
-    )
-  }
-
-  const bulkConfirm = async () => {
-    if (selected.size===0) return;
-    const ids = Array.from(selected);
-    await supabase.from("bookings").update({ status: "confirmed" }).in("id", ids);
-    const target = rows.filter(r => ids.includes(r.id) && !r.invoice_pdf_url);
-    for(const r of target) await ensureInvoiceExists({ ...r, status: 'confirmed' });
-    await load();
-  };
-  const bulkCancel = async () => {
-    if (selected.size===0) return;
-    const ids = Array.from(selected);
-    await supabase.from("bookings").update({ status: "cancelled" }).in("id", ids);
-    await load();
-  };
-  const exportCsv = () => {
-     const header = ["Date", "Invoice", "Name", "Trip", "Total", "Status"];
-     const src = rows.filter(r => selected.size===0 || selected.has(r.id));
-     const lines = src.map(r => [r.created_at, r.invoice_no||'', r.name, r.trip_name, r.total_idr, r.status]);
-     const csv = [header, ...lines].map(r => r.join(",")).join("\n");
-     const url = URL.createObjectURL(new Blob([csv], {type: "text/csv"}));
-     const a = document.createElement('a'); a.href=url; a.download="orders.csv"; a.click();
+    );
   };
 
   return (
     <div className="container mt-3 space-y-4">
-      <div className="sticky top-16 z-[5]">
-        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 py-2 glass shadow-smooth">
-           <div className="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <div className="glass rounded-2xl border border-slate-200/60 px-3 py-3 shadow-smooth backdrop-blur-md dark:border-slate-800/60 sm:px-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold">{t("admin.orders.title", { defaultValue: "Orderan" })}</h1>
-                <span className="text-xs px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800">{rows.length}</span>
+                <h1 className="text-lg font-bold text-slate-900 dark:text-white sm:text-xl">{copy.totalOrders}</h1>
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-200">{rows.length}</span>
               </div>
-              <div className="flex items-center gap-2">
-                 <button className="btn btn-outline !py-1.5 !px-3" onClick={load}><RotateCcw size={16}/></button>
-                 <button className="btn btn-outline !py-1.5 !px-3" onClick={exportCsv}><Download size={16}/></button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" className="btn btn-outline !px-3 !py-1.5" onClick={load}>
+                  <RotateCcw size={16} />
+                  <span>{copy.refresh}</span>
+                </button>
+                <button type="button" className="btn btn-outline !px-3 !py-1.5" onClick={exportCsv}>
+                  <Download size={16} />
+                  <span>{copy.exportCsv}</span>
+                </button>
               </div>
-           </div>
-           <div className="grid grid-cols-1 lg:grid-cols-5 gap-2 mt-2">
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 lg:grid-cols-5">
               <div className="relative lg:col-span-2">
-                 <input value={q} onChange={e => setQ(e.target.value)} placeholder={columnLabel.search} className="w-full pl-9 pr-3 py-2 rounded-2xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"/>
-                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"/>
+                <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.search} className="w-full rounded-2xl border border-slate-200 bg-white py-2 pl-10 pr-3 dark:border-slate-700 dark:bg-slate-900" />
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               </div>
-              <div className="flex items-center gap-2">
-                 <Filter size={16} className="text-slate-500"/>
-                 <select className="px-3 py-2 rounded-2xl border w-full bg-white dark:bg-slate-900" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                    <option value="">{columnLabel.allStatus}</option>
-                    {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                 </select>
+              <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 dark:border-slate-700 dark:bg-slate-900">
+                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="w-full bg-transparent py-2 outline-none">
+                  <option value="">{copy.allStatus}</option>
+                  {STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {getStatusLabel(status)}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <DatePicker label="Start" value={dateFrom} onChange={setDateFrom} />
-              <DatePicker label="End" value={dateTo} onChange={setDateTo} />
-           </div>
-           <div className="flex items-center justify-between mt-2">
-              <div className="flex gap-2">
-                 <button className="btn btn-outline !py-1 !px-3" onClick={() => { setQ(""); setStatusFilter(""); }}>Reset</button>
-                 <button className="btn btn-outline !py-1 !px-3" onClick={bulkConfirm} disabled={selected.size===0}><CheckCircle2 size={16}/> Confirm</button>
-                 <button className="btn btn-outline !py-1 !px-3" onClick={bulkCancel} disabled={selected.size===0}><XCircle size={16}/> Cancel</button>
+              <DatePicker copy={copy} label={copy.from} value={dateFrom} onChange={setDateFrom} />
+              <DatePicker copy={copy} label={copy.to} value={dateTo} onChange={setDateTo} />
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button type="button" className="btn btn-outline !px-3 !py-1.5" onClick={() => { setQuery(""); setStatusFilter(""); setDateFrom(""); setDateTo(""); }}>
+                  {copy.reset}
+                </button>
+                <button type="button" className="btn btn-outline !px-3 !py-1.5" onClick={bulkConfirm} disabled={selected.size === 0 || bulkAction === "confirmed"}>
+                  {bulkAction === "confirmed" ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                  <span>{copy.confirmSelected}</span>
+                </button>
+                <button type="button" className="btn btn-outline !px-3 !py-1.5" onClick={bulkCancel} disabled={selected.size === 0 || bulkAction === "cancelled"}>
+                  {bulkAction === "cancelled" ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />}
+                  <span>{copy.cancelSelected}</span>
+                </button>
               </div>
-           </div>
+              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                <span>{copy.showRows}</span>
+                <select value={pageSize} onChange={(event) => setPageSize(Number(event.target.value))} className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+                  {[10, 20, 50].map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="card">
-        <div className="overflow-auto max-h-[70vh]">
-          {loading ? <div className="p-10 text-center text-slate-500">Loading...</div> : (
-            <table className="min-w-full table-fixed text-sm border-collapse [&_th]:text-xs [&_th]:uppercase [&_th]:font-semibold [&_th]:text-slate-700 dark:[&_th]:text-slate-200 [&_td]:align-top [&_th]:border-b [&_td]:border-b border-slate-200 dark:border-slate-800">
-              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/90 backdrop-blur">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <StatCard icon={Package2} label={copy.totalOrders} value={stats.total} tone="slate" />
+        <StatCard icon={CircleAlert} label={copy.pendingOrders} value={stats.pending} tone="amber" />
+        <StatCard icon={BadgeCheck} label={copy.confirmedOrders} value={stats.confirmed} tone="emerald" />
+        <StatCard icon={Users} label={copy.selectedOrders} value={stats.selected} tone="sky" />
+        <StatCard icon={CalendarDays} label={copy.confirmedRevenue} value={`IDR ${formatCurrency(stats.revenue)}`} tone="rose" />
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        {loading ? (
+          <div className="card p-10 text-center text-slate-500">{copy.loading}</div>
+        ) : pageRows.length === 0 ? (
+          <div className="card p-10 text-center text-slate-500">{copy.noData}</div>
+        ) : (
+          pageRows.map((row) => (
+            <div key={row.id} className="card space-y-3 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <button type="button" className="rounded-lg border border-slate-200 p-2 dark:border-slate-700" onClick={() => toggleSelect(row.id)}>
+                  {selected.has(row.id) ? <CheckSquare size={16} /> : <Square size={16} />}
+                </button>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs text-slate-500">{row.public_code || row.id.slice(0, 8)}</div>
+                  <div className="font-semibold text-slate-900 dark:text-white">{row.name}</div>
+                  <div className="mt-1 text-xs text-slate-500">{row.trip_name}</div>
+                </div>
+                <span className={`rounded-full px-2 py-1 text-xs font-medium ${statusTone(row.status)}`}>{getStatusLabel(row.status)}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/70">
+                  <div className="text-xs text-slate-500">{copy.date}</div>
+                  <div className="mt-1 font-medium">{formatDateTime(row.date || row.created_at)}</div>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/70">
+                  <div className="text-xs text-slate-500">{copy.total}</div>
+                  <div className="mt-1 font-medium">IDR {formatCurrency(row.total_idr)}</div>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/70">
+                  <div className="text-xs text-slate-500">{copy.pax}</div>
+                  <div className="mt-1 font-medium">{row.pax}</div>
+                </div>
+                <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-800/70">
+                  <div className="text-xs text-slate-500">{copy.audience}</div>
+                  <div className="mt-1 font-medium">{getAudienceLabel(row.audience)}</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <select value={row.status} onChange={(event) => setRowField(row.id, { status: event.target.value })} className={`w-full rounded-xl px-3 py-2 text-sm font-medium ${statusTone(row.status)}`}>
+                  {STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {getStatusLabel(status)}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" className="btn btn-primary !px-3 !py-2" onClick={() => saveRow(row)} disabled={savingId === row.id}>
+                  {savingId === row.id ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <button type="button" className="btn btn-outline !px-3 !py-1.5" onClick={() => setDetailId(row.id)}>
+                  <Eye size={16} />
+                  <span>{copy.details}</span>
+                </button>
+                <InvoiceDropdown row={row} />
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="card hidden md:block">
+        <div className="max-h-[70vh] overflow-auto">
+          {loading ? (
+            <div className="p-10 text-center text-slate-500">{copy.loading}</div>
+          ) : (
+            <table className="min-w-full table-fixed border-collapse text-sm [&_td]:align-top [&_td]:border-b [&_th]:border-b [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase border-slate-200 dark:border-slate-800">
+              <thead className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur dark:bg-slate-800/95">
                 <tr>
-                  <th className="p-3 w-10"><button onClick={toggleSelectAllCurrent}>{pageRows.every(r => selected.has(r.id)) ? <CheckSquare size={16}/> : <Square size={16}/>}</button></th>
-                  <th className="p-3 w-28" onClick={() => { setSortBy('created_at'); setSortDir(d=>d==='asc'?'desc':'asc'); }}>Date <ArrowUpDown size={12} className="inline"/></th>
-                  <th className="p-3">Name / Contact</th>
-                  <th className="p-3 w-24">Pax</th>
-                  <th className="p-3 w-32">Total</th>
-                  <th className="p-3 w-32">Status</th>
-                  <th className="p-3 w-40 text-center">Invoice</th>
-                  <th className="p-3 w-24 text-right">Action</th>
+                  <th className="w-12 p-3 text-left">
+                    <button type="button" onClick={toggleSelectAllCurrent}>
+                      {currentPageAllSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+                    </button>
+                  </th>
+                  <th className="w-36 cursor-pointer p-3 text-left text-slate-700 dark:text-slate-200" onClick={() => { setSortBy("created_at"); setSortDir((current) => (current === "asc" ? "desc" : "asc")); }}>
+                    {copy.date} <ArrowUpDown size={12} className="inline" />
+                  </th>
+                  <th className="p-3 text-left text-slate-700 dark:text-slate-200">{copy.customer}</th>
+                  <th className="w-20 p-3 text-left text-slate-700 dark:text-slate-200">{copy.pax}</th>
+                  <th className="w-36 cursor-pointer p-3 text-left text-slate-700 dark:text-slate-200" onClick={() => { setSortBy("total_idr"); setSortDir((current) => (current === "asc" ? "desc" : "asc")); }}>
+                    {copy.total} <ArrowUpDown size={12} className="inline" />
+                  </th>
+                  <th className="w-36 p-3 text-left text-slate-700 dark:text-slate-200">{copy.status}</th>
+                  <th className="w-44 p-3 text-center text-slate-700 dark:text-slate-200">{copy.invoice}</th>
+                  <th className="w-40 p-3 text-right text-slate-700 dark:text-slate-200">{copy.actions}</th>
                 </tr>
               </thead>
               <tbody>
-                {pageRows.map(r => (
-                  <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="p-3"><button onClick={() => toggleSelect(r.id)}>{selected.has(r.id) ? <CheckSquare size={16}/> : <Square size={16}/>}</button></td>
-                    <td className="p-3">
-                      <div className="font-medium">{new Date(r.created_at).toLocaleDateString()}</div>
-                      <div className="text-xs text-slate-500">{new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                {pageRows.map((row) => (
+                  <tr key={row.id} className="cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50" onClick={() => setDetailId(row.id)}>
+                    <td className="p-3" onClick={(event) => event.stopPropagation()}>
+                      <button type="button" onClick={() => toggleSelect(row.id)}>
+                        {selected.has(row.id) ? <CheckSquare size={16} /> : <Square size={16} />}
+                      </button>
                     </td>
                     <td className="p-3">
-                      <div className="font-medium text-slate-900 dark:text-white">{r.name}</div>
-                      <div className="text-xs text-slate-500">{r.email} • {r.phone}</div>
-                      <div className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded inline-block mt-1 truncate max-w-[150px] text-sky-700 dark:text-sky-300">
-                        {r.trip_name}
+                      <div className="font-medium">{formatDateTime(row.date || row.created_at)}</div>
+                      <div className="text-xs text-slate-500">{formatDateTime(row.created_at, true)}</div>
+                    </td>
+                    <td className="p-3">
+                      <div className="font-medium text-slate-900 dark:text-white">{row.name}</div>
+                      <div className="text-xs text-slate-500">
+                        {row.email || copy.noEmail}
+                        {row.phone ? ` - ${row.phone}` : ""}
+                      </div>
+                      <div className="mt-2 inline-flex max-w-[220px] rounded-full bg-slate-100 px-2 py-1 text-[11px] text-sky-700 dark:bg-slate-800 dark:text-sky-300">
+                        {row.trip_name}
                       </div>
                     </td>
-                    <td className="p-3">{r.pax}</td>
-                    <td className="p-3 font-medium">{fmtIDR(r.total_idr)}</td>
-                    <td className="p-3">
-                       <div className="flex items-center gap-2">
-                          <select 
-                            className={`text-xs px-2 py-1 rounded-lg border-none outline-none cursor-pointer font-medium ${
-                              r.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' : 
-                              r.status === 'cancelled' ? 'bg-rose-100 text-rose-700' : 
-                              'bg-amber-100 text-amber-700'
-                            }`}
-                            value={r.status}
-                            onChange={(e) => setRowField(r.id, { status: e.target.value })}
-                          >
-                            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-                          </select>
-                       </div>
+                    <td className="p-3">{row.pax}</td>
+                    <td className="p-3 font-medium">IDR {formatCurrency(row.total_idr)}</td>
+                    <td className="p-3" onClick={(event) => event.stopPropagation()}>
+                      <select className={`w-full rounded-xl px-3 py-2 text-xs font-medium ${statusTone(row.status)}`} value={row.status} onChange={(event) => setRowField(row.id, { status: event.target.value })}>
+                        {STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>
+                            {getStatusLabel(status)}
+                          </option>
+                        ))}
+                      </select>
                     </td>
-                    
-                    <td className="p-3 text-center">
-                       <InvoiceDropdown row={r} />
-                       {r.invoice_no && <div className="text-[10px] text-slate-400 mt-1 font-mono">{r.invoice_no}</div>}
+                    <td className="p-3 text-center" onClick={(event) => event.stopPropagation()}>
+                      <InvoiceDropdown row={row} />
+                      <div className="mt-1 text-[10px] font-mono text-slate-400">{row.invoice_no || makeInvoiceNo(row)}</div>
                     </td>
-
-                    <td className="p-3 text-right">
-                       <button 
-                         className="btn btn-primary !py-1.5 !px-3" 
-                         onClick={() => saveRow(r)} 
-                         disabled={savingId === r.id}
-                       >
-                         {savingId === r.id ? <Loader2 className="animate-spin" size={16}/> : <Save size={16}/>}
-                       </button>
+                    <td className="p-3" onClick={(event) => event.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-2">
+                        <button type="button" className="btn btn-outline !px-3 !py-1.5" onClick={() => setDetailId(row.id)}>
+                          <Eye size={16} />
+                        </button>
+                        <button type="button" className="btn btn-primary !px-3 !py-1.5" onClick={() => saveRow(row)} disabled={savingId === row.id}>
+                          {savingId === row.id ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
-                {processed.length === 0 && <tr><td colSpan={8} className="p-8 text-center text-slate-500">No data found.</td></tr>}
+                {pageRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="p-10 text-center text-slate-500">
+                      {copy.noData}
+                    </td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           )}
         </div>
       </div>
-      
-      <div className="flex items-center justify-between text-sm">
-         <div>Show {pageSize} rows</div>
-         <div className="flex gap-2">
-            <button className="btn btn-outline !px-2" onClick={() => setPage(p => Math.max(1, p-1))} disabled={page===1}>Prev</button>
-            <span>{page} / {totalPages}</span>
-            <button className="btn btn-outline !px-2" onClick={() => setPage(p => Math.min(totalPages, p+1))} disabled={page===totalPages}>Next</button>
-         </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <div className="text-slate-500 dark:text-slate-400">
+          {copy.pageSummary.replace("{{page}}", String(page)).replace("{{total}}", String(totalPages))}
+        </div>
+        <div className="flex items-center gap-2">
+          <button type="button" className="btn btn-outline !px-3 !py-1.5" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1}>
+            {copy.prev}
+          </button>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs dark:bg-slate-800">
+            {page} / {totalPages}
+          </span>
+          <button type="button" className="btn btn-outline !px-3 !py-1.5" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page === totalPages}>
+            {copy.next}
+          </button>
+        </div>
       </div>
+
+      {detailRow ? (
+        <div className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm" onClick={() => setDetailId(null)}>
+          <aside className="absolute right-0 top-0 h-full w-full max-w-lg overflow-y-auto border-l border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{copy.details}</div>
+                <h2 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{detailRow.name}</h2>
+                <div className="mt-1 text-sm text-slate-500">{detailRow.trip_name}</div>
+              </div>
+              <button type="button" className="rounded-xl border border-slate-200 p-2 dark:border-slate-700" onClick={() => setDetailId(null)}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-900">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <Hash size={14} />
+                  {copy.bookingCode}
+                </div>
+                <div className="mt-2 font-semibold">{detailRow.public_code || detailRow.id}</div>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-900">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <FileDown size={14} />
+                  {copy.invoiceNumber}
+                </div>
+                <div className="mt-2 font-semibold">{makeInvoiceNo(detailRow)}</div>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-900">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <CalendarDays size={14} />
+                  {copy.createdAt}
+                </div>
+                <div className="mt-2 font-semibold">{formatDateTime(detailRow.created_at, true)}</div>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-3 dark:bg-slate-900">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <CalendarDays size={14} />
+                  {copy.tourDate}
+                </div>
+                <div className="mt-2 font-semibold">{formatDateTime(detailRow.date || detailRow.created_at)}</div>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-3xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="text-sm font-semibold text-slate-900 dark:text-white">{copy.customerInfo}</div>
+              <div className="mt-3 space-y-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <Mail size={16} className="mt-0.5 text-slate-400" />
+                  <div>{detailRow.email || copy.noEmail}</div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Phone size={16} className="mt-0.5 text-slate-400" />
+                  <div>{detailRow.phone || copy.noPhone}</div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Users size={16} className="mt-0.5 text-slate-400" />
+                  <div>
+                    {copy.pax}: {detailRow.pax} · {copy.audience}: {getAudienceLabel(detailRow.audience)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-3xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="text-sm font-semibold text-slate-900 dark:text-white">{copy.lineItems}</div>
+              <div className="mt-3 space-y-3">
+                {detailRow.items.map((item) => (
+                  <div key={item.id} className="rounded-2xl bg-slate-50 p-3 text-sm dark:bg-slate-900">
+                    <div className="font-medium text-slate-900 dark:text-white">{item.item_name}</div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {copy.qty}: {item.qty} · {copy.unitPrice}: IDR {formatCurrency(item.price_idr)}
+                    </div>
+                    <div className="mt-2 font-semibold">IDR {formatCurrency(item.total_idr)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-3xl border border-slate-200 p-4 dark:border-slate-800">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white">{copy.status}</div>
+                  <div className="mt-1 text-xs text-slate-500">{copy.notes}</div>
+                </div>
+                <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusTone(detailRow.status)}`}>{getStatusLabel(detailRow.status)}</span>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-3 text-sm dark:bg-slate-900">{detailRow.notes || copy.noNotes}</div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between rounded-3xl border border-slate-200 p-4 dark:border-slate-800">
+              <div>
+                <div className="text-xs uppercase tracking-[0.2em] text-slate-500">{copy.total}</div>
+                <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">IDR {formatCurrency(detailRow.total_idr)}</div>
+              </div>
+              <InvoiceDropdown row={detailRow} />
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button type="button" className="btn btn-outline !px-3 !py-2" onClick={() => setDetailId(null)}>
+                {copy.close}
+              </button>
+              <button type="button" className="btn btn-primary !px-3 !py-2" onClick={() => saveRow(detailRow)} disabled={savingId === detailRow.id}>
+                {savingId === detailRow.id ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                <span>{savingId === detailRow.id ? copy.saving : copy.save}</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+      ) : null}
     </div>
   );
 }

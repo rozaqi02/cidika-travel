@@ -1,5 +1,5 @@
 // src/hooks/usePackages.js
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabaseClient.js";
 
@@ -11,17 +11,17 @@ export default function usePackages({ live = true } = {}) {
   const [loading, setLoad] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoad(true);
     setError(null);
 
-const { data, error } = await supabase
-  .from("packages")
-  .select(`
-    id, slug, is_active, default_image, created_at, destination_key, trip_type, 
-    price_tiers ( pax, price_idr, audience ),
-    locales:package_locales ( lang, title, summary, spots, itinerary, include, note )
-    `)
+    const { data, error } = await supabase
+      .from("packages")
+      .select(`
+        id, slug, is_active, default_image, created_at, destination_key, trip_type,
+        price_tiers ( pax, price_idr, audience ),
+        locales:package_locales ( lang, title, summary, spots, itinerary, include, note )
+      `)
       .eq("is_active", true)
       .order("created_at", { ascending: true });
 
@@ -65,12 +65,11 @@ const { data, error } = await supabase
 
     setRows(mapped);
     setLoad(false);
-  };
+  }, [lang]);
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang]);
+  }, [fetchData]);
 
   useEffect(() => {
     if (!live) return;
@@ -81,7 +80,7 @@ const { data, error } = await supabase
       .on("postgres_changes", { event: "*", schema: "public", table: "package_locales" }, fetchData)
       .subscribe();
     return () => supabase.removeChannel(ch);
-  }, [live]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [fetchData, live]);
 
   return { rows, loading, error, refetch: fetchData };
 }

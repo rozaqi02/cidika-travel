@@ -1,5 +1,5 @@
 // src/components/Navbar.jsx
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom"; // Tambah useNavigate
 import { useTheme } from "../context/ThemeContext";
 import { Moon, Sun, LogOut, UserRound, ChevronDown, X, Home, Compass, Map, HelpCircle, Phone, LayoutDashboard, ShoppingBag, PenTool } from "lucide-react";
@@ -13,7 +13,7 @@ import ReactCountryFlag from "react-country-flag";
 const LANGS = [
   { code: "en", label: "English", country: "US" },
   { code: "id", label: "Indonesia", country: "ID" },
-  { code: "ja", label: "日本語", country: "JP" },
+  { code: "ja", label: "\u65e5\u672c\u8a9e", country: "JP" },
 ];
 
 /* ====== ICONS MAP FOR MOBILE ====== */
@@ -75,7 +75,7 @@ function cx(...x) {
 /* ====== COMPONENT ====== */
 export default function Navbar() {
   const { theme, setTheme } = useTheme();
-  const reduced = usePrefersReducedMotion();
+  usePrefersReducedMotion();
   const { atTop, show } = useHideOnScroll();
   
   // Hooks Navigasi
@@ -290,7 +290,7 @@ export default function Navbar() {
                       whileTap={{ scale: 0.9 }}
                       onClick={handleLogout} 
                       className="p-2 rounded-full text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" 
-                      title="Logout"
+                      title={t("nav.logout", { defaultValue: "Logout" })}
                    >
                       <LogOut size={18} />
                    </motion.button>
@@ -347,7 +347,7 @@ export default function Navbar() {
             >
               {/* Sidebar Header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-800/50">
-                <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">Menu</span>
+                <span className="text-xs font-bold tracking-widest text-slate-400 uppercase">{t("nav.menu", { defaultValue: "Menu" })}</span>
                 <motion.button 
                   whileTap={{ scale: 0.9 }}
                   onClick={() => setOpen(false)}
@@ -385,7 +385,7 @@ export default function Navbar() {
               <div className="p-6 border-t border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-950/30 space-y-4">
                 {/* Theme Switcher */}
                 <div className="flex items-center justify-between px-2">
-                   <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Appearance</span>
+                   <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("nav.appearance", { defaultValue: "Appearance" })}</span>
                    <div className="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-lg">
                       <button 
                         onClick={() => setTheme('light')} 
@@ -426,14 +426,14 @@ export default function Navbar() {
                     onClick={handleLogout}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors text-sm font-semibold"
                   >
-                    <LogOut size={16}/> Logout
+                    <LogOut size={16}/> {t("nav.logout", { defaultValue: "Logout" })}
                   </button>
                 ) : (
                   <Link 
                     to="/admin/login"
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 transition-opacity text-sm font-bold"
                   >
-                    <UserRound size={16}/> Login
+                    <UserRound size={16}/> {t("nav.login", { defaultValue: "Login" })}
                   </Link>
                 )}
               </div>

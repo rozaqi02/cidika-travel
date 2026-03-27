@@ -47,7 +47,7 @@ function CustomScrollRestoration() {
   const location = useLocation();
   const navType = useNavigationType();
   useEffect(() => {
-    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    if ("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
     if (navType === 'POP') {
       const saved = sessionStorage.getItem(`scroll-${location.key}`);
       if (saved) {

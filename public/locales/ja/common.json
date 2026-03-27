@@ -52,10 +52,22 @@
     "whyTitle": "選ばれる理由",
     "whySubtitle": "安心して楽しめるポイント。",
     "whyItems": [
-      { "title": "公認・経験豊富なオペレーター", "text": "ローカルチームがベストスポットとタイミングを熟知。" },
-      { "title": "誰でも楽しめる", "text": "一人旅・カップル・家族・会社旅行。" },
-      { "title": "柔軟なスケジュール", "text": "プライベートチャーター／オープントリップ。" },
-      { "title": "最適化された行程", "text": "効率的でもベストな瞬間を逃しません。" }
+      {
+        "title": "公認・経験豊富なオペレーター",
+        "text": "ローカルチームがベストスポットとタイミングを熟知。"
+      },
+      {
+        "title": "誰でも楽しめる",
+        "text": "一人旅・カップル・家族・会社旅行。"
+      },
+      {
+        "title": "柔軟なスケジュール",
+        "text": "プライベートチャーター／オープントリップ。"
+      },
+      {
+        "title": "最適化された行程",
+        "text": "効率的でもベストな瞬間を逃しません。"
+      }
     ],
     "stats": {
       "travelers": "満足した旅行者",
@@ -65,10 +77,22 @@
     "howTitle": "ご利用の流れ",
     "howSubtitle": "ログイン不要で簡単・スピーディー。",
     "how": [
-      { "title": "プランを選ぶ", "text": "比較して人数を設定。" },
-      { "title": "問い合わせ", "text": "WhatsAppをタップ—すぐ返信します。" },
-      { "title": "日程を決める", "text": "日付と集合場所を決定。" },
-      { "title": "出発！", "text": "あとは楽しむだけ。" }
+      {
+        "title": "プランを選ぶ",
+        "text": "比較して人数を設定。"
+      },
+      {
+        "title": "問い合わせ",
+        "text": "WhatsAppをタップ—すぐ返信します。"
+      },
+      {
+        "title": "日程を決める",
+        "text": "日付と集合場所を決定。"
+      },
+      {
+        "title": "出発！",
+        "text": "あとは楽しむだけ。"
+      }
     ],
     "testimonialsTitle": "お客様の声",
     "helpCTA": "お困りですか？WhatsAppで相談",
@@ -80,7 +104,11 @@
     "submitTestimonial": "あなたの体験をシェア",
     "namePlaceholder": "お名前を入力",
     "cityPlaceholder": "都市（任意）",
-    "testimonialPlaceholder": "冒険について教えてください..."
+    "testimonialPlaceholder": "冒険について教えてください...",
+    "destinationBadge": "???",
+    "testimonialRequired": "??????????????????",
+    "testimonialSubmitted": "???????????????????????",
+    "testimonialFailed": "???????????????"
   },
   "explore": {
     "title": "パッケージ一覧",
@@ -112,11 +140,13 @@
     "pricingTable": "料金詳細",
     "pricePerPax": "人数別料金",
     "totalPrice": "合計",
-    "recommended": "おすすめのツアー"
+    "recommended": "おすすめのツアー",
+    "resultsCount": "{{count}} ?????????????",
+    "emptyHint": "??????????????????????"
   },
   "actions": {
-    "order": "注文する",
-    "askMore": "詳しく質問する"
+    "order": "?????",
+    "askMore": "?????????"
   },
   "faq": {
     "title": "よくある質問",
@@ -124,9 +154,18 @@
     "search": "質問を検索…",
     "noResults": "検索に該当する質問がありません。",
     "list": [
-      { "q": "予約方法は？", "a": "パッケージをカートに追加してチェックアウト、または直接ご連絡ください。" },
-      { "q": "プライベートツアーですか？", "a": "はい、すべてプライベート（相乗りなし）です。" },
-      { "q": "行程のカスタムは可能？", "a": "可能です。ご希望をお問い合わせ時にお知らせください。" }
+      {
+        "q": "予約方法は？",
+        "a": "パッケージをカートに追加してチェックアウト、または直接ご連絡ください。"
+      },
+      {
+        "q": "プライベートツアーですか？",
+        "a": "はい、すべてプライベート（相乗りなし）です。"
+      },
+      {
+        "q": "行程のカスタムは可能？",
+        "a": "可能です。ご希望をお問い合わせ時にお知らせください。"
+      }
     ]
   },
   "dest": {
@@ -195,7 +234,7 @@
       "items": "内容:",
       "total": "合計",
       "code": "コード",
-      "footer": "ご確認をお願いします 🙏"
+      "footer": "??????????????"
     },
     "success": {
       "title": "ご注文を受け付けました！",
@@ -208,28 +247,35 @@
       "mustConfirmHint": "先に「管理者に確認する」をタップ",
       "confirmNote": "確認：上記内容で問題ありません。手配をお願いします。🙏",
       "fallback": "WhatsAppが使えない場合、このメッセージをコピーして手動で管理者にお送りください。"
-    }
+    },
+    "secureTitle": "??????????",
+    "ticketInfo": "????? e ?????????????????",
+    "paymentMethod": "?????",
+    "secureDesc": "WhatsApp ???????????",
+    "itemUnit": "?",
+    "subtotal": "??",
+    "singlePackageOnly": "??????????????? 1 ????????????"
   },
   "footer": {
     "cta": {
-      "kicker": "準備はいい？",
-      "title": "ヌサ・ペニダの旅、手配は私たちにお任せ。",
-      "whatsapp": "WhatsAppで相談",
-      "contact": "お問い合わせ"
+      "kicker": "?????OK?",
+      "title": "?????????????????????????????????",
+      "whatsapp": "WhatsApp???",
+      "contact": "??????"
     },
     "brand": {
-      "tagline": "ヌサ・ペニダ島ツアー＆シュノーケリング。プライベート対応、柔軟な行程、経験豊富なローカルチーム。"
+      "tagline": "????????????????????????????????????????????????????????"
     },
     "links": {
-      "title": "メニュー",
-      "packages": "料金とプラン",
-      "destinations": "人気スポット",
+      "title": "??",
+      "packages": "??????",
+      "destinations": "??????",
       "faq": "FAQ",
-      "contact": "お問い合わせ"
+      "contact": "??????"
     },
     "contact": {
-      "title": "連絡先",
-      "addressText": "ブンガ・メカル／ヌサ・ペニダ／クルンクン県／バリ"
+      "title": "???",
+      "addressText": "????????????????????????"
     },
     "newsletter": {
       "title": "最新情報を受け取る",
@@ -240,10 +286,10 @@
       "thanks": "ありがとうございます！最新情報をお送りします 🎉"
     },
     "bottom": {
-      "rights": "無断転載禁止。",
-      "terms": "利用規約",
-      "privacy": "プライバシー",
-      "follow": "フォロー"
+      "rights": "??????????",
+      "terms": "????",
+      "privacy": "??????",
+      "follow": "????"
     }
   },
   "admin": {
@@ -266,7 +312,8 @@
       "required": "必須",
       "forgot": "パスワード忘れ？",
       "rememberEmail": "メール保存",
-      "resetLink": "メールでリセットリンクをご確認ください。"
+      "resetLink": "メールでリセットリンクをご確認ください。",
+      "emailRequired": "?????????????"
     },
     "dashboard": {
       "stats": {
@@ -276,11 +323,60 @@
       },
       "latestOrders": "最新の注文",
       "table": {
-        "date": "日時",
+        "date": "??",
         "name": "名前",
-        "status": "ステータス",
-        "totalIDR": "合計 (IDR)"
-      }
+        "status": "?????",
+        "totalIDR": "合計 (IDR)",
+        "customer": "??",
+        "package": "???",
+        "audience": "?????",
+        "total": "??"
+      },
+      "title": "???????",
+      "refresh": "?????",
+      "filters": {
+        "confirmedOnly": "????",
+        "pendingOnly": "????",
+        "allStatus": "?????????",
+        "showPendingOverlay": "????????????",
+        "allAudience": "?????????",
+        "customDate": "????",
+        "reset": "????",
+        "topSort": "??????????",
+        "sortBookings": "???",
+        "sortRevenue": "??",
+        "sortDesc": "??",
+        "sortAsc": "??",
+        "dayWindow": "{{count}} ?",
+        "unknownAudience": "??"
+      },
+      "cards": {
+        "confirmedBookings": "?????",
+        "confirmedRevenue": "?? (??)",
+        "avgRevenue": "?????????",
+        "conversionRate": "????????"
+      },
+      "sections": {
+        "dailyTrends": "????",
+        "statusDistribution": "???????",
+        "audienceDistribution": "????????",
+        "topPackages": "?????",
+        "recentBookings": "?????"
+      },
+      "metrics": {
+        "bookings": "???",
+        "revenue": "??",
+        "pendingBookings": "??? (??)",
+        "confirmedBookings": "??? (??)",
+        "confirmedRevenue": "?? (??)"
+      },
+      "status": {
+        "confirmed": "??",
+        "pending": "??",
+        "cancelled": "?????",
+        "rejected": "??"
+      },
+      "emptyRecent": "???????????"
     },
     "customize": {
       "title": "ページのカスタマイズ",
@@ -342,10 +438,24 @@
     }
   },
   "misc": {
-    "loading": "読み込み中...",
-    "success": "成功しました",
-    "error": "エラーが発生しました"
+    "loading": "?????...",
+    "success": "??????",
+    "error": "??????????",
+    "toggleLayout": "??????????",
+    "clearSearch": "??????"
   },
   "back": "戻る",
-  "gallery": "ギャラリー"
+  "gallery": "ギャラリー",
+  "packageDetail": {
+    "countryFallback": "??????",
+    "from": "????",
+    "askPackage": "???",
+    "askTripType": "?????",
+    "askAudience": "?????",
+    "tripType": "?????",
+    "travelerType": "?????",
+    "totalPax": "??",
+    "noPaymentToday": "???????????",
+    "seeAll": "?????"
+  }
 }

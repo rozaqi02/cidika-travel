@@ -46,6 +46,23 @@
 .hero-batik{ @apply font-batik; line-height: 1.05; }
 .faq-title{ @apply font-batik; }
 .contact-title{ @apply font-batik; }
+.home-hero-title{
+  font-family: var(--font-hero);
+  font-weight: 700;
+  letter-spacing: .06em;
+  line-height: .92;
+  text-wrap: balance;
+  text-shadow:
+    0 14px 42px rgba(15, 23, 42, 0.42),
+    0 4px 14px rgba(15, 23, 42, 0.32);
+}
+
+@media (max-width: 768px){
+  .home-hero-title{
+    letter-spacing: .03em;
+    line-height: .98;
+  }
+}
 
 /* Full-height app */
 html, body, #root { height: 100%; }

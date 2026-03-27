@@ -1,9 +1,9 @@
 // src/pages/PackageDetail.jsx
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, Check, Info, MapPin, DollarSign, Users, ArrowRight, Star } from "lucide-react";
+import { ArrowLeft, Calendar, Check, Info, MapPin, DollarSign, Users, ArrowRight } from "lucide-react";
 import usePackages from "../hooks/usePackages";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
@@ -86,10 +86,12 @@ function RecommendationCard({ p, currency, fx, locale, lang, t }) {
           {loc.title || p.slug}
         </h4>
         <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-3">
-           <MapPin size={12} /> {p.destination_key ? p.destination_key.replace('-', ' ') : 'Indonesia'}
+           <MapPin size={12} /> {p.destination_key ? p.destination_key.replace('-', ' ') : t("packageDetail.countryFallback", { defaultValue: "Indonesia" })}
         </div>
         <div className="flex items-center justify-between">
-           <div className="text-xs text-gray-400">From</div>
+           <div className="text-xs text-gray-400">
+             {t("packageDetail.from", { defaultValue: "From" })}
+           </div>
            <div className="font-bold text-sky-600 dark:text-sky-400 text-sm">
               {formatMoneyFromIDR(displayPrice, currency, fx, locale)}
            </div>
@@ -154,8 +156,8 @@ function PillList({ items }) {
 }
 
 function NoteSection({ note }) {
-  if (!note) return null;
   const { t } = useTranslation();
+  if (!note) return null;
   const lines = note.split("\n").map(line => line.trim()).filter(line => line);
   const bulletPoints = lines.filter(line => !line.match(/^\d\s+IDR/));
   const priceLines = lines.filter(line => line.match(/^\d\s+IDR/)).map(line => {
@@ -274,10 +276,10 @@ export default function PackageDetail() {
     const lines = [
       t("checkout.wa.header", { defaultValue: "Halo Admin CIDIKA, saya ingin bertanya." }),
       "",
-      `Paket: ${title}`,
-      `Jenis Trip: ${tripTypeLabel}`,
+      `${t("packageDetail.askPackage", { defaultValue: "Package" })}: ${title}`,
+      `${t("packageDetail.askTripType", { defaultValue: "Trip Type" })}: ${tripTypeLabel}`,
       `${t("home.pax")}: ${pax}`,
-      `Tipe: ${audienceLabel}`,
+      `${t("packageDetail.askAudience", { defaultValue: "Traveler Type" })}: ${audienceLabel}`,
       t("checkout.wa.footer", { defaultValue: "Mohon info lebih lanjut ya 🙏" }),
     ];
     return encodeURIComponent(lines.join("\n"));
@@ -338,7 +340,7 @@ export default function PackageDetail() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="text-3xl sm:text-5xl font-bold text-white leading-tight"
+                className="home-hero-title text-white text-[clamp(34px,7vw,68px)] leading-[0.98] max-w-4xl"
               >
                   {loc?.title || pkg.slug}
               </motion.h1>
@@ -473,14 +475,18 @@ export default function PackageDetail() {
             <div className="space-y-4">
               {/* Trip Type Info */}
               <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-                  <span className="text-xs font-semibold text-gray-500 uppercase">Trip Type</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase">
+                    {t("packageDetail.tripType", { defaultValue: "Trip Type" })}
+                  </span>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded ${isOpenTrip ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'}`}>
                       {tripTypeLabel}
                   </span>
               </div>
 
               <div>
-                 <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Traveler Type</label>
+                 <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">
+                   {t("packageDetail.travelerType", { defaultValue: "Traveler Type" })}
+                 </label>
                  <div className="grid grid-cols-2 gap-2">
                   {["domestic", "foreign"].map((k) => (
                     <button
@@ -499,7 +505,9 @@ export default function PackageDetail() {
               </div>
 
               <div>
-                 <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Total Pax</label>
+                 <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">
+                   {t("packageDetail.totalPax", { defaultValue: "Total Pax" })}
+                 </label>
                  <select
                   value={pax}
                   onChange={(e) => setPax(parseInt(e.target.value))}
@@ -520,7 +528,7 @@ export default function PackageDetail() {
                  {formatMoneyFromIDR(price * pax, currency, fx, locale)}
               </div>
               <div className="text-xs text-gray-400 mt-1">
-                 {formatMoneyFromIDR(price, currency, fx, locale)} x {pax} pax
+                 {formatMoneyFromIDR(price, currency, fx, locale)} x {pax} {t("home.pax")}
               </div>
             </div>
 
@@ -543,7 +551,11 @@ export default function PackageDetail() {
             
             <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
                <Info size={12}/> 
-               <span>No payment required today</span>
+               <span>
+                 {t("packageDetail.noPaymentToday", {
+                   defaultValue: "No payment required today",
+                 })}
+               </span>
             </div>
           </motion.aside>
         </div>
@@ -557,7 +569,7 @@ export default function PackageDetail() {
                {t("explore.recommended", { defaultValue: "Other Trips You Might Like" })}
              </h2>
              <button onClick={() => nav('/explore')} className="text-sm font-semibold text-sky-600 hover:underline flex items-center gap-1">
-                See All <ArrowRight size={14}/>
+                {t("packageDetail.seeAll", { defaultValue: "See All" })} <ArrowRight size={14}/>
              </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

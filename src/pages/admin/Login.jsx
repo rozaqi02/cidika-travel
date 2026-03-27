@@ -20,6 +20,9 @@ export default function Login() {
     const current = i18n.language;
     const next = current === "en" ? "id" : current === "id" ? "ja" : "en";
     i18n.changeLanguage(next);
+    try {
+      localStorage.setItem("i18nextLng", next);
+    } catch {}
   };
 
   const onSubmit = async (e) => {
@@ -44,7 +47,11 @@ export default function Login() {
 
   const onForgot = async () => {
     if (!email) {
-      setErr(t("admin.login.email") + " " + t("admin.login.required"));
+      setErr(
+        t("admin.login.emailRequired", {
+          defaultValue: "Email is required.",
+        })
+      );
       return;
     }
     setErr("");
@@ -188,7 +195,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPass(e.target.value)}
                   className="block w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all font-sans"
-                  placeholder="••••••••"
+                  placeholder="********"
                   required
                 />
                 <button
@@ -231,7 +238,7 @@ export default function Login() {
           
           <div className="mt-10 text-center">
             <p className="text-xs text-slate-400">
-              © {new Date().getFullYear()} {t("admin.portalTitle")}
+              (c) {new Date().getFullYear()} {t("admin.portalTitle")}
             </p>
           </div>
         </motion.div>

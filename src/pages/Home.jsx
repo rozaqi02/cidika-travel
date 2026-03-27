@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
@@ -111,23 +111,6 @@ function SpotlightOverlay({ className = "" }) {
   );
 }
 
-function ShimmerButton({ as: Comp = "a", className = "", children, ...props }) {
-  return (
-    <Comp 
-      {...props} 
-      className={`relative overflow-hidden group btn glass border-white/20 ${className}`} 
-    >
-      <span className="relative z-10 flex items-center gap-2">{children}</span>
-      <motion.div
-        initial={{ x: "-100%" }}
-        whileHover={{ x: "100%" }}
-        transition={{ duration: 0.6, ease: "easeInOut" }}
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12"
-      />
-    </Comp>
-  );
-}
-
 function Marquee({ speed = 35, children }) {
   return (
     <div className="relative overflow-hidden w-full mask-linear-fade">
@@ -226,7 +209,7 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
                 delay={40}
                 animateBy="words"
                 direction="top"
-                className="font-serif font-semibold text-white leading-tight drop-shadow-2xl text-[clamp(32px,8vw,64px)] tracking-wide text-center w-full"
+                className="home-hero-title text-white text-[clamp(34px,8vw,72px)] text-center w-full px-2 sm:px-0"
              />
           </div>
         )}
@@ -314,54 +297,6 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
   );
 }
 
-function DestinationsSection({ title, subtitle, items = [] }) {
-  const nav = useNavigate();
-  return (
-    <section className="container mt-20 relative z-10">
-      <motion.div 
-        initial="hidden" 
-        whileInView="visible" 
-        viewport={{ once: true, amount: 0.1 }} 
-        variants={staggerContainer}
-      >
-        <div className="text-center mb-10 px-4">
-          <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">{title}</motion.h2>
-          <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 mt-2 text-sm md:text-base">{subtitle}</motion.p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 md:px-0">
-          {items.map((item, i) => (
-            <motion.div
-              key={item.key}
-              variants={bouncyUp}
-              whileHover={{ y: -10 }}
-              onClick={() => nav(`/explore?dest=${item.key}`)}
-              className="group cursor-pointer relative h-64 md:h-80 rounded-[2rem] overflow-hidden shadow-lg"
-            >
-              <img 
-                src={item.image || "/23.jpg"} 
-                alt={item.key} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-              <div className="absolute bottom-0 left-0 p-8">
-                <div className="bg-white/20 backdrop-blur-md w-fit px-3 py-1 rounded-full text-xs font-bold text-white mb-3 border border-white/20 flex items-center gap-1">
-                   <MapPin size={12} /> Destination
-                </div>
-                <h3 className="text-3xl font-extrabold text-white uppercase tracking-wide">{item.key.replace("-", " ")}</h3>
-                <div className="h-1 w-12 bg-sky-500 mt-3 transition-all duration-300 group-hover:w-24" />
-              </div>
-              <div className="absolute top-6 right-6 bg-white/90 dark:bg-slate-900/90 p-3 rounded-full opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 shadow-lg">
-                 <ArrowRight size={20} className="text-sky-600 dark:text-sky-400" />
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-    </section>
-  );
-}
-
 function FeatureCard({ iconName, title, text }) {
   const Icon = { "badge-check": BadgeCheck, "users": Users, "calendar": Calendar, "map-pin": MapPin }[iconName] || BadgeCheck;
   return (
@@ -387,6 +322,7 @@ function FeatureCard({ iconName, title, text }) {
 
 function FeaturedDestinationsSection({ items = [] }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   if (!items || items.length < 2) return null;
 
@@ -402,10 +338,12 @@ function FeaturedDestinationsSection({ items = [] }) {
       >
         <div className="text-center mb-12 px-4 md:px-0">
           <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-3">
-            Featured Destinations
+            {t("home.featuredTitle", { defaultValue: "Featured Destinations" })}
           </motion.h2>
           <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
-            Explore handpicked destinations for your next adventure
+            {t("home.featuredDesc", {
+              defaultValue: "Explore handpicked destinations for your next adventure",
+            })}
           </motion.p>
         </div>
 
@@ -453,7 +391,12 @@ function FeaturedDestinationsSection({ items = [] }) {
                       onClick={() => navigate(`/explore?dest=${item.key || item.id}`)}
                       className="group relative inline-flex items-center gap-3 px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold text-base shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
                     >
-                      <span>Explore {item.title}</span>
+                      <span>
+                        {t("home.exploreDest", {
+                          name: item.title,
+                          defaultValue: "Explore {{name}}",
+                        })}
+                      </span>
                       <span className="bg-white/20 dark:bg-slate-900/10 p-1 rounded-full">
                         <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                       </span>
@@ -514,7 +457,7 @@ function Stats({ trips = 0, photos = 0, rating = 4.9 }) {
         <div className="absolute -top-24 -left-24 w-64 h-64 bg-sky-400/20 dark:bg-sky-600/20 rounded-full blur-[80px] mix-blend-multiply dark:mix-blend-screen transition-colors duration-500" />
         <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-indigo-400/20 dark:bg-indigo-600/20 rounded-full blur-[80px] mix-blend-multiply dark:mix-blend-screen transition-colors duration-500" />
 
-        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-0 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 dark:divide-slate-800 p-8 md:p-12 transition-colors duration-500">
+        <div className="relative z-10 grid grid-cols-3 gap-0 divide-x divide-slate-200 dark:divide-slate-800 p-4 sm:p-8 md:p-12 transition-colors duration-500">
           {[
             { num: tv.toLocaleString() + "+", label: t("home.stats.travelers", { defaultValue: "Happy Travelers" }), icon: Users, color: "text-sky-500" },
             { num: pv.toLocaleString() + "+", label: t("home.stats.media", { defaultValue: "Photos & Videos" }), icon: Star, color: "text-amber-400" },
@@ -525,15 +468,15 @@ function Stats({ trips = 0, photos = 0, rating = 4.9 }) {
               initial={{ opacity: 0, y: 20 }}
               animate={start ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: i * 0.2, duration: 0.5 }}
-              className="flex flex-col items-center justify-center px-4 py-4 sm:py-0"
+              className="flex flex-col items-center justify-center px-2 py-3 sm:px-4 sm:py-0 text-center"
             >
-              <div className={`mb-4 p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/50 ${stat.color} transition-colors duration-500`}>
-                 <stat.icon size={32} strokeWidth={2} />
+              <div className={`mb-3 sm:mb-4 p-2.5 sm:p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/50 ${stat.color} transition-colors duration-500`}>
+                 <stat.icon size={20} strokeWidth={2} className="sm:w-8 sm:h-8" />
               </div>
-              <div className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-1 transition-colors duration-500 tabular-nums">
+              <div className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-1 transition-colors duration-500 tabular-nums">
                 {stat.num}
               </div>
-              <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">
+              <div className="text-[9px] leading-tight sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide sm:tracking-wider transition-colors duration-500">
                 {stat.label}
               </div>
             </motion.div>
@@ -743,6 +686,7 @@ function HowItWorks({ title, subtitle, steps = [] }) {
 }
 
 function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
+  const { t } = useTranslation();
   const galleryImages = useMemo(() => {
     // 1. Prioritaskan gambar manual dari Kustomisasi jika ada
     if (manualImages && manualImages.length > 0) {
@@ -762,7 +706,6 @@ function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
   if (galleryImages.length === 0) return null;
 
   return (
-    // Margin disamakan dengan section lain (container mt-20)
     <section className="container mt-20 relative z-10">
       <motion.div
         initial="hidden"
@@ -770,30 +713,56 @@ function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
         viewport={{ once: true, amount: 0.1 }}
         variants={staggerContainer}
       >
-        <div className="text-center mb-10 px-4 md:px-0">
-          <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
-            {title}
-          </motion.h2>
-          <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 mt-2 text-sm md:text-base">
-            {subtitle}
-          </motion.p>
-        </div>
+        <div className="relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-5 shadow-2xl shadow-slate-900/10 dark:border-slate-700/70 dark:from-slate-900 dark:via-slate-950 dark:to-black md:p-8">
+          <div className="absolute -top-16 left-12 h-40 w-40 rounded-full bg-sky-400/20 blur-3xl" />
+          <div className="absolute -bottom-20 right-8 h-48 w-48 rounded-full bg-indigo-500/20 blur-3xl" />
 
-        <div className="flex justify-center mb-8 px-4 md:px-0">
-          <motion.div variants={bouncyUp}>
-            <a
-              href="https://instagram.com/cidikatravel"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 bg-white dark:bg-slate-800 px-5 py-2.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200 hover:text-pink-600 dark:hover:text-pink-400"
-            >
-              <Instagram size={16} /> Follow on Instagram
-            </a>
-          </motion.div>
-        </div>
+          <div className="relative z-10 mb-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+            <div className="px-1">
+              <motion.div variants={bouncyUp} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/75">
+                <Camera size={14} className="text-sky-200" />
+                {t("home.galleryLabel", { defaultValue: "Trip Gallery" })}
+              </motion.div>
+              <motion.h2 variants={bouncyUp} className="mt-4 text-3xl md:text-5xl font-bold text-white tracking-tight leading-tight">
+                {title}
+              </motion.h2>
+              <motion.p variants={bouncyUp} className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 md:text-base">
+                {subtitle}
+              </motion.p>
+            </div>
 
-        {/* BENTO GRID LAYOUT (Max 12 items) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[150px] md:auto-rows-[200px]">
+            <motion.div variants={bouncyUp} className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-md">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                  {t("home.galleryMoments", { defaultValue: "Captured Moments" })}
+                </div>
+                <div className="mt-2 text-3xl font-black text-white">{galleryImages.length}</div>
+                <div className="mt-1 text-sm text-slate-300">
+                  {t("home.galleryMomentsHint", { defaultValue: "Selected shots from our latest trips." })}
+                </div>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-md">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
+                  {t("home.galleryAction", { defaultValue: "Daily Inspiration" })}
+                </div>
+                <div className="mt-2 text-lg font-bold text-white">
+                  {t("home.followIg", { defaultValue: "Follow on Instagram" })}
+                </div>
+                <a
+                  href="https://instagram.com/cidikatravel"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-900 transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  <Instagram size={15} />
+                  <span>@cidikatravel</span>
+                </a>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* BENTO GRID LAYOUT (Max 12 items) */}
+          <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[150px] md:auto-rows-[220px]">
           {galleryImages.map((src, i) => {
             // Pola Grid Estetik
             // Item 0: Besar (2x2)
@@ -805,7 +774,7 @@ function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
               <motion.div
                 key={i}
                 variants={bouncyUp}
-                className={`relative rounded-2xl overflow-hidden group shadow-sm hover:shadow-xl transition-all duration-500 ${
+                className={`relative rounded-[1.5rem] overflow-hidden group border border-white/10 shadow-sm hover:shadow-2xl transition-all duration-500 ${
                   isLarge ? "col-span-2 row-span-2" : isWide ? "col-span-2 row-span-1" : "col-span-1 row-span-1"
                 }`}
               >
@@ -815,31 +784,38 @@ function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300" />
+                <div className="absolute top-3 left-3 rounded-full border border-white/15 bg-black/25 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/80 backdrop-blur-md">
+                  {String(i + 1).padStart(2, "0")}
+                </div>
                 
                 {/* Ikon kamera hanya di foto pertama */}
                 {i === 0 && (
-                  <div className="absolute bottom-4 left-4 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
-                    <div className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white border border-white/20">
-                      <Camera size={20} />
+                  <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-white backdrop-blur-md">
+                      <Camera size={18} />
+                      <span className="text-xs font-semibold uppercase tracking-[0.16em]">
+                        {t("home.galleryFeatured", { defaultValue: "Travel Highlight" })}
+                      </span>
                     </div>
                   </div>
                 )}
               </motion.div>
             );
           })}
-        </div>
+          </div>
         
-        {/* Tombol Mobile Instagram */}
-        <div className="mt-8 text-center md:hidden">
+          {/* Tombol Mobile Instagram */}
+          <div className="mt-8 text-center md:hidden">
            <a
               href="https://instagram.com/cidikatravel"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 btn btn-outline rounded-full text-xs font-bold"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-bold uppercase tracking-[0.16em] text-slate-900 shadow-lg"
             >
-              <Instagram size={16} /> Follow on Instagram
+              <Instagram size={16} /> {t("home.followIg", { defaultValue: "Follow on Instagram" })}
             </a>
+          </div>
         </div>
       </motion.div>
     </section>
@@ -906,14 +882,29 @@ function TestimonialForm({ onSubmit }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !text.trim()) return alert("Mohon isi nama dan testimoni.");
+    if (!name.trim() || !text.trim()) {
+      alert(
+        t("home.testimonialRequired", {
+          defaultValue: "Please fill in your name and testimonial.",
+        })
+      );
+      return;
+    }
     setIsSubmitting(true);
     try {
       await onSubmit({ name, city, text, stars, lang: t("i18n.language", { defaultValue: "id" }) });
       setName(""); setCity(""); setText(""); setStars(5);
-      alert(t("home.testimonialSubmitted"));
+      alert(
+        t("home.testimonialSubmitted", {
+          defaultValue: "Thank you, your review has been submitted.",
+        })
+      );
     } catch (error) {
-      alert("Error submitting testimonial.");
+      alert(
+        t("home.testimonialFailed", {
+          defaultValue: "Failed to submit your review.",
+        })
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -925,7 +916,11 @@ function TestimonialForm({ onSubmit }) {
       <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-1 text-center mt-1">
         {t("home.submitTestimonial", { defaultValue: "Share Your Experience" })}
       </h3>
-      <p className="text-center text-slate-500 text-xs mb-5">Help us improve by leaving a review!</p>
+      <p className="text-center text-slate-500 text-xs mb-5">
+        {t("home.helpImprove", {
+          defaultValue: "Help us improve by leaving a review!",
+        })}
+      </p>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 gap-3">
@@ -986,14 +981,21 @@ function Testimonials({ title, allItems = [] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
-  const handleNext = () => setCurrentIndex((prev) => (prev + 1) % allItems.length);
-  const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + allItems.length) % allItems.length);
+  const handleNext = useCallback(() => {
+    if (!allItems.length) return;
+    setCurrentIndex((prev) => (prev + 1) % allItems.length);
+  }, [allItems.length]);
+
+  const handlePrev = useCallback(() => {
+    if (!allItems.length) return;
+    setCurrentIndex((prev) => (prev - 1 + allItems.length) % allItems.length);
+  }, [allItems.length]);
 
   useEffect(() => {
     if (allItems.length <= 1 || isHovered) return;
     const interval = setInterval(handleNext, 6000);
     return () => clearInterval(interval);
-  }, [allItems.length, isHovered]);
+  }, [allItems.length, handleNext, isHovered]);
 
   const handleTestimonialSubmit = async (testimonial) => {
     const { error } = await supabase.from("testimonials").insert([{ ...testimonial, is_approved: false }]);
@@ -1219,8 +1221,8 @@ export default function Home() {
         steps={S.how?.locale?.extra?.steps || []}
       />
       <GallerySection
-        title={S.gallery?.locale?.title || "Our Gallery"}
-        subtitle={S.gallery?.locale?.body_md || "Moments captured from our travelers."}
+        title={S.gallery?.locale?.title || t("home.galleryDefaultTitle", { defaultValue: "Our Gallery" })}
+        subtitle={S.gallery?.locale?.body_md || t("home.galleryDefaultSub", { defaultValue: "Moments captured from our travelers." })}
         packages={packages}
         manualImages={galleryManualImages}
       />

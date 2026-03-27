@@ -1,7 +1,7 @@
 // src/pages/Explore.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useScroll, useTransform, motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import usePackages from "../hooks/usePackages";
 import usePageSections from "../hooks/usePageSections";
@@ -110,7 +110,7 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
       className="group relative overflow-hidden rounded-xl border border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-xl transition-shadow duration-300 bg-white dark:bg-gray-900"
     >
       {/* Image */}
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative h-56 overflow-hidden">
         <motion.img
           src={cover}
           alt={loc?.title}
@@ -161,7 +161,7 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
             {formatMoneyFromIDR(priceSelected, currency, fx, locale)}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            / {pax} {t("home.pax")} • {audienceLabel}
+            / {pax} {t("home.pax")} - {audienceLabel}
           </p>
         </div>
 
@@ -208,24 +208,27 @@ export default function Explore() {
   const { sections: destSections = [] } = usePageSections("destinations");
 
   const location = useLocation();
-  const qs = new URLSearchParams(location.search);
+  const searchParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  );
   const initialPax = Number(location.state?.pax) || 6;
 
-  const [dest, setDest] = useState(qs.get("dest") || "all");
+  const [dest, setDest] = useState(searchParams.get("dest") || "all");
   const [pax, setPax] = useState(initialPax);
   const [audience, setAudience] = useState("domestic");
   const [query, setQuery] = useState("");
-  const [sortBy, setSortBy] = useState("price");
+  const sortBy = "price";
   const [compact, setCompact] = useState(false);
 
   useEffect(() => {
-    const currentDest = qs.get("dest");
+    const currentDest = searchParams.get("dest");
     if (currentDest) {
       setDest(currentDest);
     } else {
       setDest("all");
     }
-  }, [location.search]);
+  }, [searchParams]);
 
   // Logic pembuatan Dropdown
   const destinationOptions = useMemo(() => {
@@ -252,38 +255,6 @@ export default function Explore() {
 
     return [...opts, ...dynamicOpts];
   }, [destSections, t]);
-
-  // Theme & scroll
-  const [isDark, setIsDark] = useState(() =>
-    typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : false
-  );
-  const lastScrollYRef = useRef(0);
-  const [hideToolbar, setHideToolbar] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY || 0;
-      const last = lastScrollYRef.current;
-      const down = y > last;
-      const delta = Math.abs(y - last);
-      if (delta > 14) {
-        setHideToolbar(down && y > 80);
-        lastScrollYRef.current = y;
-      }
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const root = document.documentElement;
-    const update = () => setIsDark(root.classList.contains("dark"));
-    update();
-    const obs = new MutationObserver(update);
-    obs.observe(root, { attributes: true, attributeFilter: ["class"] });
-    return () => obs.disconnect();
-  }, []);
 
   const domesticLabel = t("explore.domestic");
   const foreignLabel = t("explore.foreign");
@@ -411,7 +382,7 @@ export default function Explore() {
           <button
             className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors text-gray-600 dark:text-gray-300"
             onClick={() => setCompact((v) => !v)}
-            title="Toggle Layout"
+            title={t("misc.toggleLayout", { defaultValue: "Toggle layout" })}
           >
             {compact ? <LayoutGrid size={18} /> : <Rows size={18} />}
           </button>
@@ -421,7 +392,10 @@ export default function Explore() {
       {/* Result Count & Sort (Optional info bar) */}
       <div className="flex items-center justify-between px-2">
          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Found <b>{filtered.length}</b> packages
+            {t("explore.resultsCount", {
+              count: filtered.length,
+              defaultValue: "Found {{count}} packages",
+            })}
          </span>
       </div>
 
@@ -494,7 +468,11 @@ export default function Explore() {
               <p className="text-lg font-medium">
                 {t("explore.empty", { defaultValue: "No packages found." })}
               </p>
-              <p className="text-sm mt-1 opacity-70">Try adjusting your search or filters.</p>
+              <p className="text-sm mt-1 opacity-70">
+                {t("explore.emptyHint", {
+                  defaultValue: "Try adjusting your search or filters.",
+                })}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>

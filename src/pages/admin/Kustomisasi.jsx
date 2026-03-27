@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState, useRef, useDeferredValue, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useDeferredValue, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../../lib/supabaseClient";
 import { useTranslation } from "react-i18next";
 import {
-  Trash2, Plus, ArrowUp, ArrowDown, Upload, GripVertical, Save, LayoutList, Languages, Search,
-  Copy, RotateCcw, Images, Eye, Wrench, Settings2, Star, ChevronDown, ChevronUp
+  Trash2, Plus, ArrowUp, ArrowDown, Upload, GripVertical, Save, LayoutList, Search,
+  Copy, RotateCcw, Images, Eye, Wrench, Settings2, Star, ChevronDown, ChevronUp, X
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -20,6 +20,29 @@ const Labeled = ({ label, htmlFor, children }) => (
     <div className="mt-1">{children}</div>
   </div>
 );
+
+const DialogShell = ({ open, title, description, children, footer, onClose }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm px-4" role="presentation">
+      <div className="flex min-h-full items-center justify-center py-8">
+        <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h3>
+              {description ? <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{description}</p> : null}
+            </div>
+            <button type="button" className="rounded-xl border border-slate-200 p-2 dark:border-slate-700" onClick={onClose}>
+              <X size={16} />
+            </button>
+          </div>
+          <div className="mt-4">{children}</div>
+          {footer ? <div className="mt-4 flex flex-wrap justify-end gap-2">{footer}</div> : null}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const DataTextArea = React.memo(({ s, updateDataText, validateDataText }) => (
   <textarea
@@ -184,7 +207,7 @@ const GalleryEditor = ({ s, activeLang, updateLocal, readData, writeData, onUplo
   );
 };
 
-const TestimonialsEditor = ({ items, setItems, loading }) => {
+const TestimonialsEditor = ({ items, setItems, loading, onRequestDelete }) => {
   const updateTestimonial = async (id, patch) => {
   const { error } = await supabase.from('testimonials').update(patch).eq('id', id);
   if (error) {
@@ -197,7 +220,6 @@ const TestimonialsEditor = ({ items, setItems, loading }) => {
 };
 
 const deleteTestimonial = async (id) => {
-  if (!window.confirm('Yakin hapus testimoni ini?')) return;
   const { error } = await supabase.from('testimonials').delete().eq('id', id);
   if (error) {
     toast.error('Gagal hapus: ' + error.message);
@@ -231,7 +253,7 @@ const deleteTestimonial = async (id) => {
                   </label>
                 </div>
                 <div className="flex items-center gap-1">
-                  <button className="p-1 rounded-lg border hover:bg-red-50 dark:hover:bg-slate-800" onClick={() => deleteTestimonial(it.id)} title="Hapus">
+                  <button className="p-1 rounded-lg border hover:bg-red-50 dark:hover:bg-slate-800" onClick={() => onRequestDelete(() => deleteTestimonial(it.id), it.name)} title="Hapus">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -273,7 +295,7 @@ const FaqListEditor = ({ s, activeLang, updateLocaleExtra }) => {
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <div className="font-medium">FAQ Items — {activeLang.toUpperCase()}</div>
+        <div className="font-medium">FAQ Items â€” {activeLang.toUpperCase()}</div>
         <button className="btn btn-outline !py-1 !px-3" onClick={() => setItems([...(items || []), { q: "", a: "" }])}><Plus size={14} /> Tambah</button>
       </div>
 
@@ -601,7 +623,7 @@ const CardsEditor = ({ s, activeLang, updateLocaleExtra, page, uploadToBucket })
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <div className="font-medium">Cards — {activeLang.toUpperCase()}</div>
+        <div className="font-medium">Cards â€” {activeLang.toUpperCase()}</div>
         <button className="btn btn-outline !py-1 !px-3" onClick={addItem}>
           <Plus size={14} /> Tambah
         </button>
@@ -967,6 +989,128 @@ const SimpleTitleBody = ({ s, activeLang, updateLocal, titleLabel = "Judul", bod
 
 export default function Kustomisasi() {
   const { t, i18n } = useTranslation();
+  const language = (i18n.language || "id").slice(0, 2);
+  const ui = useMemo(() => ({
+    id: {
+      title: "Kustomisasi Halaman",
+      invalidJson: "JSON invalid",
+      simple: "Simple",
+      advanced: "Advanced JSON",
+      addSection: "Tambah Section",
+      saveAll: "Simpan Semua",
+      saving: "Menyimpan...",
+      page: "Halaman",
+      search: "Cari section / judul...",
+      expandAll: "Buka semua",
+      collapseAll: "Tutup semua",
+      packagesTitle: "Kelola Packages",
+      addPackage: "Tambah Paket",
+      savePackages: "Simpan Packages",
+      packagesSaving: "Menyimpan...",
+      packagesLoading: "Memuat paket...",
+      packagesEmpty: "Belum ada paket.",
+      dirty: "belum disimpan",
+      sectionPromptTitle: "Tambah section baru",
+      sectionPromptDesc: "Masukkan section key untuk halaman ini.",
+      sectionPlaceholder: "mis. hero, whyus, faq_list",
+      packagePromptTitle: "Tambah paket baru",
+      packagePromptDesc: "Masukkan slug paket unik tanpa spasi.",
+      packagePlaceholder: "mis. nusa-penida-west-trip",
+      confirmDeletePackage: "Hapus paket ini?",
+      confirmDeletePackageDesc: "Paket akan hilang dari admin dan tidak bisa dikembalikan otomatis.",
+      confirmDeleteSection: "Hapus section ini?",
+      confirmDeleteSectionDesc: "Section ini akan dihapus permanen dari halaman terpilih.",
+      confirmDeleteTestimonial: "Hapus testimoni ini?",
+      confirmDeleteTestimonialDesc: "Testimoni akan dihapus permanen dari daftar.",
+      cancel: "Batal",
+      confirm: "Lanjutkan",
+      create: "Buat",
+      changedSummary: "{{sections}} section diubah · {{packages}} paket diubah",
+      packageLanguage: "Bahasa",
+      active: "aktif",
+      noUnsaved: "Semua perubahan sudah tersimpan",
+    },
+    en: {
+      title: "Page Customization",
+      invalidJson: "Invalid JSON",
+      simple: "Simple",
+      advanced: "Advanced JSON",
+      addSection: "Add Section",
+      saveAll: "Save All",
+      saving: "Saving...",
+      page: "Page",
+      search: "Search section / title...",
+      expandAll: "Expand all",
+      collapseAll: "Collapse all",
+      packagesTitle: "Manage Packages",
+      addPackage: "Add Package",
+      savePackages: "Save Packages",
+      packagesSaving: "Saving...",
+      packagesLoading: "Loading packages...",
+      packagesEmpty: "No packages yet.",
+      dirty: "unsaved",
+      sectionPromptTitle: "Add a new section",
+      sectionPromptDesc: "Enter the section key for this page.",
+      sectionPlaceholder: "e.g. hero, whyus, faq_list",
+      packagePromptTitle: "Add a new package",
+      packagePromptDesc: "Enter a unique package slug without spaces.",
+      packagePlaceholder: "e.g. nusa-penida-west-trip",
+      confirmDeletePackage: "Delete this package?",
+      confirmDeletePackageDesc: "This package will be removed from admin and cannot be auto-restored.",
+      confirmDeleteSection: "Delete this section?",
+      confirmDeleteSectionDesc: "This section will be permanently removed from the selected page.",
+      confirmDeleteTestimonial: "Delete this testimonial?",
+      confirmDeleteTestimonialDesc: "This testimonial will be permanently removed.",
+      cancel: "Cancel",
+      confirm: "Continue",
+      create: "Create",
+      changedSummary: "{{sections}} sections changed Â· {{packages}} packages changed",
+      packageLanguage: "Language",
+      active: "active",
+      noUnsaved: "Everything is saved",
+    },
+    ja: {
+      title: "ãƒšãƒ¼ã‚¸ã‚«ã‚¹ã‚¿ãƒžã‚¤ã‚º",
+      invalidJson: "JSON ãŒç„¡åŠ¹ã§ã™",
+      simple: "ã‚·ãƒ³ãƒ—ãƒ«",
+      advanced: "é«˜åº¦ãª JSON",
+      addSection: "ã‚»ã‚¯ã‚·ãƒ§ãƒ³è¿½åŠ ",
+      saveAll: "ã™ã¹ã¦ä¿å­˜",
+      saving: "ä¿å­˜ä¸­...",
+      page: "ãƒšãƒ¼ã‚¸",
+      search: "ã‚»ã‚¯ã‚·ãƒ§ãƒ³ / ã‚¿ã‚¤ãƒˆãƒ«ã‚’æ¤œç´¢...",
+      expandAll: "ã™ã¹ã¦é–‹ã",
+      collapseAll: "ã™ã¹ã¦é–‰ã˜ã‚‹",
+      packagesTitle: "ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ç®¡ç†",
+      addPackage: "ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸è¿½åŠ ",
+      savePackages: "ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ä¿å­˜",
+      packagesSaving: "ä¿å­˜ä¸­...",
+      packagesLoading: "ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã‚’èª­ã¿è¾¼ã¿ä¸­...",
+      packagesEmpty: "ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã¯ã¾ã ã‚ã‚Šã¾ã›ã‚“ã€‚",
+      dirty: "æœªä¿å­˜",
+      sectionPromptTitle: "æ–°ã—ã„ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã‚’è¿½åŠ ",
+      sectionPromptDesc: "ã“ã®ãƒšãƒ¼ã‚¸ç”¨ã® section key ã‚’å…¥åŠ›ã—ã¦ãã ã•ã„ã€‚",
+      sectionPlaceholder: "ä¾‹: hero, whyus, faq_list",
+      packagePromptTitle: "æ–°ã—ã„ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã‚’è¿½åŠ ",
+      packagePromptDesc: "ã‚¹ãƒšãƒ¼ã‚¹ãªã—ã®ä¸€æ„ãª slug ã‚’å…¥åŠ›ã—ã¦ãã ã•ã„ã€‚",
+      packagePlaceholder: "ä¾‹: nusa-penida-west-trip",
+      confirmDeletePackage: "ã“ã®ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã‚’å‰Šé™¤ã—ã¾ã™ã‹ï¼Ÿ",
+      confirmDeletePackageDesc: "ç®¡ç†ç”»é¢ã‹ã‚‰å‰Šé™¤ã•ã‚Œã€è‡ªå‹•ã§å…ƒã«æˆ»ã™ã“ã¨ã¯ã§ãã¾ã›ã‚“ã€‚",
+      confirmDeleteSection: "ã“ã®ã‚»ã‚¯ã‚·ãƒ§ãƒ³ã‚’å‰Šé™¤ã—ã¾ã™ã‹ï¼Ÿ",
+      confirmDeleteSectionDesc: "é¸æŠžä¸­ã®ãƒšãƒ¼ã‚¸ã‹ã‚‰å®Œå…¨ã«å‰Šé™¤ã•ã‚Œã¾ã™ã€‚",
+      confirmDeleteTestimonial: "ã“ã®å£ã‚³ãƒŸã‚’å‰Šé™¤ã—ã¾ã™ã‹ï¼Ÿ",
+      confirmDeleteTestimonialDesc: "ã“ã®å£ã‚³ãƒŸã¯å®Œå…¨ã«å‰Šé™¤ã•ã‚Œã¾ã™ã€‚",
+      cancel: "ã‚­ãƒ£ãƒ³ã‚»ãƒ«",
+      confirm: "ç¶šè¡Œ",
+      create: "ä½œæˆ",
+      changedSummary: "{{sections}} ä»¶ã®ã‚»ã‚¯ã‚·ãƒ§ãƒ³å¤‰æ›´ Â· {{packages}} ä»¶ã®ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸å¤‰æ›´",
+      packageLanguage: "è¨€èªž",
+      active: "æœ‰åŠ¹",
+      noUnsaved: "æœªä¿å­˜ã®å¤‰æ›´ã¯ã‚ã‚Šã¾ã›ã‚“",
+    },
+  }[language] || {
+    title: "Page Customization",
+  }), [language]);
   const [page, setPage] = useState("home");
   const [sections, setSections] = useState([]);
   const [original, setOriginal] = useState([]);
@@ -975,9 +1119,6 @@ export default function Kustomisasi() {
   const [activeLang, setActiveLang] = useState(LANGS[0]);
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState("simple");
-  const [compactToolbar, setCompactToolbar] = useState(false);
-  const lastScrollYRef = useRef(0);
-  const [hideToolbar, setHideToolbar] = useState(false);
   const [expandedSections, setExpandedSections] = useState({});
 
   const [pkgList, setPkgList] = useState([]);
@@ -986,10 +1127,18 @@ export default function Kustomisasi() {
 
   const [testimonials, setTestimonials] = useState([]);
   const [testimonialsLoading, setTestimonialsLoading] = useState(true);
+  const [promptDialog, setPromptDialog] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const deferredQuery = useDeferredValue(query);
+  const dirtySectionsCount = sections.filter((section) => section._dirty).length;
+  const dirtyPackagesCount = pkgList.filter((pkg) => pkg._dirty).length;
 
-  const loadTestimonials = async () => {
+  const requestConfirm = (title, description, action) => {
+    setConfirmDialog({ title, description, action });
+  };
+
+  const loadTestimonials = useCallback(async () => {
     setTestimonialsLoading(true);
     const { data, error } = await supabase
       .from("testimonials")
@@ -1004,25 +1153,7 @@ export default function Kustomisasi() {
   setTestimonials(data || []);
 }
     setTestimonialsLoading(false);
-  };
-
-  useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY || 0;
-      const last = lastScrollYRef.current;
-      const down = y > last;
-      const delta = Math.abs(y - last);
-
-      if (delta > 14) {
-        setHideToolbar(down && y > 80);
-        setCompactToolbar(y > 40);
-        lastScrollYRef.current = y;
-      }
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
 
   const PAGES = useMemo(
     () => [
@@ -1032,7 +1163,7 @@ export default function Kustomisasi() {
       { key: "faq", label: t("nav.faq") },
       { key: "contact", label: t("nav.contact") },
     ],
-    [t, i18n.language]
+    [t]
   );
 
   const mapFromDb = (data) =>
@@ -1048,7 +1179,7 @@ export default function Kustomisasi() {
       _dirty: false,
     }));
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("page_sections")
@@ -1072,9 +1203,9 @@ if (error) {
       return acc;
     }, {});
     setExpandedSections(expandedState);
-  };
+  }, [page]);
 
-  const loadPackages = async () => {
+  const loadPackages = useCallback(async () => {
     setPkgLoading(true);
     const { data, error } = await supabase
       .from("packages")
@@ -1121,13 +1252,13 @@ if (error) {
     }));
     setPkgList(mapped);
     setPkgLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     load();
     if (page === "explore") loadPackages();
     if (page === "home") loadTestimonials();
-  }, [page]);
+  }, [load, loadPackages, loadTestimonials, page]);
 
   const updatePkgField = (id, key, value) => {
     setPkgList(prev => prev.map(p => p.id === id ? ({ ...p, [key]: value, _dirty: true }) : p));
@@ -1302,30 +1433,44 @@ await loadPackages();
     }
   };
 
-  const addPackage = async () => {
-    const slug = prompt("Slug paket (tanpa spasi, unik):");
-    if (!slug) return;
-    const { data, error } = await supabase
-      .from("packages")
-      .insert({ slug, is_active: true, default_image: "" })
-      .select()
-      .single();
-    if (error) { toast.error(error.message); return; }
-
-    for (const lang of LANGS) {
-      await supabase.from("package_locales")
-        .upsert({ package_id: data.id, lang, title: "", summary: null }, { onConflict: "package_id,lang" });
-    }
-    await loadPackages();
+  const addPackage = () => {
+    setPromptDialog({
+      title: ui.packagePromptTitle,
+      description: ui.packagePromptDesc,
+      placeholder: ui.packagePlaceholder,
+      value: "",
+      action: async (value) => {
+        const slug = value.trim();
+        if (!slug) return;
+        const { data, error } = await supabase
+          .from("packages")
+          .insert({ slug, is_active: true, default_image: "" })
+          .select()
+          .single();
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        for (const lang of LANGS) {
+          await supabase
+            .from("package_locales")
+            .upsert({ package_id: data.id, lang, title: "", summary: null }, { onConflict: "package_id,lang" });
+        }
+        await loadPackages();
+      },
+    });
   };
 
   const deletePackageRow = async (id) => {
-    if (!confirm("Hapus paket ini?")) return;
-const { error } = await supabase.from("packages").delete().eq("id", id);
-if (error) { toast.error(error.message); return; }
-await loadPackages();
-toast.success("Paket dihapus");
-
+    requestConfirm(ui.confirmDeletePackage, ui.confirmDeletePackageDesc, async () => {
+      const { error } = await supabase.from("packages").delete().eq("id", id);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      await loadPackages();
+      toast.success("Paket dihapus");
+    });
   };
 
   const updateLocal = (sid, lang, field, value) => {
@@ -1391,19 +1536,37 @@ toast.success("Paket dihapus");
     }
   };
 
-  const addSection = async () => {
-    const section_key = prompt("Section key (mis: hero, whyus, stats, how, popular, testimonials, cta, faq_list, categories, categories_banner, banner1, quotes_banner)?");
-    if (!section_key) return;
-    const sort_index = (sections[sections.length - 1]?.sort_index || 0) + 10;
-    const { data, error } = await supabase.from("page_sections").insert({ page, section_key, sort_index, data: {} }).select().single();
-    if (error) { alert(error.message); return; }
-    setSections((prev) => ([...prev, {
-      ...data,
-      locales: LANGS.reduce((acc, l) => ({ ...acc, [l]: { title: "", body_md: "", extra: null } }), {}),
-      dataText: "{}",
-      dataValid: true,
-      _dirty: true,
-    }]));
+  const addSection = () => {
+    setPromptDialog({
+      title: ui.sectionPromptTitle,
+      description: ui.sectionPromptDesc,
+      placeholder: ui.sectionPlaceholder,
+      value: "",
+      action: async (value) => {
+        const section_key = value.trim();
+        if (!section_key) return;
+        const sort_index = (sections[sections.length - 1]?.sort_index || 0) + 10;
+        const { data, error } = await supabase
+          .from("page_sections")
+          .insert({ page, section_key, sort_index, data: {} })
+          .select()
+          .single();
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        setSections((prev) => [
+          ...prev,
+          {
+            ...data,
+            locales: LANGS.reduce((acc, l) => ({ ...acc, [l]: { title: "", body_md: "", extra: null } }), {}),
+            dataText: "{}",
+            dataValid: true,
+            _dirty: true,
+          },
+        ]);
+      },
+    });
   };
 
   const duplicateSection = async (sid) => {
@@ -1436,11 +1599,15 @@ toast.success("Paket dihapus");
   };
 
   const deleteSection = async (id) => {
-    if (!confirm("Hapus section ini?")) return;
-const { error } = await supabase.from("page_sections").delete().eq("id", id);
-if (error) { toast.error(error.message); return; }
-setSections((prev) => prev.filter((s) => s.id !== id));
-toast.success("Section dihapus");
+    requestConfirm(ui.confirmDeleteSection, ui.confirmDeleteSectionDesc, async () => {
+      const { error } = await supabase.from("page_sections").delete().eq("id", id);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      setSections((prev) => prev.filter((s) => s.id !== id));
+      toast.success("Section dihapus");
+    });
   };
 
   const move = (id, dir) => {
@@ -1531,7 +1698,7 @@ toast.success("Section dihapus");
           return { ...s, dataText: JSON.stringify(obj, null, 2), dataValid: true, _dirty: true };
         })
       );
-    } catch (e) { alert(e.message); }
+    } catch (e) { toast.error(e.message || "Gagal upload"); }
   };
 
   const sorted = useMemo(
@@ -1546,6 +1713,32 @@ toast.success("Section dihapus");
         }),
     [sections, deferredQuery, activeLang]
   );
+  const filteredSectionIds = useMemo(() => sorted.map((section) => section.id), [sorted]);
+  const allFilteredExpanded =
+    filteredSectionIds.length > 0 &&
+    filteredSectionIds.every((id) => expandedSections[id]);
+  const toggleAllFilteredSections = () => {
+    const nextValue = !allFilteredExpanded;
+    setExpandedSections((prev) =>
+      filteredSectionIds.reduce((acc, id) => {
+        acc[id] = nextValue;
+        return acc;
+      }, { ...prev })
+    );
+  };
+  const submitPromptDialog = async () => {
+    if (!promptDialog?.action) return;
+    const value = promptDialog.value || "";
+    const action = promptDialog.action;
+    setPromptDialog(null);
+    await action(value);
+  };
+  const submitConfirmDialog = async () => {
+    if (!confirmDialog?.action) return;
+    const action = confirmDialog.action;
+    setConfirmDialog(null);
+    await action();
+  };
 
 
   const readData = (s) => { try { return JSON.parse(s.dataText || "{}"); } catch { return {}; } };
@@ -1556,75 +1749,75 @@ toast.success("Section dihapus");
 
   return (
     <div className="container mt-3 space-y-4">
-      <div
-        className={`sticky top-16 z-[5] transition-transform duration-200 ${hideToolbar ? "-translate-y-[120%]" : "translate-y-0"
-          }`}
-      >
+      <div>
         <div
-          className={`rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 ${compactToolbar ? "py-1.5" : "py-3"
-            } glass shadow-smooth transition-all duration-200`}
+          className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 py-3 glass shadow-smooth sm:px-4"
         >
-          <div className={`flex flex-col ${compactToolbar ? "gap-2" : "gap-3 sm:gap-2"}`}>
+          <div className="flex flex-col gap-3 sm:gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <LayoutList className="opacity-70" size={compactToolbar ? 16 : 18} />
-                <h1 className={`${compactToolbar ? "text-base" : "text-lg sm:text-xl"} font-bold`}>
-                  Kustomisasi Halaman
+                <LayoutList className="opacity-70" size={18} />
+                <h1 className="text-lg font-bold sm:text-xl">
+                  {ui.title}
                 </h1>
                 {hasInvalid && (
                   <span
-                    className={`${compactToolbar ? "text-[10px] px-1.5 py-[1px]" : "text-[11px] px-2 py-0.5"
-                      } rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200`}
+                    className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-800 dark:bg-amber-900/30 dark:text-amber-200"
                   >
-                    JSON invalid
+                    {ui.invalidJson}
                   </span>
                 )}
+                <span className="hidden text-xs text-slate-500 dark:text-slate-400 lg:inline">
+                  {dirtySectionsCount || dirtyPackagesCount
+                    ? ui.changedSummary
+                        .replace("{{sections}}", String(dirtySectionsCount))
+                        .replace("{{packages}}", String(dirtyPackagesCount))
+                    : ui.noUnsaved}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="hidden sm:flex items-center gap-1 mr-2">
                   <button
-                    className={`btn ${mode === "simple" ? "btn-primary" : "btn-outline"} ${compactToolbar ? "!py-1.5 !px-2.5" : "!py-2 !px-3"
-                      }`}
+                    className={`btn ${mode === "simple" ? "btn-primary" : "btn-outline"} !py-2 !px-3`}
                     onClick={() => setMode("simple")}
                   >
-                    <Settings2 size={compactToolbar ? 14 : 16} />{" "}
-                    <span className={compactToolbar ? "hidden lg:inline" : ""}>Simple</span>
+                    <Settings2 size={16} />{" "}
+                    <span>{ui.simple}</span>
                   </button>
                   <button
-                    className={`btn ${mode === "advanced" ? "btn-primary" : "btn-outline"} ${compactToolbar ? "!py-1.5 !px-2.5" : "!py-2 !px-3"
-                      }`}
+                    className={`btn ${mode === "advanced" ? "btn-primary" : "btn-outline"} !py-2 !px-3`}
                     onClick={() => setMode("advanced")}
                   >
-                    <Wrench size={compactToolbar ? 14 : 16} />{" "}
-                    <span className={compactToolbar ? "hidden lg:inline" : ""}>Advanced JSON</span>
+                    <Wrench size={16} />{" "}
+                    <span>{ui.advanced}</span>
                   </button>
                 </div>
-                <button
-                  className={`btn btn-outline hidden sm:inline-flex ${compactToolbar ? "!py-1.5 !px-2.5" : "!py-2 !px-3"
-                    }`}
-                  onClick={addSection}
-                  title="Tambah Section"
-                >
-                  <Plus size={compactToolbar ? 14 : 16} />{" "}
-                  <span className={`${compactToolbar ? "hidden md:inline" : "hidden md:inline"}`}>
-                    Tambah Section
-                  </span>
+                <button className="btn btn-outline hidden sm:inline-flex !py-2 !px-3" onClick={toggleAllFilteredSections} type="button">
+                  {allFilteredExpanded ? ui.collapseAll : ui.expandAll}
                 </button>
                 <button
-                  className={`btn btn-primary ${compactToolbar ? "!py-1.5 !px-2.5" : "!py-2 !px-3"}`}
+                  className="btn btn-outline hidden sm:inline-flex !py-2 !px-3"
+                  onClick={addSection}
+                  title={ui.addSection}
+                >
+                  <Plus size={16} />{" "}
+                  <span className="hidden md:inline">{ui.addSection}</span>
+                </button>
+                <button
+                  className="btn btn-primary !py-2 !px-3"
                   onClick={save}
                   disabled={saving || hasInvalid}
-                  title="Simpan Semua"
+                  title={ui.saveAll}
                 >
-                  <Save size={compactToolbar ? 14 : 16} />{" "}
-                  <span className="ml-2">{saving ? "Menyimpan…" : "Simpan Semua"}</span>
+                  <Save size={16} />{" "}
+                  <span className="ml-2">{saving ? ui.saving : ui.saveAll}</span>
                 </button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">Halaman</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">{ui.page}</span>
                 <select
                   className="px-3 py-2 rounded-2xl border w-[180px]"
                   value={page}
@@ -1642,7 +1835,7 @@ toast.success("Section dihapus");
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Cari section / judul…"
+                  placeholder={ui.search}
                   className="w-full pl-9 pr-3 py-2 rounded-2xl border-slate-200 dark:border-slate-700"
                 />
                 <Search
@@ -1669,17 +1862,17 @@ toast.success("Section dihapus");
                   className={`flex-1 btn ${mode === "simple" ? "btn-primary" : "btn-outline"}`}
                   onClick={() => setMode("simple")}
                 >
-                  Simple
+                  {ui.simple}
                 </button>
                 <button
                   className={`flex-1 btn ${mode === "advanced" ? "btn-primary" : "btn-outline"}`}
                   onClick={() => setMode("advanced")}
                 >
-                  Advanced
+                  {ui.advanced}
                 </button>
               </div>
               <button className="btn btn-outline w-full mt-2" onClick={addSection}>
-                <Plus size={16} /> Tambah Section
+                <Plus size={16} /> {ui.addSection}
               </button>
             </div>
           </div>
@@ -1690,11 +1883,11 @@ toast.success("Section dihapus");
         <div className="card p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="font-semibold">
-              Kelola Packages ({pkgList.length}) — {activeLang.toUpperCase()}
+              {ui.packagesTitle} ({pkgList.length}) - {activeLang.toUpperCase()}
             </div>
             <div className="flex items-center gap-2">
               <button className="btn btn-outline !py-1.5 !px-3" onClick={addPackage}>
-                <Plus size={14} /> Tambah Paket
+                <Plus size={14} /> {ui.addPackage}
               </button>
               <button
                 className="btn btn-primary !py-1.5 !px-3"
@@ -1702,21 +1895,21 @@ toast.success("Section dihapus");
                 disabled={pkgSaving}
                 title="Simpan perubahan packages"
               >
-                <Save size={14} /> {pkgSaving ? "Menyimpan…" : "Simpan Packages"}
+                <Save size={14} /> {pkgSaving ? ui.packagesSaving : ui.savePackages}
               </button>
             </div>
           </div>
 
           {pkgLoading ? (
-            <div className="text-sm text-slate-500">Loading…</div>
+            <div className="text-sm text-slate-500">{ui.packagesLoading}</div>
           ) : pkgList.length === 0 ? (
-            <div className="text-sm text-slate-500">Belum ada paket.</div>
+            <div className="text-sm text-slate-500">{ui.packagesEmpty}</div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
               {pkgList.map((p) => (
                 <div key={p.id} className="rounded-xl border p-3 dark:border-slate-700 space-y-2">
                   <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>{p.id.slice(0, 8)}…</span>
+                    <span>{p.id.slice(0, 8)}...</span>
                     <div className="flex items-center gap-2">
                       <label className="inline-flex items-center gap-2 text-xs">
                         <input
@@ -1724,7 +1917,7 @@ toast.success("Section dihapus");
                           checked={!!p.is_active}
                           onChange={(e) => updatePkgField(p.id, "is_active", e.target.checked)}
                         />
-                        aktif
+                        {ui.active}
                       </label>
                       <button
                         className="p-1 rounded-lg border hover:bg-red-50 dark:hover:bg-slate-800"
@@ -1772,7 +1965,7 @@ toast.success("Section dihapus");
                   </div>
 
 <div>
-  <div className="text-xs mb-1">Bahasa: {activeLang.toUpperCase()}</div>
+  <div className="text-xs mb-1">{ui.packageLanguage}: {activeLang.toUpperCase()}</div>
 
   <input
     className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-2"
@@ -1793,7 +1986,7 @@ toast.success("Section dihapus");
   <textarea
     rows={3}
     className="w-full border rounded-xl px-3 py-2 dark:bg-slate-900 mb-3 font-mono text-xs"
-    placeholder={"contoh:\nKelingking Beach\nBroken Beach\nAngel’s Billabong"}
+    placeholder={"contoh:\nKelingking Beach\nBroken Beach\nAngelâ€™s Billabong"}
     value={arrToText(p.locales?.[activeLang]?.spots)}
     onChange={(e) => updatePkgLocale(p.id, activeLang, "spots", textToArr(e.target.value))}
   />
@@ -1912,7 +2105,7 @@ toast.success("Section dihapus");
                   </div>
 
                   {p._dirty && (
-                    <div className="text-[11px] text-amber-600 mt-1">• belum disimpan</div>
+                    <div className="text-[11px] text-amber-600 mt-1">* {ui.dirty}</div>
                   )}
                 </div>
               ))}
@@ -1948,11 +2141,11 @@ toast.success("Section dihapus");
                 />
                 {!s.dataValid && (
                   <span className="ml-2 text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
-                    JSON invalid
+                    {ui.invalidJson}
                   </span>
                 )}
                 {s._dirty && (
-                  <span className="ml-2 text-[11px] text-amber-600">• belum disimpan</span>
+                  <span className="ml-2 text-[11px] text-amber-600">* {ui.dirty}</span>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -2000,13 +2193,11 @@ switch (s.section_key) {
       <div className="space-y-6">
         <SimpleTitleBody s={s} activeLang={activeLang} updateLocal={updateLocal} bodyLabel="Subjudul (opsional)" />
         <div className="border-t dark:border-slate-700 my-4" />
-        <TestimonialsEditor items={testimonials} setItems={setTestimonials} loading={testimonialsLoading} />
+        <TestimonialsEditor items={testimonials} setItems={setTestimonials} loading={testimonialsLoading} onRequestDelete={(action, name) => requestConfirm(ui.confirmDeleteTestimonial, `${ui.confirmDeleteTestimonialDesc}${name ? ` (${name})` : ""}`, action)} />
       </div>
     );
   case "stats":
     return <StatsEditor s={s} readData={readData} writeData={writeData} />;
-  case "stats":
-    return <StatsEditor s={s} activeLang={activeLang} updateLocal={updateLocal} />;
   case "how":
     return <HowEditor s={s} activeLang={activeLang} updateLocal={updateLocal} updateLocaleExtra={updateLocaleExtra} />;
   case "cta":
@@ -2043,7 +2234,7 @@ switch (s.section_key) {
                     <label className="text-sm">Data JSON</label>
                     {s.section_key === "hero" && (
                       <label className="inline-flex items-center gap-2 text-xs cursor-pointer">
-                        <Upload size={14} /> Upload Gambar → data.images
+                        <Upload size={14} /> Upload Gambar â†’ data.images
                         <input
                           type="file"
                           accept="image/*"
@@ -2076,7 +2267,7 @@ switch (s.section_key) {
                                     Array.isArray(obj2[k])
                                       ? `[${obj2[k].length}]`
                                       : typeof obj2[k] === "object" && obj2[k]
-                                      ? "{…}"
+                                      ? "{â€¦}"
                                       : obj2[k];
                                   return a;
                                 }, {}),
@@ -2213,6 +2404,57 @@ switch (s.section_key) {
           );
         })}
       </div>
+
+      <DialogShell
+        open={!!promptDialog}
+        title={promptDialog?.title}
+        description={promptDialog?.description}
+        onClose={() => setPromptDialog(null)}
+        footer={
+          <>
+            <button type="button" className="btn btn-outline" onClick={() => setPromptDialog(null)}>
+              {ui.cancel}
+            </button>
+            <button type="button" className="btn btn-primary" onClick={submitPromptDialog}>
+              {ui.create}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <input
+            autoFocus
+            className="w-full rounded-2xl border px-3 py-2 dark:bg-slate-900"
+            placeholder={promptDialog?.placeholder || ""}
+            value={promptDialog?.value || ""}
+            onChange={(e) => setPromptDialog((prev) => (prev ? { ...prev, value: e.target.value } : prev))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submitPromptDialog();
+            }}
+          />
+        </div>
+      </DialogShell>
+
+      <DialogShell
+        open={!!confirmDialog}
+        title={confirmDialog?.title}
+        description={confirmDialog?.description}
+        onClose={() => setConfirmDialog(null)}
+        footer={
+          <>
+            <button type="button" className="btn btn-outline" onClick={() => setConfirmDialog(null)}>
+              {ui.cancel}
+            </button>
+            <button type="button" className="btn btn-primary" onClick={submitConfirmDialog}>
+              {ui.confirm}
+            </button>
+          </>
+        }
+      >
+        <div className="rounded-2xl bg-slate-50 p-3 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+          {ui.confirm}
+        </div>
+      </DialogShell>
     </div>
   );
 }

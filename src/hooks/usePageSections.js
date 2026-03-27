@@ -1,5 +1,5 @@
 // src/hooks/usePageSections.js
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "../lib/supabaseClient.js";
 
@@ -16,7 +16,7 @@ export default function usePageSections(page, { live = true } = {}) {
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -47,12 +47,11 @@ export default function usePageSections(page, { live = true } = {}) {
 
     setSections(mapped);
     setLoading(false);
-  };
+  }, [lang, page]);
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, lang]);
+  }, [fetchData]);
 
   useEffect(() => {
     if (!live) return;
@@ -74,7 +73,7 @@ export default function usePageSections(page, { live = true } = {}) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [page, live]);
+  }, [fetchData, live, page]);
 
   return { sections, loading, error, refetch: fetchData };
 }
