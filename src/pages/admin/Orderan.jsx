@@ -825,7 +825,8 @@ export default function Orderan() {
   };
 
   const uploadInvoiceBlob = async (blob, row, invoiceNo) => {
-    const path = `invoices/${invoiceNo.replace(/[^\w/-]/g, "_")}-${row.id}.pdf`;
+    const cleanInvoiceNo = invoiceNo.replace(/[^a-zA-Z0-9]/g, "_");
+    const path = `packages/invoice-${cleanInvoiceNo}-${row.id}.pdf`;
     const { error } = await supabase.storage.from("assets").upload(path, blob, { cacheControl: "3600", upsert: true, contentType: "application/pdf" });
     if (error) throw error;
     const { data } = supabase.storage.from("assets").getPublicUrl(path);
@@ -852,6 +853,7 @@ export default function Orderan() {
     } catch (error) {
       console.error(error);
       toast.error(copy.saveFailed);
+      await load();
     } finally {
       setSavingId(null);
     }
@@ -1097,7 +1099,16 @@ export default function Orderan() {
               </div>
 
               <div className="flex items-center gap-2">
-                <select value={row.status} onChange={(event) => setRowField(row.id, { status: event.target.value })} className={`w-full rounded-xl px-3 py-2 text-sm font-medium ${statusTone(row.status)}`}>
+                <select
+                  value={row.status}
+                  onChange={async (event) => {
+                    const newStatus = event.target.value;
+                    setRowField(row.id, { status: newStatus });
+                    await saveRow({ ...row, status: newStatus });
+                  }}
+                  className={`w-full rounded-xl px-3 py-2 text-sm font-medium ${statusTone(row.status)}`}
+                  disabled={savingId === row.id}
+                >
                   {STATUS_OPTIONS.map((status) => (
                     <option key={status} value={status}>
                       {getStatusLabel(status)}
@@ -1172,7 +1183,16 @@ export default function Orderan() {
                     <td className="p-3">{row.pax}</td>
                     <td className="p-3 font-medium">IDR {formatCurrency(row.total_idr)}</td>
                     <td className="p-3" onClick={(event) => event.stopPropagation()}>
-                      <select className={`w-full rounded-xl px-3 py-2 text-xs font-medium ${statusTone(row.status)}`} value={row.status} onChange={(event) => setRowField(row.id, { status: event.target.value })}>
+                      <select
+                        className={`w-full rounded-xl px-3 py-2 text-xs font-medium ${statusTone(row.status)}`}
+                        value={row.status}
+                        onChange={async (event) => {
+                          const newStatus = event.target.value;
+                          setRowField(row.id, { status: newStatus });
+                          await saveRow({ ...row, status: newStatus });
+                        }}
+                        disabled={savingId === row.id}
+                      >
                         {STATUS_OPTIONS.map((status) => (
                           <option key={status} value={status}>
                             {getStatusLabel(status)}
