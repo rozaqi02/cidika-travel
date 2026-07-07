@@ -7,7 +7,11 @@ import usePackages from "../hooks/usePackages";
 import usePageSections from "../hooks/usePageSections";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
-import { LayoutGrid, Rows, Star, Heart, MapPin, Users, Search, ChevronDown, Globe } from "lucide-react";
+import { LayoutGrid, Rows, MapPin, Users, Search, ChevronDown, Globe, Clock } from "lucide-react";
+import OptimizedImage from "../components/OptimizedImage";
+import { PackageCardSkeleton } from "../components/Skeleton";
+import { ExploreEmptyState } from "../components/EmptyState";
+import { getPkgImage } from "../utils/images";
 
 /* ===============================
    Animation Variants
@@ -36,21 +40,6 @@ const itemVariants = {
 /* ===============================
    Helpers
 ================================= */
-function getPkgImage(p) {
-  const raw =
-    p?.default_image ||
-    p?.cover_url ||
-    p?.thumbnail ||
-    p?.thumb_url ||
-    p?.image_url ||
-    (Array.isArray(p?.images) && p.images[0]) ||
-    (p?.data?.images && p.data.images[0]) ||
-    "";
-  if (!raw) return "/23.jpg";
-  if (/^https?:\/\//i.test(raw)) return raw;
-  return raw.startsWith("/") ? raw : `/${raw}`;
-}
-
 function normalizeLocale(p, lang2) {
   if (p?.locale && p.locale.title) return p.locale;
   const L = Array.isArray(p?.locales) ? p.locales : [];
@@ -80,7 +69,10 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
   const labelColor = isOpenTrip ? "bg-amber-500/90" : "bg-sky-500/90";
   const labelText = isOpenTrip ? t("explore.openTrip") : t("explore.privateTour", { defaultValue: "Private Tour" });
 
-  const goOrder = () => {
+  const goDetail = () => nav(`/packages/${p.id}`, { state: { pax, audience } });
+
+  const goOrder = (event) => {
+    event.stopPropagation();
     const item = {
       id: p.id,
       title: loc.title || p.slug,
@@ -93,10 +85,10 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
     nav("/checkout", { state: { items: [item] } });
   };
 
-  const rating = 4.8;
-  const stars = Array.from({ length: 5 }, (_, i) => (
-    <Star key={i} size={14} className={i < rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"} />
-  ));
+  const stopCardNav = (event) => event.stopPropagation();
+
+  const spotCount = (loc.spots || []).length;
+  const tripLabel = isOpenTrip ? t("explore.openTrip") : t("explore.privateTour", { defaultValue: "Private Tour" });
 
   return (
     <MotionArticle
@@ -106,19 +98,31 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
       animate="visible"
       exit="exit"
       whileHover={{ y: -8, transition: { duration: 0.3 } }}
+      whileTap={{ scale: 0.99 }}
       id={`pkg-${p.id}`}
-      className="group relative overflow-hidden rounded-xl border border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-xl transition-shadow duration-300 bg-white dark:bg-gray-900"
+      role="link"
+      tabIndex={0}
+      aria-label={`${loc.title || p.slug} — ${t("home.viewDetails")}`}
+      onClick={goDetail}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          goDetail();
+        }
+      }}
+      className="card-package group relative cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
     >
       {/* Image */}
       <div className="relative h-56 overflow-hidden">
-        <motion.img
-          src={cover}
-          alt={loc?.title}
-          loading="lazy"
-          className="w-full h-full object-cover"
-          whileHover={{ scale: 1.1 }}
-          transition={{ duration: 0.6 }}
-        />
+        <motion.div className="w-full h-full" whileHover={{ scale: 1.1 }} transition={{ duration: 0.6 }}>
+          <OptimizedImage
+            src={cover}
+            alt={loc?.title}
+            preset="card"
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </motion.div>
         
         {/* DYNAMIC LABEL (DATABASE) */}
         <div className={`absolute top-3 left-3 z-10 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 ${labelColor}`}>
@@ -127,9 +131,6 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
         </div>
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        <button className="absolute top-3 right-3 z-10 p-2 bg-white/90 dark:bg-gray-800/90 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 active:scale-95">
-          <Heart size={18} className="text-gray-600 dark:text-gray-300" />
-        </button>
       </div>
 
       {/* Content */}
@@ -149,10 +150,17 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
           ))}
         </div>
 
-        {/* Rating */}
-        <div className="flex items-center gap-1 mb-3">
-          <div className="flex">{stars}</div>
-          <span className="text-sm text-gray-500 dark:text-gray-400 ml-1">({rating.toFixed(1)})</span>
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 dark:bg-slate-800">
+            <Clock size={12} className="text-sky-500" />
+            {tripLabel}
+          </span>
+          {spotCount > 0 ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 dark:bg-slate-800">
+              <MapPin size={12} className="text-amber-500" />
+              {spotCount} {t("explore.spots", { defaultValue: "spots" })}
+            </span>
+          ) : null}
         </div>
 
         {/* Price */}
@@ -165,20 +173,19 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
           </p>
         </div>
 
-        {/* Actions */}
+        {/* Actions — klik kartu membuka detail; pax & order tetap independen */}
         <div className="flex items-center justify-between gap-2">
-          <button
-            onClick={() => nav(`/packages/${p.id}`, { state: { pax, audience } })}
-            className="text-sm font-medium text-sky-600 dark:text-sky-400 hover:underline flex-1 text-left"
-          >
+          <span className="text-sm font-medium text-sky-600 dark:text-sky-400 flex-1 text-left flex items-center gap-1 group-hover:underline pointer-events-none">
             {t("home.viewDetails")}
-          </button>
+            <ChevronDown size={14} className="-rotate-90 opacity-60" />
+          </span>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" onClick={stopCardNav}>
             <select
               value={pax}
-              onChange={(e) => setPax(parseInt(e.target.value))}
-              className="px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-lg outline-none focus:ring-2 focus:ring-sky-500/50"
+              onChange={(e) => setPax(parseInt(e.target.value, 10))}
+              aria-label={t("home.pax")}
+              className="px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-lg outline-none focus:ring-2 focus:ring-sky-500/50 cursor-pointer"
             >
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <option key={n} value={n}>
@@ -186,7 +193,11 @@ function PackageCard({ p, audience, pax, setPax, currency, fx, locale, t, lang }
                 </option>
               ))}
             </select>
-            <button onClick={goOrder} className="btn btn-primary px-4 py-1.5 rounded-lg text-sm shadow-lg shadow-sky-500/20 hover:shadow-sky-500/40 transition-shadow">
+            <button
+              type="button"
+              onClick={goOrder}
+              className="btn btn-primary px-4 py-1.5 rounded-lg text-sm shadow-lg shadow-sky-500/20 hover:shadow-sky-500/40 transition-shadow"
+            >
               {t("actions.order")}
             </button>
           </div>
@@ -203,7 +214,7 @@ export default function Explore() {
   const { t, i18n } = useTranslation();
   const { rows: data = [], loading } = usePackages();
   const { fx, currency, locale } = useCurrency();
-  const lang = (i18n.language || "id").slice(0, 2);
+  const lang = (i18n.resolvedLanguage || i18n.language || "id").split("-")[0];
 
   const { sections: destSections = [] } = usePageSections("destinations");
 
@@ -317,8 +328,7 @@ export default function Explore() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
-        // Hapus sticky, pakai static layout. Styling diperbagus.
-        className="bg-white dark:bg-gray-900 p-3 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col lg:flex-row gap-4 items-center justify-between"
+        className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-gray-200/80 bg-white/90 p-3 shadow-sm backdrop-blur-xl dark:border-gray-800/80 dark:bg-gray-900/90 lg:flex-row"
       >
         
         {/* Left Side: Filters Group */}
@@ -408,39 +418,7 @@ export default function Explore() {
       >
         <AnimatePresence mode="popLayout">
           {loading ? (
-            // Render 6 skeleton placeholders while loading
-            Array.from({ length: 6 }).map((_, i) => (
-              <motion.div
-                key={`ph-${i}`}
-                variants={itemVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                className="group relative overflow-hidden rounded-xl border border-gray-200/40 dark:border-gray-700/40 shadow-sm bg-white dark:bg-gray-900"
-              >
-                <div className="relative h-48 overflow-hidden bg-gray-200 dark:bg-gray-800" style={{background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.06) 100%)', backgroundSize: '200% 100%', animation: 'shimmer 1.2s linear infinite'}}>
-                  <div className="absolute top-3 left-3 z-10 w-20 h-6 rounded-full bg-gray-300 dark:bg-gray-700/60" />
-                </div>
-
-                <div className="p-4">
-                  <div className="h-4 w-3/4 mb-3 rounded bg-gray-200 dark:bg-gray-800" style={{backgroundSize: '200% 100%', animation: 'shimmer 1.2s linear infinite'}} />
-                  <div className="flex gap-2 mb-3">
-                    <div className="h-3 w-16 rounded bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
-                    <div className="h-3 w-12 rounded bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
-                  </div>
-                  <div className="h-3 w-20 mb-3 rounded bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
-
-                  <div className="mb-4">
-                    <div className="h-6 w-1/2 rounded bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="h-9 w-24 rounded-lg bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
-                    <div className="h-9 w-20 rounded-lg bg-gray-200 dark:bg-gray-800" style={{animation: 'shimmer 1.2s linear infinite'}} />
-                  </div>
-                </div>
-              </motion.div>
-            ))
+            Array.from({ length: 6 }).map((_, index) => <PackageCardSkeleton key={`sk-${index}`} />)
           ) : filtered.length ? (
             filtered.map((p) => (
               <PackageCard
@@ -457,23 +435,14 @@ export default function Explore() {
               />
             ))
           ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="col-span-full text-center py-16 text-gray-500 dark:text-gray-400"
-            >
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
-                 <Search size={24} className="opacity-50" />
-              </div>
-              <p className="text-lg font-medium">
-                {t("explore.empty", { defaultValue: "No packages found." })}
-              </p>
-              <p className="text-sm mt-1 opacity-70">
-                {t("explore.emptyHint", {
-                  defaultValue: "Try adjusting your search or filters.",
-                })}
-              </p>
-            </motion.div>
+            <ExploreEmptyState
+              t={t}
+              onReset={() => {
+                setQuery("");
+                setDest("all");
+                setAudience("domestic");
+              }}
+            />
           )}
         </AnimatePresence>
       </motion.div>

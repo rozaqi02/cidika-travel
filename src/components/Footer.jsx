@@ -35,7 +35,7 @@ export default function Footer() {
                 href="https://wa.me/62895630193926"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 text-white px-4 py-2 font-semibold hover:bg-sky-700 transition"
+                className="btn btn-wa inline-flex items-center gap-2 rounded-2xl px-4 py-2 font-semibold"
               >
                 {t("footer.cta.whatsapp")} <ArrowRight size={18} />
               </a>

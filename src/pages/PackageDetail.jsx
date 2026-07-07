@@ -7,30 +7,18 @@ import { ArrowLeft, Calendar, Check, Info, MapPin, DollarSign, Users, ArrowRight
 import usePackages from "../hooks/usePackages";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
+import OptimizedImage from "../components/OptimizedImage";
+import Lightbox from "../components/Lightbox";
+import { PackageDetailSkeleton } from "../components/Skeleton";
+import { getPkgImage, normalizeImageUrl } from "../utils/images";
 
 /* ===== util ===== */
-function getPkgImage(p) {
-  const raw =
-    p?.default_image ||
-    p?.cover_url ||
-    p?.thumbnail ||
-    p?.thumb_url ||
-    p?.image_url ||
-    (Array.isArray(p?.images) && p.images[0]) ||
-    (p?.data?.images && p.data.images[0]) ||
-    "";
-  if (!raw) return "/23.jpg";
-  if (/^https?:\/\//i.test(raw)) return raw;
-  return raw.startsWith("/") ? raw : `/${raw}`;
-}
 
 function getGalleryList(p) {
   const urls = new Set();
   const push = (u) => {
     if (!u) return;
-    const s = String(u);
-    const final = /^https?:\/\//i.test(s) ? s : s.startsWith("/") ? s : `/${s}`;
-    urls.add(final);
+    urls.add(normalizeImageUrl(u));
   };
   push(p?.default_image);
   if (Array.isArray(p?.images)) p.images.forEach(push);
@@ -72,12 +60,18 @@ function RecommendationCard({ p, currency, fx, locale, lang, t }) {
   return (
     <motion.div 
       whileHover={{ y: -5 }}
-      className="group cursor-pointer rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-gray-900 overflow-hidden shadow-sm hover:shadow-md transition-all"
+      className="card-package group cursor-pointer overflow-hidden"
       onClick={handleClick}
     >
         <div className="relative h-40 overflow-hidden">
-        <img src={cover} alt={loc.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-        <div className="absolute top-2 left-2 bg-black/50 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full font-medium uppercase">
+        <OptimizedImage
+          src={cover}
+          alt={loc.title}
+          preset="card"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          loading="lazy"
+        />
+        <div className="absolute top-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-medium uppercase text-white backdrop-blur-sm">
            {p.trip_type === 'open' ? t("explore.openTrip") : t("explore.private")}
         </div>
       </div>
@@ -105,7 +99,8 @@ function ItineraryTimeline({ data }) {
   const steps = Array.isArray(data) ? data : [];
   if (!steps.length) return null;
   return (
-    <ol className="mt-4 relative border-l-2 border-sky-200 dark:border-sky-800 space-y-6 ml-2">
+    <ol className="relative ml-2 mt-4 space-y-6">
+      <div className="itinerary-line absolute bottom-2 left-[7px] top-2 w-0.5" aria-hidden />
       {steps.map((step, i) => {
         const isObj = step && typeof step === "object";
         const time = String(isObj ? step.time ?? "" : "").trim();
@@ -215,15 +210,16 @@ export default function PackageDetail() {
   const nav = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const { rows: data = [] } = usePackages();
+  const { rows: data = [], loading } = usePackages();
   const { fx, currency, locale } = useCurrency();
-  const lang = (i18n.language || "id").slice(0, 2);
+  const lang = (i18n.resolvedLanguage || i18n.language || "id").split("-")[0];
 
   const pkg = useMemo(() => data.find((p) => p.id === id || p.slug === id), [data, id]);
   const loc = normalizeLocale(pkg, locale?.slice(0, 2));
 
   const [audience, setAudience] = useState(location.state?.audience || "domestic");
   const [pax, setPax] = useState(location.state?.pax || 1);
+  const [lightboxIdx, setLightboxIdx] = useState(null);
 
   // --- LOGIC REKOMENDASI ---
   const recommendations = useMemo(() => {
@@ -236,6 +232,10 @@ export default function PackageDetail() {
     return shuffled.slice(0, 3);
   }, [data, pkg]);
   // -------------------------
+
+  if (loading) {
+    return <PackageDetailSkeleton />;
+  }
 
   if (!pkg) {
     return (
@@ -255,9 +255,9 @@ export default function PackageDetail() {
   const tripTypeLabel = isOpenTrip ? t("explore.openTrip") : t("explore.privateTour", { defaultValue: "Private Trip" });
   const tripTypeColor = isOpenTrip ? "bg-amber-500 text-white" : "bg-sky-500 text-white";
   const tripTypeBadge = (
-      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${tripTypeColor}`}>
-          {isOpenTrip && <Users size={12} />}
-          {tripTypeLabel}
+      <span className={`inline-flex max-w-full items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide sm:text-xs ${tripTypeColor}`}>
+          {isOpenTrip && <Users size={12} className="shrink-0" />}
+          <span className="truncate">{tripTypeLabel}</span>
       </span>
   );
   // -----------------------
@@ -299,7 +299,7 @@ export default function PackageDetail() {
   };
 
   return (
-    <div className="container mt-2 pb-20">
+    <div className="container mt-2 pb-28 lg:pb-20">
       {/* Hero */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -307,31 +307,43 @@ export default function PackageDetail() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="relative rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl"
       >
-        <motion.img 
+        <motion.div
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
           transition={{ duration: 0.8 }}
-          src={cover} 
-          alt={loc?.title} 
-          className="w-full h-[40vh] sm:h-[55vh] object-cover" 
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-950/90 via-gray-900/20 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10">
-          <motion.button 
-             whileHover={{ x: -5 }}
-             onClick={() => nav(-1)} 
-             className="btn btn-outline text-white border-white/30 bg-white/10 backdrop-blur-md hover:bg-white/20 !px-4 !py-2 mb-6 flex items-center gap-2 w-fit"
-          >
-            <ArrowLeft size={16} /> {t("back", { defaultValue: "Back" })}
-          </motion.button>
-          
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="flex-1">
+          className="relative w-full h-[40vh] min-h-[280px] sm:h-[55vh] sm:min-h-[320px]"
+        >
+          <OptimizedImage
+            src={cover}
+            alt={loc?.title}
+            preset="detail"
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+            fetchpriority="high"
+          />
+          <div className="absolute inset-0 hero-tropical-overlay" />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950/90 via-gray-900/20 to-transparent" />
+        </motion.div>
+
+        <motion.button
+          type="button"
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => nav(-1)}
+          className="absolute left-4 top-4 z-20 flex w-fit items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-white shadow-lg backdrop-blur-md transition-colors hover:bg-white/20 sm:left-6 sm:top-6"
+        >
+          <ArrowLeft size={16} /> {t("back", { defaultValue: "Back" })}
+        </motion.button>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-gray-950/95 via-gray-950/70 to-transparent pt-16 sm:pt-20">
+          <div className="pointer-events-auto p-4 sm:p-6 md:p-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+            <div className="min-w-0 flex-1">
               {/* Trip Type Badge Hero */}
               <motion.div 
                  initial={{ opacity: 0, y: 10 }} 
                  animate={{ opacity: 1, y: 0 }} 
-                 className="mb-3"
+                 className="mb-3 max-w-full"
               >
                   {tripTypeBadge}
               </motion.div>
@@ -340,24 +352,26 @@ export default function PackageDetail() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="home-hero-title text-white text-[clamp(34px,7vw,68px)] leading-[0.98] max-w-4xl"
+                className="home-hero-title line-clamp-3 break-words text-white text-[clamp(28px,7vw,68px)] leading-[1.05] max-w-4xl"
               >
                   {loc?.title || pkg.slug}
               </motion.h1>
-              <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="text-gray-200 text-sm sm:text-lg mt-3 max-w-2xl leading-relaxed"
-              >
-                  {loc?.summary || ""}
-              </motion.p>
+              {loc?.summary ? (
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-gray-200 text-sm sm:text-base md:text-lg mt-2 sm:mt-3 max-w-2xl leading-relaxed line-clamp-2 sm:line-clamp-3"
+                >
+                  {loc.summary}
+                </motion.p>
+              ) : null}
             </div>
             <motion.div 
                initial={{ opacity: 0, x: 20 }}
                animate={{ opacity: 1, x: 0 }}
                transition={{ delay: 0.5 }}
-               className="text-left md:text-right shrink-0 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10"
+               className="w-full shrink-0 text-left md:w-auto md:max-w-[240px] md:text-right bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10"
             >
               <div className="text-sky-400 font-extrabold text-3xl sm:text-4xl">
                 {formatMoneyFromIDR(price, currency, fx, locale)} 
@@ -368,6 +382,7 @@ export default function PackageDetail() {
                  <span>{pax} {t("home.pax")}</span>
               </div>
             </motion.div>
+          </div>
           </div>
         </div>
       </motion.div>
@@ -442,18 +457,25 @@ export default function PackageDetail() {
               <SectionTitle>{t("gallery", { defaultValue: "Gallery" })}</SectionTitle>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {gallery.map((src, i) => (
-                  <motion.img
+                  <motion.button
+                    type="button"
                     key={i}
-                    src={src}
-                    alt=""
-                    loading="lazy"
                     initial={{ opacity: 0, scale: 0.8 }}
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true, margin: "-50px" }}
                     transition={{ duration: 0.4, delay: i * 0.05 }}
                     whileHover={{ scale: 1.05, zIndex: 10 }}
-                    className="w-full aspect-[4/3] object-cover rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer shadow-sm hover:shadow-lg"
-                  />
+                    onClick={() => setLightboxIdx(i)}
+                    className="w-full aspect-[4/3] overflow-hidden rounded-xl border border-slate-200 bg-transparent shadow-sm hover:shadow-lg dark:border-slate-800"
+                  >
+                    <OptimizedImage
+                      src={src}
+                      alt=""
+                      preset="gallery"
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  </motion.button>
                 ))}
               </div>
             </section>
@@ -461,7 +483,7 @@ export default function PackageDetail() {
         </motion.div>
 
         {/* Right: sticky booking card */}
-        <div className="lg:col-span-1">
+        <div className="hidden lg:col-span-1 lg:block">
            <motion.aside
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -469,16 +491,16 @@ export default function PackageDetail() {
             className="card p-6 h-max sticky top-[7.5rem] bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-700"
           >
             <div className="flex items-center justify-between mb-6">
-              <div className="font-bold text-xl text-gray-900 dark:text-white">{t("explore.title", { defaultValue: "Booking Options" })}</div>
+              <div className="font-bold text-xl text-gray-900 dark:text-white">{t("packageDetail.bookingOptions", { defaultValue: "Booking Options" })}</div>
             </div>
 
             <div className="space-y-4">
               {/* Trip Type Info */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
-                  <span className="text-xs font-semibold text-gray-500 uppercase">
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                  <span className="shrink-0 text-xs font-semibold text-gray-500 uppercase">
                     {t("packageDetail.tripType", { defaultValue: "Trip Type" })}
                   </span>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${isOpenTrip ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'}`}>
+                  <span className={`max-w-[58%] truncate rounded px-2 py-0.5 text-right text-xs font-bold ${isOpenTrip ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'}`}>
                       {tripTypeLabel}
                   </span>
               </div>
@@ -540,7 +562,7 @@ export default function PackageDetail() {
                 {t("actions.order", { defaultValue: "Book Now" })}
               </button>
               <a
-                className="btn btn-outline w-full py-3.5 rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="btn btn-wa w-full rounded-xl py-3.5 font-semibold"
                 href={`https://wa.me/62895630193926?text=${buildAskWAMessage()}`}
                 target="_blank"
                 rel="noreferrer"
@@ -588,6 +610,33 @@ export default function PackageDetail() {
         </div>
       )}
       {/* -------------------------------------- */}
+
+      {lightboxIdx !== null ? (
+        <Lightbox
+          images={gallery}
+          index={lightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+          onNavigate={setLightboxIdx}
+        />
+      ) : null}
+
+      <div
+        className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 border-t border-slate-200/80 bg-white/95 px-4 py-3 shadow-[0_-8px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
+      >
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-4">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              {t("explore.prices", { defaultValue: "Total" })}
+            </div>
+            <div className="text-xl font-extrabold text-sky-600 dark:text-sky-400">
+              {formatMoneyFromIDR(price * pax, currency, fx, locale)}
+            </div>
+          </div>
+          <button type="button" className="btn btn-primary rounded-full px-6 py-3" onClick={goOrder}>
+            {t("actions.order", { defaultValue: "Book Now" })}
+          </button>
+        </div>
+      </div>
 
     </div>
   );

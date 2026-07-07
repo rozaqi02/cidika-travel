@@ -23,6 +23,8 @@ import { CurrencyProvider } from "./context/CurrencyContext";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import ScrollProgressBar from "./components/ScrollProgressBar";
+import MobileBottomNav from "./components/MobileBottomNav";
+import AdminLayout from "./components/admin/AdminLayout";
 import PackageDetail from "./pages/PackageDetail";
 import Checkout from "./pages/Checkout";
 import Reset from "./pages/admin/Reset";
@@ -245,6 +247,8 @@ export default function App() {
 
             <Toaster position="top-right" toastOptions={{ className: "rounded-xl border border-slate-200 dark:border-slate-700" }} />
 
+            <MobileBottomNav />
+
             <Routes>
               <Route path="/" element={<Layout><Home /></Layout>} />
               <Route path="/explore" element={<Layout><Explore /></Layout>} />
@@ -255,9 +259,9 @@ export default function App() {
               <Route path="/contact" element={<Layout><Contact /></Layout>} />
 
               <Route path="/admin/login" element={<Layout><Login /></Layout>} />
-              <Route path="/admin" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
-              <Route path="/admin/kustomisasi" element={<ProtectedRoute><Layout><Kustomisasi /></Layout></ProtectedRoute>} />
-              <Route path="/admin/orderan" element={<ProtectedRoute><Layout><Orderan /></Layout></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><AdminLayout><Dashboard /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/kustomisasi" element={<ProtectedRoute><AdminLayout><Kustomisasi /></AdminLayout></ProtectedRoute>} />
+              <Route path="/admin/orderan" element={<ProtectedRoute><AdminLayout><Orderan /></AdminLayout></ProtectedRoute>} />
               <Route path="/admin/reset" element={<Layout><Reset /></Layout>} />
 
               <Route path="*" element={<Navigate to="/" replace />} />

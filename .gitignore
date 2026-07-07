@@ -36,5 +36,6 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+/terminals/
 *storybook.log
 storybook-static

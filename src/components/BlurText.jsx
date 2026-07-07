@@ -1,6 +1,7 @@
 // src/components/BlurText.jsx
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState, useMemo } from 'react';
+import usePrefersReducedMotion from '../hooks/usePrefersReducedMotion';
 
 const buildKeyframes = (from, steps) => {
   const keys = new Set([...Object.keys(from), ...steps.flatMap(s => Object.keys(s))]);
@@ -64,7 +65,12 @@ const BlurText = ({
   const stepCount = toSnapshots.length + 1;
   const totalDuration = stepDuration * (stepCount - 1);
   const times = Array.from({ length: stepCount }, (_, i) => (stepCount === 1 ? 0 : i / (stepCount - 1)));
-  
+  const reducedMotion = usePrefersReducedMotion();
+
+  if (reducedMotion) {
+    return <p className={className}>{text}</p>;
+  }
+
   return (
     // REVISI: Tambahkan justifyContent: 'center' agar teks flex rata tengah
     <p ref={ref} className={className} style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>

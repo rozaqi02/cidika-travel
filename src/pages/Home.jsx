@@ -8,11 +8,19 @@ import {
   Search, Quote, ArrowRight, Send, Camera, Instagram
 } from "lucide-react";
 import BlurText from "../components/BlurText";
+import OptimizedImage from "../components/OptimizedImage";
+import {
+  DestinationCardSkeleton,
+  GalleryGridSkeleton,
+  PopularCardSkeleton,
+} from "../components/Skeleton";
 import usePackages from "../hooks/usePackages";
+import usePrefersReducedMotion from "../hooks/usePrefersReducedMotion";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
 import usePageSections from "../hooks/usePageSections";
 import { supabase } from "../lib/supabaseClient";
+import { getPkgImage, preloadImage } from "../utils/images";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -44,46 +52,12 @@ const staggerContainer = {
   }
 };
 
-function usePreload(images) {
-  useEffect(() => {
-    images?.forEach(src => {
-      const img = new Image();
-      img.src = src;
-    });
-  }, [images]);
-}
-
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const m = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    if (!m) return;
-    setReduced(!!m.matches);
-    const c = () => setReduced(!!m.matches);
-    m.addEventListener?.("change", c);
-    return () => m.removeEventListener?.("change", c);
-  }, []);
-  return reduced;
-}
-
-function normalizeUrl(raw) {
-  if (!raw) return "";
-  if (/^https?:\/\//i.test(raw)) return raw;
-  return raw.startsWith("/") ? raw : `/${raw}`;
-}
-
-function getPkgImage(p) {
-  const raw = p?.default_image || p?.cover_url || p?.thumbnail || p?.thumb_url || p?.image_url ||
-    (Array.isArray(p?.images) && p.images[0]) || (p?.data?.images && p.data.images[0]) || "";
-  const url = normalizeUrl(raw);
-  return url || "/23.jpg";
-}
-
-function SpotlightOverlay({ className = "" }) {
+function SpotlightOverlay({ className = "", disabled = false }) {
   const ref = useRef(null);
   useEffect(() => {
+    if (disabled) return undefined;
     const el = ref.current;
-    if (!el) return;
+    if (!el) return undefined;
     let frameId;
     const onMove = (e) => {
       if (frameId) cancelAnimationFrame(frameId);
@@ -98,7 +72,7 @@ function SpotlightOverlay({ className = "" }) {
       window.removeEventListener("mousemove", onMove);
       if (frameId) cancelAnimationFrame(frameId);
     };
-  }, []);
+  }, [disabled]);
   return (
     <div
       ref={ref}
@@ -111,7 +85,15 @@ function SpotlightOverlay({ className = "" }) {
   );
 }
 
-function Marquee({ speed = 35, children }) {
+function Marquee({ speed = 35, children, reduced = false }) {
+  if (reduced) {
+    return (
+      <div className="relative w-full overflow-hidden mask-linear-fade">
+        <div className="flex w-max gap-3">{children}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative overflow-hidden w-full mask-linear-fade">
       <motion.div
@@ -127,14 +109,23 @@ function Marquee({ speed = 35, children }) {
 }
 
 function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaContactLabel }) {
+  const { t } = useTranslation();
   const reduced = usePrefersReducedMotion();
+  const hasChips = chips?.length > 0;
   const [idx, setIdx] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   
   const { scrollY } = useScroll();
-  const y = useTransform(scrollY, [0, 1000], [0, 200]); 
+  const y = useTransform(scrollY, [0, 1000], [0, reduced ? 0 : 200]);
+  const slideTransition = reduced
+    ? { duration: 0.01 }
+    : { duration: 1.5, ease: "easeInOut" };
 
-  usePreload(images);
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const nextIndex = (idx + 1) % images.length;
+    preloadImage(images[nextIndex], { width: 1920, quality: 78 });
+  }, [idx, images]);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -147,36 +138,38 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
   const prevSlide = () => setIdx((prev) => (prev - 1 + images.length) % images.length);
 
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-slate-900 group">
+    <section className="relative min-h-[100dvh] min-h-[calc(var(--vh,1vh)*100)] w-full overflow-hidden bg-slate-900 group grain">
       
       {/* --- BACKGROUND SLIDER --- */}
-      <motion.div style={{ y }} className="absolute inset-0 z-0 will-change-transform">
-        <AnimatePresence mode="popLayout">
-          {images.map((raw, i) => {
-            const src = normalizeUrl(raw);
-            return (
-              <motion.img
-                key={src || i}
-                src={src}
-                alt="Hero"
-                className="absolute inset-0 w-full h-full object-cover"
-                initial={{ opacity: 0, scale: 1.08 }}
-                animate={{ opacity: i === idx ? 1 : 0, scale: i === idx ? 1 : 1.08 }}
-                transition={{ duration: 1.5, ease: "easeInOut" }}
-                loading={i === 0 ? "eager" : "lazy"}
-              />
-            );
-          })}
+      <motion.div style={reduced ? undefined : { y }} className="absolute inset-0 z-0 will-change-transform">
+        <AnimatePresence mode={reduced ? "sync" : "wait"}>
+          <motion.div
+            key={reduced ? 0 : idx}
+            className="absolute inset-0"
+            initial={reduced ? false : { opacity: 0, scale: 1.08 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={reduced ? undefined : { opacity: 0, scale: 1.02 }}
+            transition={slideTransition}
+          >
+            <OptimizedImage
+              src={images[reduced ? 0 : idx]}
+              alt="Hero"
+              preset="hero"
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="eager"
+              fetchpriority="high"
+            />
+          </motion.div>
         </AnimatePresence>
         
         {/* Overlay */}
-        <div className="absolute inset-0 bg-black/30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
-        <SpotlightOverlay />
+        <div className="absolute inset-0 hero-tropical-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-slate-900/25" />
+        <SpotlightOverlay disabled={reduced} />
       </motion.div>
 
       {/* --- NAVIGASI PANAH MANUAL --- */}
-      {images.length > 1 && (
+      {images.length > 1 && !reduced && (
         <>
           <div className="absolute top-1/2 left-4 md:left-8 z-20 -translate-y-1/2 p-3 cursor-pointer text-white/50 hover:text-white transition-colors duration-300 hidden md:block rounded-full hover:bg-white/10" onClick={prevSlide}>
             <ChevronLeft size={48} strokeWidth={1} />
@@ -189,13 +182,13 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
 
       {/* --- KONTEN TENGAH --- */}
       <motion.div
-        className="relative z-10 container h-full flex flex-col justify-center items-center text-center px-4"
-        initial="hidden"
-        animate={isLoaded ? "visible" : "hidden"}
-        variants={staggerContainer}
+        className={`relative z-10 container flex min-h-[inherit] flex-col items-center justify-center px-4 text-center ${hasChips ? "pb-40 md:pb-36" : "pb-16"}`}
+        initial={reduced ? false : "hidden"}
+        animate={reduced || isLoaded ? "visible" : "hidden"}
+        variants={reduced ? undefined : staggerContainer}
       >
         {subtitle && (
-          <motion.div variants={bouncyUp} className="mb-6">
+          <motion.div variants={reduced ? undefined : bouncyUp} className="mb-6">
             <span className="text-[10px] md:text-sm text-white font-medium tracking-[0.2em] md:tracking-[0.3em] uppercase drop-shadow-md bg-white/10 px-3 py-1 md:px-4 md:py-1 rounded-full backdrop-blur-sm border border-white/10">
               {subtitle}
             </span>
@@ -216,7 +209,7 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
 
         {desc && (
           <motion.p 
-            variants={bouncyUp} 
+            variants={reduced ? undefined : bouncyUp} 
             className="max-w-xl md:max-w-2xl mx-auto text-sm md:text-lg text-slate-200 leading-relaxed mb-8 md:mb-10 drop-shadow-md font-light text-center opacity-90"
           >
             {desc}
@@ -225,7 +218,7 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
 
         {ctaContactLabel && (
           <motion.div 
-            variants={bouncyUp}
+            variants={reduced ? undefined : bouncyUp}
             className="w-full flex justify-center"
           >
             {/* --- TOMBOL RESPONSIF (GLASS + GLOW) --- */}
@@ -241,13 +234,13 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
                 text-xs md:text-sm uppercase overflow-hidden
                 transition-all duration-300
               "
-              whileHover={{ 
+              whileHover={reduced ? undefined : { 
                 scale: 1.05, 
                 backgroundColor: "rgba(255, 255, 255, 0.15)",
                 borderColor: "rgba(255, 255, 255, 0.8)",
                 boxShadow: "0 0 30px rgba(255,255,255,0.3)"
               }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={reduced ? undefined : { scale: 0.95 }}
             >
               {/* Text Label */}
               <span className="relative z-10 drop-shadow-sm whitespace-nowrap">{ctaContactLabel}</span>
@@ -255,44 +248,52 @@ function Hero({ images = [], subtitle, title, desc, chips = [], onSearch, ctaCon
               {/* Arrow Icon */}
               <motion.span
                 initial={{ x: 0 }}
-                whileHover={{ x: 5 }}
+                whileHover={reduced ? undefined : { x: 5 }}
                 className="relative z-10"
               >
                 <ChevronRight size={16} className="md:w-[18px] md:h-[18px]" strokeWidth={2} />
               </motion.span>
 
               {/* Shine Animation Effect */}
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 z-0"
-                initial={{ x: "-100%" }}
-                whileHover={{ x: "100%" }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
-              />
+              {!reduced && (
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 z-0"
+                  initial={{ x: "-100%" }}
+                  whileHover={{ x: "100%" }}
+                  transition={{ duration: 0.6, ease: "easeInOut" }}
+                />
+              )}
             </motion.a>
             {/* ---------------------------------------------------- */}
           </motion.div>
         )}
 
-        {!!chips?.length && (
-          <motion.div 
-            variants={bouncyUp} 
-            className="absolute bottom-6 md:bottom-8 w-full max-w-lg mx-auto left-0 right-0 px-4"
-          >
-            <p className="text-[10px] text-white/60 mb-2 uppercase tracking-widest font-semibold text-center">Pencarian Populer</p>
-            <Marquee speed={40}>
-              {chips.map((c, i) => (
-                <button
-                  key={i}
-                  onClick={() => onSearch?.(c.q)}
-                  className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-[10px] md:text-xs text-white transition-all flex items-center gap-1.5 shadow-sm hover:shadow-md"
-                >
-                  <Search size={10} className="text-white/70" /> {c.label}
-                </button>
-              ))}
-            </Marquee>
-          </motion.div>
-        )}
       </motion.div>
+
+      {hasChips && (
+        <motion.div
+          initial={reduced ? false : { opacity: 0, y: 16 }}
+          animate={reduced || isLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+          transition={reduced ? { duration: 0.01 } : { duration: 0.4, delay: 0.2 }}
+          className="absolute inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] z-20 mx-auto w-full max-w-lg px-4 lg:bottom-8"
+        >
+          <p className="mb-2 text-center text-[10px] font-semibold uppercase tracking-widest text-white/60">
+            {t("home.popularSearch")}
+          </p>
+          <Marquee speed={40} reduced={reduced}>
+            {chips.map((c, i) => (
+              <button
+                key={c.q || c.label || i}
+                type="button"
+                onClick={() => onSearch?.(c.q)}
+                className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[10px] text-white shadow-sm backdrop-blur-md transition-all hover:bg-white/20 hover:shadow-md md:text-xs"
+              >
+                <Search size={10} className="text-white/70" /> {c.label}
+              </button>
+            ))}
+          </Marquee>
+        </motion.div>
+      )}
     </section>
   );
 }
@@ -320,10 +321,26 @@ function FeatureCard({ iconName, title, text }) {
   );
 }
 
-function FeaturedDestinationsSection({ items = [] }) {
+function FeaturedDestinationsSection({ items = [], loading = false }) {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  
+  const reduced = usePrefersReducedMotion();
+
+  if (loading) {
+    return (
+      <section className="container relative z-10 mt-20 md:mt-28">
+        <div className="mb-12 px-4 text-center md:px-0">
+          <div className="mx-auto mb-3 h-8 w-64 rounded-lg skeleton-shimmer" />
+          <div className="mx-auto h-4 w-96 max-w-full rounded-lg skeleton-shimmer" />
+        </div>
+        <div className="mx-auto max-w-6xl">
+          <DestinationCardSkeleton />
+          <DestinationCardSkeleton reverse />
+        </div>
+      </section>
+    );
+  }
+
   if (!items || items.length < 2) return null;
 
   const featuredDests = items.slice(0, 2);
@@ -331,16 +348,16 @@ function FeaturedDestinationsSection({ items = [] }) {
   return (
     <section className="container mt-20 md:mt-28 relative z-10">
       <motion.div
-        initial="hidden"
-        whileInView="visible"
+        initial={reduced ? false : "hidden"}
+        whileInView={reduced ? undefined : "visible"}
         viewport={{ once: true, amount: 0.1 }}
-        variants={staggerContainer}
+        variants={reduced ? undefined : staggerContainer}
       >
         <div className="text-center mb-12 px-4 md:px-0">
-          <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-3">
+          <motion.h2 variants={reduced ? undefined : bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-3">
             {t("home.featuredTitle", { defaultValue: "Featured Destinations" })}
           </motion.h2>
-          <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
+          <motion.p variants={reduced ? undefined : bouncyUp} className="text-slate-600 dark:text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
             {t("home.featuredDesc", {
               defaultValue: "Explore handpicked destinations for your next adventure",
             })}
@@ -363,16 +380,18 @@ function FeaturedDestinationsSection({ items = [] }) {
                 <div className="w-full lg:w-1/2 group">
                   <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl aspect-[4/3] lg:aspect-[5/4]">
                     <div className="absolute inset-0 bg-slate-900/20 group-hover:bg-slate-900/0 transition-colors duration-500 z-10" />
-                    <img
+                    <OptimizedImage
                       src={item.image || "/23.jpg"}
                       alt={item.title}
+                      preset="card"
+                      width={960}
                       className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-out"
                       loading="lazy"
                     />
                     {/* Floating Badge */}
-                    <div className="absolute top-6 left-6 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-full text-sm font-bold text-slate-900 dark:text-white shadow-lg flex items-center gap-2">
-                      <MapPin size={16} className="text-sky-500" />
-                      {item.title}
+                    <div className="absolute top-6 left-6 z-20 flex max-w-[calc(100%-3rem)] items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-bold text-slate-900 shadow-lg backdrop-blur-md dark:bg-slate-900/90 dark:text-white">
+                      <MapPin size={16} className="shrink-0 text-sky-500" />
+                      <span className="truncate">{item.title}</span>
                     </div>
                   </div>
                 </div>
@@ -498,24 +517,30 @@ function PopularCard({ pkg, price, pax, currency, fx, locale, audience }) {
   return (
     <motion.div
       variants={bouncyUp}
-      className="group bg-white dark:bg-slate-900 rounded-[1.5rem] shadow-md hover:shadow-xl hover:shadow-sky-900/5 transition-all duration-500 border border-slate-100 dark:border-slate-800 overflow-hidden h-full flex flex-col"
+      className="card-package group flex h-full flex-col overflow-hidden"
       whileHover={{ y: -8 }}
     >
       <div className="relative aspect-[4/3] overflow-hidden">
-        <img
+        <OptimizedImage
           src={cover}
           alt={title}
+          preset="card"
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           loading="lazy"
         />
         <div className="absolute top-3 left-3">
           <span className="bg-white/95 backdrop-blur-md text-slate-900 px-3 py-1 rounded-full text-[10px] font-bold shadow-lg flex items-center gap-1">
-            <Star size={12} className="fill-amber-400 text-amber-400"/> Popular
+            <Star size={12} className="fill-amber-400 text-amber-400"/> {t("home.popularBadge", { defaultValue: "Popular" })}
           </span>
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent opacity-60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/20 to-transparent opacity-80" />
         <div className="absolute left-4 bottom-4 right-4 text-white">
           <h3 className="font-bold text-lg leading-tight mb-1 text-shadow-lg drop-shadow-md line-clamp-2">{title}</h3>
+          {spots ? (
+            <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-sky-200/90">
+              {spots.split(" • ").length} {t("explore.spots", { defaultValue: "spots" })}
+            </p>
+          ) : null}
           <div className="flex items-center text-[10px] text-slate-200 font-medium bg-black/20 w-fit px-2 py-0.5 rounded-lg backdrop-blur-sm">
              <MapPin size={10} className="mr-1 text-sky-400"/> <span className="line-clamp-1">{spots}</span>
           </div>
@@ -548,8 +573,9 @@ function PopularCard({ pkg, price, pax, currency, fx, locale, audience }) {
   );
 }
 
-function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
+function PopularPackages({ heading, subheading, data, currency, fx, locale, loading = false }) {
   const { t } = useTranslation();
+  const reduced = usePrefersReducedMotion();
   const pax = 6;
   const [audience, setAudience] = useState("domestic");
   const [popularPackages, setPopularPackages] = useState([]);
@@ -580,20 +606,20 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
   return (
     <section id="popular" className="container mt-20">
       <motion.div
-        initial="hidden"
-        whileInView="visible"
+        initial={reduced ? false : "hidden"}
+        whileInView={reduced ? undefined : "visible"}
         viewport={{ once: true, amount: 0.1 }}
-        variants={staggerContainer}
+        variants={reduced ? undefined : staggerContainer}
       >
         <div className="flex flex-col items-center justify-center mb-10 px-4 md:px-0">
-          <motion.h2 variants={bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight text-center">
+          <motion.h2 variants={reduced ? undefined : bouncyUp} className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight text-center">
             {heading || t("home.popular")}
           </motion.h2>
-          {subheading && <motion.p variants={bouncyUp} className="text-slate-600 dark:text-slate-400 mt-2 text-sm md:text-base max-w-2xl text-center">{subheading}</motion.p>}
+          {subheading && <motion.p variants={reduced ? undefined : bouncyUp} className="text-slate-600 dark:text-slate-400 mt-2 text-sm md:text-base max-w-2xl text-center">{subheading}</motion.p>}
         </div>
 
         <div className="flex justify-center mb-8 px-4 md:px-0">
-          <motion.div variants={bouncyUp} className="flex flex-col sm:flex-row items-center gap-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-xl shadow-sm">
+          <motion.div variants={reduced ? undefined : bouncyUp} className="flex flex-col sm:flex-row items-center gap-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-1.5 rounded-xl shadow-sm">
             <div className="flex bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
               {["domestic", "foreign"].map((k) => (
                 <button
@@ -616,7 +642,9 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 px-4 md:px-0">
-          {popularPackages.length ? (
+          {loading ? (
+            Array.from({ length: 3 }).map((_, index) => <PopularCardSkeleton key={index} />)
+          ) : popularPackages.length ? (
             popularPackages.map(({ p, price }) => (
               <PopularCard key={p.id} pkg={p} price={price} pax={pax} currency={currency} fx={fx} locale={locale} audience={audience} />
             ))
@@ -629,7 +657,7 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
           )}
         </div>
 
-        <motion.div variants={bouncyUp} className="mt-10 text-center">
+        <motion.div variants={reduced ? undefined : bouncyUp} className="mt-10 text-center">
           <Link to="/destinasi" className="btn btn-outline rounded-full px-8 py-3 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-sm hover:shadow-md">
             {t("home.viewAllPackages")} <ChevronRight size={14} className="ml-1" />
           </Link>
@@ -641,13 +669,16 @@ function PopularPackages({ heading, subheading, data, currency, fx, locale }) {
 
 function HowItWorks({ title, subtitle, steps = [] }) {
   const { t } = useTranslation();
-  const fallback = [
-    { icon: "search", title: t("home.whyItems.0.title"), text: t("home.whyItems.0.text") },
-    { icon: "message", title: t("home.whyItems.1.title"), text: t("home.whyItems.1.text") },
-    { icon: "calendar", title: t("home.whyItems.2.title"), text: t("home.whyItems.2.text") },
-    { icon: "badge-check", title: t("home.whyItems.3.title"), text: t("home.whyItems.3.text") },
-  ];
-  const list = steps.length ? steps : fallback;
+  const fallback = t("home.how", { returnObjects: true, defaultValue: [] });
+  const fallbackList = Array.isArray(fallback) && fallback.length
+    ? fallback
+    : [
+        { title: t("home.how.0.title", { defaultValue: "Choose a Package" }), text: t("home.how.0.text", { defaultValue: "" }) },
+        { title: t("home.how.1.title", { defaultValue: "Chat Admin" }), text: t("home.how.1.text", { defaultValue: "" }) },
+        { title: t("home.how.2.title", { defaultValue: "Set Schedule" }), text: t("home.how.2.text", { defaultValue: "" }) },
+        { title: t("home.how.3.title", { defaultValue: "Let's Go!" }), text: t("home.how.3.text", { defaultValue: "" }) },
+      ];
+  const list = steps.length ? steps : fallbackList;
 
   return (
     <section className="container mt-20 md:mt-24 mb-16">
@@ -685,8 +716,9 @@ function HowItWorks({ title, subtitle, steps = [] }) {
   );
 }
 
-function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
+function GallerySection({ title, subtitle, packages = [], manualImages = [], loading = false }) {
   const { t } = useTranslation();
+  const reduced = usePrefersReducedMotion();
   const galleryImages = useMemo(() => {
     // 1. Prioritaskan gambar manual dari Kustomisasi jika ada
     if (manualImages && manualImages.length > 0) {
@@ -703,15 +735,15 @@ function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
     return all.sort(() => 0.5 - Math.random()).slice(0, 12);
   }, [packages, manualImages]);
 
-  if (galleryImages.length === 0) return null;
+  if (!loading && galleryImages.length === 0) return null;
 
   return (
     <section className="container mt-20 relative z-10">
       <motion.div
-        initial="hidden"
-        whileInView="visible"
+        initial={reduced ? false : "hidden"}
+        whileInView={reduced ? undefined : "visible"}
         viewport={{ once: true, amount: 0.1 }}
-        variants={staggerContainer}
+        variants={reduced ? undefined : staggerContainer}
       >
         <div className="relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 p-5 shadow-2xl shadow-slate-900/10 dark:border-slate-700/70 dark:from-slate-900 dark:via-slate-950 dark:to-black md:p-8">
           <div className="absolute -top-16 left-12 h-40 w-40 rounded-full bg-sky-400/20 blur-3xl" />
@@ -719,19 +751,19 @@ function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
 
           <div className="relative z-10 mb-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
             <div className="px-1">
-              <motion.div variants={bouncyUp} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/75">
+              <motion.div variants={reduced ? undefined : bouncyUp} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/75">
                 <Camera size={14} className="text-sky-200" />
                 {t("home.galleryLabel", { defaultValue: "Trip Gallery" })}
               </motion.div>
-              <motion.h2 variants={bouncyUp} className="mt-4 text-3xl md:text-5xl font-bold text-white tracking-tight leading-tight">
+              <motion.h2 variants={reduced ? undefined : bouncyUp} className="mt-4 text-3xl md:text-5xl font-bold text-white tracking-tight leading-tight">
                 {title}
               </motion.h2>
-              <motion.p variants={bouncyUp} className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 md:text-base">
+              <motion.p variants={reduced ? undefined : bouncyUp} className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 md:text-base">
                 {subtitle}
               </motion.p>
             </div>
 
-            <motion.div variants={bouncyUp} className="grid gap-3 sm:grid-cols-2">
+            <motion.div variants={reduced ? undefined : bouncyUp} className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-[1.5rem] border border-white/10 bg-white/10 px-4 py-4 backdrop-blur-md">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">
                   {t("home.galleryMoments", { defaultValue: "Captured Moments" })}
@@ -752,7 +784,7 @@ function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
                   href="https://instagram.com/cidikatravel"
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-900 transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                  className={`mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-slate-900 ${reduced ? "" : "transition-all hover:-translate-y-0.5 hover:shadow-lg"}`}
                 >
                   <Instagram size={15} />
                   <span>@cidikatravel</span>
@@ -762,6 +794,9 @@ function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
           </div>
 
           {/* BENTO GRID LAYOUT (Max 12 items) */}
+          {loading ? (
+            <GalleryGridSkeleton />
+          ) : (
           <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 auto-rows-[150px] md:auto-rows-[220px]">
           {galleryImages.map((src, i) => {
             // Pola Grid Estetik
@@ -772,26 +807,27 @@ function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
             
             return (
               <motion.div
-                key={i}
-                variants={bouncyUp}
-                className={`relative rounded-[1.5rem] overflow-hidden group border border-white/10 shadow-sm hover:shadow-2xl transition-all duration-500 ${
+                key={`${src}-${i}`}
+                variants={reduced ? undefined : bouncyUp}
+                className={`relative rounded-[1.5rem] overflow-hidden group border border-white/10 shadow-sm ${reduced ? "" : "hover:shadow-2xl transition-all duration-500"} ${
                   isLarge ? "col-span-2 row-span-2" : isWide ? "col-span-2 row-span-1" : "col-span-1 row-span-1"
                 }`}
               >
-                <img
+                <OptimizedImage
                   src={src}
                   alt={`Gallery ${i}`}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  preset={isLarge ? "galleryLarge" : "gallery"}
+                  className={`w-full h-full object-cover ${reduced ? "" : "transition-transform duration-700 group-hover:scale-110"}`}
                   loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300" />
+                <div className={`absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent opacity-60 ${reduced ? "opacity-80" : "group-hover:opacity-90 transition-opacity duration-300"}`} />
                 <div className="absolute top-3 left-3 rounded-full border border-white/15 bg-black/25 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/80 backdrop-blur-md">
                   {String(i + 1).padStart(2, "0")}
                 </div>
                 
                 {/* Ikon kamera hanya di foto pertama */}
                 {i === 0 && (
-                  <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0">
+                  <div className={`absolute bottom-4 left-4 right-4 ${reduced ? "opacity-100 translate-y-0" : "opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0"}`}>
                     <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-white backdrop-blur-md">
                       <Camera size={18} />
                       <span className="text-xs font-semibold uppercase tracking-[0.16em]">
@@ -804,6 +840,7 @@ function GallerySection({ title, subtitle, packages = [], manualImages = [] }) {
             );
           })}
           </div>
+          )}
         
           {/* Tombol Mobile Instagram */}
           <div className="mt-8 text-center md:hidden">
@@ -873,7 +910,7 @@ function TestimonialCard({ item, lang, currentIndex, total, isActive }) {
 }
 
 function TestimonialForm({ onSubmit }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [text, setText] = useState("");
@@ -892,7 +929,13 @@ function TestimonialForm({ onSubmit }) {
     }
     setIsSubmitting(true);
     try {
-      await onSubmit({ name, city, text, stars, lang: t("i18n.language", { defaultValue: "id" }) });
+      await onSubmit({
+        name,
+        city,
+        text,
+        stars,
+        lang: (i18n.resolvedLanguage || i18n.language || "id").split("-")[0],
+      });
       setName(""); setCity(""); setText(""); setStars(5);
       alert(
         t("home.testimonialSubmitted", {
@@ -977,7 +1020,8 @@ function TestimonialForm({ onSubmit }) {
 
 function Testimonials({ title, allItems = [] }) {
   const { i18n } = useTranslation();
-  const lang = i18n.language.slice(0, 2);
+  const reduced = usePrefersReducedMotion();
+  const lang = (i18n.resolvedLanguage || i18n.language || "id").split("-")[0];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -992,10 +1036,10 @@ function Testimonials({ title, allItems = [] }) {
   }, [allItems.length]);
 
   useEffect(() => {
-    if (allItems.length <= 1 || isHovered) return;
+    if (reduced || allItems.length <= 1 || isHovered) return;
     const interval = setInterval(handleNext, 6000);
     return () => clearInterval(interval);
-  }, [allItems.length, handleNext, isHovered]);
+  }, [reduced, allItems.length, handleNext, isHovered]);
 
   const handleTestimonialSubmit = async (testimonial) => {
     const { error } = await supabase.from("testimonials").insert([{ ...testimonial, is_approved: false }]);
@@ -1007,13 +1051,13 @@ function Testimonials({ title, allItems = [] }) {
   return (
     <section className="container mt-20 md:mt-24">
       <motion.div
-        initial="hidden"
-        whileInView="visible"
+        initial={reduced ? false : "hidden"}
+        whileInView={reduced ? undefined : "visible"}
         viewport={{ once: true, amount: 0.1 }} 
-        variants={staggerContainer}
+        variants={reduced ? undefined : staggerContainer}
       >
         {title && (
-          <motion.h2 variants={bouncyUp} className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white text-center mb-8 md:mb-12 px-4">
+          <motion.h2 variants={reduced ? undefined : bouncyUp} className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white text-center mb-8 md:mb-12 px-4">
             {title}
           </motion.h2>
         )}
@@ -1024,14 +1068,14 @@ function Testimonials({ title, allItems = [] }) {
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
-            <div className="relative h-[450px] sm:h-[350px] md:h-[320px] w-full">
-              <AnimatePresence mode="wait">
+            <div className="relative min-h-[280px] w-full sm:min-h-[300px] md:min-h-[320px]">
+              <AnimatePresence mode={reduced ? "sync" : "wait"}>
                 <motion.div
                   key={currentIndex}
-                  initial={{ opacity: 0, x: 30 }}
+                  initial={reduced ? false : { opacity: 0, x: 30 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -30 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  exit={reduced ? undefined : { opacity: 0, x: -30 }}
+                  transition={reduced ? { duration: 0.01 } : { type: "spring", stiffness: 300, damping: 30 }}
                   className="absolute inset-0 w-full"
                 >
                   <TestimonialCard 
@@ -1089,13 +1133,13 @@ function StickyHelpCTA() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          className="fixed bottom-6 right-6 z-50"
+          className="fixed bottom-6 right-6 z-30 hidden lg:block"
         >
           <a
             href="https://wa.me/62895630193926"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-full shadow-xl shadow-emerald-500/30 hover:scale-105 transition-all font-bold group text-sm"
+            className="btn btn-wa flex items-center gap-2 rounded-full px-5 py-3 font-bold text-sm shadow-xl hover:scale-105"
           >
             <MessageCircle size={20} className="group-hover:rotate-12 transition-transform" />
             <span className="hidden md:inline">{t("home.helpCTA", { defaultValue: "Help" })}</span>
@@ -1124,12 +1168,13 @@ function useCountUp({ from = 0, to = 100, duration = 1200, start = false }) {
 }
 
 export default function Home() {
-  const { rows: packages = [] } = usePackages();
+  const { rows: packages = [], loading: packagesLoading } = usePackages();
   const { fx, currency, locale } = useCurrency();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { sections: homeSections } = usePageSections("home");
-  const { sections: destSections } = usePageSections("destinations");
+  const { sections: homeSections, loading: homeSectionsLoading } = usePageSections("home");
+  const { sections: destSections, loading: destSectionsLoading } = usePageSections("destinations");
+  const contentLoading = packagesLoading || homeSectionsLoading || destSectionsLoading;
   const S = useMemo(() => Object.fromEntries((homeSections || []).map(s => [s.section_key, s])), [homeSections]);
 
   const onQuickSearch = (q) => navigate(`/explore?tag=${encodeURIComponent(q)}`);
@@ -1206,7 +1251,7 @@ export default function Home() {
         photos={Number(S.stats?.data?.photos) || 1300}
         rating={Number(S.stats?.data?.rating) || 4.9}
       />
-      <FeaturedDestinationsSection items={featuredDestinations} />
+      <FeaturedDestinationsSection items={featuredDestinations} loading={destSectionsLoading} />
       <PopularPackages
         heading={S.popular?.locale?.title || t("home.popular")}
         subheading={S.popular?.locale?.body_md || t("home.popularSub")}
@@ -1214,6 +1259,7 @@ export default function Home() {
         currency={currency}
         fx={fx}
         locale={locale}
+        loading={packagesLoading}
       />
       <HowItWorks
         title={S.how?.locale?.title || t("home.howTitle")}
@@ -1225,6 +1271,7 @@ export default function Home() {
         subtitle={S.gallery?.locale?.body_md || t("home.galleryDefaultSub", { defaultValue: "Moments captured from our travelers." })}
         packages={packages}
         manualImages={galleryManualImages}
+        loading={contentLoading && galleryManualImages.length === 0}
       />
       <Testimonials
         title={S.testimonials?.locale?.title || t("home.testimonialsTitle")}

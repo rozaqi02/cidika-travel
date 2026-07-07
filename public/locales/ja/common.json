@@ -12,7 +12,8 @@
     "light": "ライト",
     "dark": "ダーク",
     "menu": "メニュー",
-    "appearance": "外観"
+    "appearance": "外観",
+    "adminAccess": "管理者アクセス"
   },
   "hero": {
     "tag": "BEST OFFERS",
@@ -32,6 +33,7 @@
     "followIg": "Instagramをフォロー",
     "helpImprove": "レビューを投稿してサービスの向上にご協力ください！",
     "popular": "人気パッケージ",
+    "popularBadge": "人気",
     "popularSub": "旅行者に人気のプラン。",
     "calcFor": "人数別の料金",
     "pax": "名",
@@ -105,10 +107,15 @@
     "namePlaceholder": "お名前を入力",
     "cityPlaceholder": "都市（任意）",
     "testimonialPlaceholder": "冒険について教えてください...",
-    "destinationBadge": "???",
-    "testimonialRequired": "??????????????????",
-    "testimonialSubmitted": "???????????????????????",
-    "testimonialFailed": "???????????????"
+    "destinationBadge": "目的地",
+    "testimonialRequired": "お名前とレビュー内容を入力してください。",
+    "testimonialSubmitted": "ありがとうございます。レビューを送信しました。",
+    "testimonialFailed": "レビューの送信に失敗しました。",
+    "galleryLabel": "トリップギャラリー",
+    "galleryMoments": "撮影された瞬間",
+    "galleryMomentsHint": "最新の旅行から選んだ写真。",
+    "galleryAction": "日々のインスピレーション",
+    "galleryFeatured": "旅行のハイライト"
   },
   "explore": {
     "title": "パッケージ一覧",
@@ -141,12 +148,13 @@
     "pricePerPax": "人数別料金",
     "totalPrice": "合計",
     "recommended": "おすすめのツアー",
-    "resultsCount": "{{count}} ?????????????",
-    "emptyHint": "??????????????????????"
+    "resultsCount": "{{count}} 件のプランが見つかりました",
+    "emptyHint": "検索条件やフィルターを変更してみてください。",
+    "resetFilters": "フィルターをリセット"
   },
   "actions": {
-    "order": "?????",
-    "askMore": "?????????"
+    "order": "予約する",
+    "askMore": "詳しく聞く"
   },
   "faq": {
     "title": "よくある質問",
@@ -234,7 +242,7 @@
       "items": "内容:",
       "total": "合計",
       "code": "コード",
-      "footer": "??????????????"
+      "footer": "ご確認よろしくお願いします。"
     },
     "success": {
       "title": "ご注文を受け付けました！",
@@ -248,34 +256,37 @@
       "confirmNote": "確認：上記内容で問題ありません。手配をお願いします。🙏",
       "fallback": "WhatsAppが使えない場合、このメッセージをコピーして手動で管理者にお送りください。"
     },
-    "secureTitle": "??????????",
-    "ticketInfo": "????? e ?????????????????",
-    "paymentMethod": "?????",
-    "secureDesc": "WhatsApp ???????????",
+    "secureTitle": "安全なチェックアウト",
+    "ticketInfo": "この情報は e チケット確認に使用されます。",
+    "paymentMethod": "お支払い方法",
+    "secureDesc": "WhatsApp で安全に管理されます。",
     "itemUnit": "?",
-    "subtotal": "??",
-    "singlePackageOnly": "??????????????? 1 ????????????"
+    "subtotal": "小計",
+    "singlePackageOnly": "一度に予約できるのは 1 つのパッケージのみです。",
+    "stepPackage": "パッケージ",
+    "stepDetails": "詳細",
+    "stepConfirm": "確認"
   },
   "footer": {
     "cta": {
-      "kicker": "?????OK?",
-      "title": "?????????????????????????????????",
-      "whatsapp": "WhatsApp???",
-      "contact": "??????"
+      "kicker": "旅の準備OK？",
+      "title": "ヌサ・ペニダ旅行のことなら、最初から最後までお任せください。",
+      "whatsapp": "WhatsAppで相談",
+      "contact": "お問い合わせ"
     },
     "brand": {
-      "tagline": "????????????????????????????????????????????????????????"
+      "tagline": "ヌサ・ペニダ島ツアー＆シュノーケリング。プライベート旅行、柔軟な行程、経験豊富なローカルチーム。"
     },
     "links": {
-      "title": "??",
-      "packages": "??????",
-      "destinations": "??????",
+      "title": "探索",
+      "packages": "プランと料金",
+      "destinations": "人気の目的地",
       "faq": "FAQ",
-      "contact": "??????"
+      "contact": "お問い合わせ"
     },
     "contact": {
-      "title": "???",
-      "addressText": "????????????????????????"
+      "title": "連絡先",
+      "addressText": "バリ州クランクン県ヌサ・ペニダ島ブンガ・メカール"
     },
     "newsletter": {
       "title": "最新情報を受け取る",
@@ -286,10 +297,10 @@
       "thanks": "ありがとうございます！最新情報をお送りします 🎉"
     },
     "bottom": {
-      "rights": "??????????",
-      "terms": "????",
-      "privacy": "??????",
-      "follow": "????"
+      "rights": "無断転載を禁じます。",
+      "terms": "利用規約",
+      "privacy": "プライバシー",
+      "follow": "フォロー"
     }
   },
   "admin": {
@@ -299,6 +310,12 @@
       "dashboard": "ダッシュボード",
       "orders": "注文一覧",
       "customize": "カスタマイズ"
+    },
+    "shell": {
+      "menu": "メニュー",
+      "navigation": "管理ナビゲーション",
+      "workspace": "運用ワークスペース",
+      "backToSite": "サイトに戻る"
     },
     "common": {
       "empty": "データはまだありません"
@@ -313,7 +330,7 @@
       "forgot": "パスワード忘れ？",
       "rememberEmail": "メール保存",
       "resetLink": "メールでリセットリンクをご確認ください。",
-      "emailRequired": "?????????????"
+      "emailRequired": "メールアドレスは必須です。"
     },
     "dashboard": {
       "stats": {
@@ -323,60 +340,66 @@
       },
       "latestOrders": "最新の注文",
       "table": {
-        "date": "??",
+        "date": "日付",
         "name": "名前",
-        "status": "?????",
+        "status": "状況",
         "totalIDR": "合計 (IDR)",
-        "customer": "??",
-        "package": "???",
-        "audience": "?????",
-        "total": "??"
+        "customer": "顧客",
+        "package": "パッケージ",
+        "audience": "区分",
+        "total": "合計"
       },
-      "title": "???????",
-      "refresh": "?????",
+      "title": "ダッシュボード",
+      "subtitle": "パフォーマンス概要",
+      "heroCopy": "予約・売上・コンバージョンを一つのコマンドセンターで監視。",
+      "window": "表示期間",
+      "pendingBadge": "保留中の予約",
+      "refresh": "更新",
       "filters": {
-        "confirmedOnly": "????",
-        "pendingOnly": "????",
-        "allStatus": "?????????",
-        "showPendingOverlay": "????????????",
-        "allAudience": "?????????",
-        "customDate": "????",
-        "reset": "????",
-        "topSort": "??????????",
-        "sortBookings": "???",
-        "sortRevenue": "??",
-        "sortDesc": "??",
-        "sortAsc": "??",
+        "title": "フィルターと操作",
+        "subtitle": "分析ビューを調整",
+        "confirmedOnly": "確定のみ",
+        "pendingOnly": "保留のみ",
+        "allStatus": "すべての状況",
+        "showPendingOverlay": "保留オーバーレイを表示",
+        "allAudience": "すべての区分",
+        "customDate": "カスタム",
+        "reset": "リセット",
+        "topSort": "上位パッケージの並び",
+        "sortBookings": "予約数",
+        "sortRevenue": "売上",
+        "sortDesc": "降順",
+        "sortAsc": "昇順",
         "dayWindow": "{{count}} ?",
-        "unknownAudience": "??"
+        "unknownAudience": "不明"
       },
       "cards": {
-        "confirmedBookings": "?????",
-        "confirmedRevenue": "?? (??)",
-        "avgRevenue": "?????????",
-        "conversionRate": "????????"
+        "confirmedBookings": "確定予約",
+        "confirmedRevenue": "売上（確定）",
+        "avgRevenue": "平均売上 / 予約",
+        "conversionRate": "コンバージョン率"
       },
       "sections": {
-        "dailyTrends": "????",
-        "statusDistribution": "???????",
-        "audienceDistribution": "????????",
-        "topPackages": "?????",
-        "recentBookings": "?????"
+        "dailyTrends": "日次トレンド",
+        "statusDistribution": "状況の分布",
+        "audienceDistribution": "区分の分布",
+        "topPackages": "上位パッケージ",
+        "recentBookings": "最近の予約"
       },
       "metrics": {
-        "bookings": "???",
-        "revenue": "??",
-        "pendingBookings": "??? (??)",
-        "confirmedBookings": "??? (??)",
-        "confirmedRevenue": "?? (??)"
+        "bookings": "予約",
+        "revenue": "売上",
+        "pendingBookings": "予約（保留）",
+        "confirmedBookings": "予約（確定）",
+        "confirmedRevenue": "売上（確定）"
       },
       "status": {
-        "confirmed": "??",
-        "pending": "??",
-        "cancelled": "?????",
-        "rejected": "??"
+        "confirmed": "確定",
+        "pending": "保留",
+        "cancelled": "キャンセル",
+        "rejected": "却下"
       },
-      "emptyRecent": "???????????"
+      "emptyRecent": "最近の予約はありません"
     },
     "customize": {
       "title": "ページのカスタマイズ",
@@ -438,24 +461,25 @@
     }
   },
   "misc": {
-    "loading": "?????...",
-    "success": "??????",
-    "error": "??????????",
-    "toggleLayout": "??????????",
-    "clearSearch": "??????"
+    "loading": "読み込み中...",
+    "success": "成功",
+    "error": "エラーが発生しました",
+    "toggleLayout": "レイアウトを切り替え",
+    "clearSearch": "検索をクリア"
   },
   "back": "戻る",
   "gallery": "ギャラリー",
   "packageDetail": {
-    "countryFallback": "??????",
-    "from": "????",
-    "askPackage": "???",
-    "askTripType": "?????",
-    "askAudience": "?????",
-    "tripType": "?????",
-    "travelerType": "?????",
-    "totalPax": "??",
-    "noPaymentToday": "???????????",
-    "seeAll": "?????"
+    "countryFallback": "インドネシア",
+    "from": "料金",
+    "askPackage": "パッケージ",
+    "askTripType": "旅行タイプ",
+    "askAudience": "旅行者区分",
+    "tripType": "旅行タイプ",
+    "travelerType": "旅行者区分",
+    "totalPax": "合計人数",
+    "noPaymentToday": "本日のお支払いは不要です",
+    "seeAll": "すべて見る",
+    "bookingOptions": "予約オプション"
   }
 }

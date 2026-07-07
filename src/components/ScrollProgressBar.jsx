@@ -50,7 +50,7 @@ export default function ScrollProgressBar() {
         style={{
           transform: "scaleX(0)",
           opacity: 0,
-          background: "linear-gradient(90deg, #0ea5e9 0%, #3b82f6 50%, #0ea5e9 100%)", // Gradient pro
+          background: "linear-gradient(90deg, #0ea5e9 0%, #14b8a6 45%, #f59e0b 100%)",
           backgroundSize: "300% 100%", // Lebih lebar untuk shimmer lambat
           animation: "shimmer 3s ease-in-out infinite", // Shimmer lebih lambat & smooth
         }}

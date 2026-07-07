@@ -12,7 +12,8 @@
     "light": "Terang",
     "dark": "Gelap",
     "menu": "Menu",
-    "appearance": "Tampilan"
+    "appearance": "Tampilan",
+    "adminAccess": "Akses admin"
   },
   "hero": {
     "tag": "BEST OFFERS",
@@ -32,6 +33,7 @@
     "followIg": "Ikuti di Instagram",
     "helpImprove": "Bantu kami menjadi lebih baik dengan memberikan ulasan!",
     "popular": "Paket Populer",
+    "popularBadge": "Populer",
     "popularSub": "Pilihan terbaik wisatawan.",
     "calcFor": "Hitung harga untuk",
     "pax": "pax",
@@ -107,7 +109,13 @@
     "destinationBadge": "Destinasi",
     "testimonialRequired": "Mohon isi nama dan testimoni.",
     "testimonialSubmitted": "Terima kasih, ulasan Anda sudah terkirim.",
-    "testimonialFailed": "Gagal mengirim ulasan."
+    "testimonialFailed": "Gagal mengirim ulasan.",
+    "noPackages": "Belum ada paket populer tersedia.",
+    "galleryLabel": "Galeri Trip",
+    "galleryMoments": "Momen Terabadikan",
+    "galleryMomentsHint": "Foto pilihan dari trip terbaru kami.",
+    "galleryAction": "Inspirasi Harian",
+    "galleryFeatured": "Sorotan Perjalanan"
   },
   "explore": {
     "title": "Explore Paket",
@@ -141,7 +149,8 @@
     "totalPrice": "Total",
     "recommended": "Paket Lain yang Mungkin Anda Sukai",
     "resultsCount": "Menemukan {{count}} paket",
-    "emptyHint": "Coba ubah pencarian atau filter Anda."
+    "emptyHint": "Coba ubah pencarian atau filter Anda.",
+    "resetFilters": "Reset filter"
   },
   "actions": {
     "order": "Pesan",
@@ -253,7 +262,10 @@
     "secureDesc": "Dikelola dengan aman melalui WhatsApp.",
     "itemUnit": "item",
     "subtotal": "Subtotal",
-    "singlePackageOnly": "Silakan checkout satu pilihan paket pada satu waktu."
+    "singlePackageOnly": "Silakan checkout satu pilihan paket pada satu waktu.",
+    "stepPackage": "Paket",
+    "stepDetails": "Detail",
+    "stepConfirm": "Konfirmasi"
   },
   "footer": {
     "cta": {
@@ -299,6 +311,12 @@
       "orders": "Orderan",
       "customize": "Kustomisasi"
     },
+    "shell": {
+      "menu": "Menu",
+      "navigation": "Navigasi admin",
+      "workspace": "Ruang operasional",
+      "backToSite": "Kembali ke situs"
+    },
     "common": {
       "empty": "Belum ada data"
     },
@@ -332,8 +350,14 @@
         "total": "Total"
       },
       "title": "Dashboard",
+      "subtitle": "Ringkasan performa",
+      "heroCopy": "Pantau order, pendapatan, dan konversi dalam satu pusat kendali.",
+      "window": "Rentang aktif",
+      "pendingBadge": "Order pending",
       "refresh": "Muat ulang",
       "filters": {
+        "title": "Filter & kontrol",
+        "subtitle": "Sesuaikan tampilan analitik",
         "confirmedOnly": "Hanya terkonfirmasi",
         "pendingOnly": "Hanya pending",
         "allStatus": "Semua status",
@@ -455,6 +479,7 @@
     "travelerType": "Tipe Wisatawan",
     "totalPax": "Total Pax",
     "noPaymentToday": "Tidak perlu pembayaran hari ini",
-    "seeAll": "Lihat Semua"
+    "seeAll": "Lihat Semua",
+    "bookingOptions": "Opsi Pemesanan"
   }
 }

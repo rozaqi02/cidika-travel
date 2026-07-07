@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import BlurText from "../components/BlurText"; // Tambah import ini
+import OptimizedImage from "../components/OptimizedImage";
 import usePageSections from "../hooks/usePageSections";
 import { Mail, Phone, MapPin, Instagram, MessageCircle } from "lucide-react";
 import { useEffect, useRef } from "react";  // Untuk SpotlightOverlay
@@ -106,13 +107,16 @@ export default function Contact() {
         transition={{ duration: 1, ease: "easeOut" }}
         className="relative h-[60vh] overflow-hidden"
       >
-        <img
-          src={S.hero_contact?.data?.images?.[0] || "https://sftqstwvvtflwyfrvqdt.supabase.co/storage/v1/object/public/assets/pages/contact/hero.jpg"}
+        <OptimizedImage
+          src={S.hero_contact?.data?.images?.[0] || "/hero2.jpg"}
           alt="Contact Hero"
+          preset="detail"
           className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
+          fetchPriority="high"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-900/70 via-gray-900/30 to-white/80 dark:to-gray-900/85" />
+        <div className="absolute inset-0 hero-tropical-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-transparent to-slate-50/90 dark:to-slate-950/90" />
         <SpotlightOverlay />
         <div className="relative z-10 container h-full flex flex-col justify-center items-center text-center px-6">
           <BlurText
@@ -330,7 +334,7 @@ export default function Contact() {
         href={`https://wa.me/${waNumber.replace("+", "")}`}
         target="_blank"
         rel="noreferrer"
-        className="fixed bottom-6 right-6 rounded-full bg-sky-600 p-4 text-white shadow-lg hover:bg-sky-700 transition-all"
+        className="btn btn-wa fixed bottom-6 right-4 z-30 hidden rounded-full p-4 shadow-lg lg:inline-flex"
         aria-label="Chat on WhatsApp"
       >
         <MessageCircle size={24} />

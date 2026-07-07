@@ -7,7 +7,13 @@ export default function ProtectedRoute({ children }) {
   const location = useLocation();
 
   if (loading) {
-    return <div className="container pt-16">Loading...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#060a14] text-indigo-100">
+        <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-sm font-semibold">
+          Loading...
+        </div>
+      </div>
+    );
   }
   if (!session || role !== "admin") {
     return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />;

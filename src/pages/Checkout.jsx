@@ -15,6 +15,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import StepIndicator from "../components/StepIndicator";
 import { supabase } from "../lib/supabaseClient.js";
 import { useCurrency } from "../context/CurrencyContext";
 import { formatMoneyFromIDR } from "../utils/currency";
@@ -338,38 +339,49 @@ export default function Checkout() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
-      <div className="w-full border-b border-slate-200 bg-white/80 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80">
-        <div className="container h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen w-full overflow-x-hidden bg-slate-50 dark:bg-slate-950 pb-20">
+      <div className="sticky top-0 z-30 w-full border-b border-slate-200 bg-white/80 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/80">
+        <div className="container flex h-16 min-w-0 items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
             <button
               onClick={() => nav(-1)}
-              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="flex-shrink-0 rounded-full p-2 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
               aria-label={t("back")}
             >
               <ArrowLeft size={20} className="text-slate-700 dark:text-slate-300" />
             </button>
-            <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={18} className="text-emerald-500" />
-              <span className="font-semibold text-slate-900 dark:text-white tracking-tight">
+            <div className="hidden h-6 w-px flex-shrink-0 bg-slate-200 dark:bg-slate-700 sm:block" />
+            <div className="flex min-w-0 items-center gap-2">
+              <ShieldCheck size={18} className="flex-shrink-0 text-emerald-500" />
+              <span className="truncate font-semibold tracking-tight text-slate-900 dark:text-white">
                 {t("checkout.secureTitle", { defaultValue: "Secure Checkout" })}
               </span>
             </div>
           </div>
-          <div className="text-sm font-medium text-slate-500 dark:text-slate-400">
+          <div className="hidden flex-shrink-0 text-sm font-medium text-slate-500 dark:text-slate-400 sm:block">
             CIDIKA TRAVEL
           </div>
         </div>
       </div>
 
-      <div className="container mt-8">
-        <div className="grid lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+      <div className="container mt-6 min-w-0">
+        <div className="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white px-3 py-5 dark:border-slate-800 dark:bg-slate-900 sm:px-4">
+          <StepIndicator
+            current={justPlaced ? 2 : 1}
+            steps={[
+              t("checkout.stepPackage", { defaultValue: "Package" }),
+              t("checkout.stepDetails", { defaultValue: "Details" }),
+              t("checkout.stepConfirm", { defaultValue: "Confirm" }),
+            ]}
+          />
+        </div>
+
+        <div className="grid min-w-0 gap-8 lg:grid-cols-12">
+          <div className="min-w-0 space-y-6 lg:col-span-7 xl:col-span-8">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800"
+              className="min-w-0 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6 md:p-8"
             >
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
                 {t("checkout.details")}
@@ -497,7 +509,7 @@ export default function Checkout() {
               </form>
             </motion.div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800 opacity-80 pointer-events-none grayscale-[0.5]">
+            <div className="pointer-events-none min-w-0 rounded-2xl border border-slate-100 bg-white p-4 opacity-80 shadow-sm grayscale-[0.5] dark:border-slate-800 dark:bg-slate-900 sm:p-6 md:p-8">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-slate-900 dark:text-white">
                   {t("checkout.paymentMethod", { defaultValue: "Payment Method" })}
@@ -512,24 +524,24 @@ export default function Checkout() {
             </div>
           </div>
 
-          <div className="lg:col-span-5 xl:col-span-4">
+          <div className="min-w-0 lg:col-span-5 xl:col-span-4">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="sticky top-24"
+              className="lg:sticky lg:top-24"
             >
-              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 overflow-hidden">
-                <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between">
-                  <h3 className="font-bold text-slate-900 dark:text-white">
+              <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/50 px-4 py-5 dark:border-slate-800 dark:bg-slate-800/30 sm:px-6">
+                  <h3 className="min-w-0 truncate font-bold text-slate-900 dark:text-white">
                     {t("checkout.summary")}
                   </h3>
-                  <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300">
+                  <span className="flex-shrink-0 rounded-lg bg-sky-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-sky-700 dark:bg-sky-900/50 dark:text-sky-300">
                     {audienceLabel}
                   </span>
                 </div>
 
-                <div className="p-6 space-y-5">
+                <div className="space-y-5 p-4 sm:p-6">
                   {normalizedItems.length === 0 ? (
                     <p className="text-center text-slate-500 py-4">
                       {t("checkout.cartEmptyShort")}
@@ -553,8 +565,8 @@ export default function Checkout() {
                               {t("checkout.itemUnit", { defaultValue: "item" })}
                             </p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium text-slate-900 dark:text-white">
+                          <div className="flex-shrink-0 text-right">
+                            <p className="whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
                               {formatMoneyFromIDR(
                                 lineSubtotal(item),
                                 currency,
@@ -639,7 +651,7 @@ export default function Checkout() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden p-4"
           >
             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" />
 
@@ -647,7 +659,7 @@ export default function Checkout() {
               initial={{ scale: 0.9, y: 20, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 20, opacity: 0 }}
-              className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-slate-900"
             >
               <div className="bg-gradient-to-br from-sky-500 to-blue-600 p-8 text-center text-white relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
@@ -665,9 +677,9 @@ export default function Checkout() {
                 <p className="text-sky-100 text-sm">{t("checkout.success.body")}</p>
               </div>
 
-              <div className="p-6 relative">
-                <div className="absolute -top-3 left-0 w-6 h-6 bg-slate-900/80 rounded-full translate-x-[-50%]" />
-                <div className="absolute -top-3 right-0 w-6 h-6 bg-slate-900/80 rounded-full translate-x-[50%]" />
+              <div className="relative overflow-hidden p-6">
+                <div className="absolute -top-3 left-3 h-6 w-6 rounded-full bg-slate-900/80" />
+                <div className="absolute -top-3 right-3 h-6 w-6 rounded-full bg-slate-900/80" />
 
                 <div className="space-y-4 text-center">
                   {justPlaced.code && (

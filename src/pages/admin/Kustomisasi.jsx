@@ -7,8 +7,21 @@ import {
   Copy, RotateCcw, Images, Eye, Wrench, Settings2, Star, ChevronDown, ChevronUp, X
 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { prepareImageForUpload } from "../../utils/compressImage";
 
 const LANGS = ["id", "en", "ja"];
+
+async function uploadCompressedAsset(file, path) {
+  const { file: uploadFile, path: uploadPath } = await prepareImageForUpload(file, path);
+  const { error } = await supabase.storage.from("assets").upload(uploadPath, uploadFile, {
+    cacheControl: "31536000",
+    upsert: false,
+    contentType: uploadFile.type || "image/webp",
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from("assets").getPublicUrl(uploadPath);
+  return data?.publicUrl;
+}
 
 const Labeled = ({ label, htmlFor, children }) => (
   <div className="block text-sm mb-1">
@@ -607,13 +620,9 @@ const CardsEditor = ({ s, activeLang, updateLocaleExtra, page, uploadToBucket })
 
   const uploadImg = async (idx, file) => {
     if (!file) return;
-    const ext = file.name.split(".").pop();
-    const path = `pages/${page}/${s.id}-card-${idx}-${Date.now()}.${ext}`;
+    const path = `pages/${page}/${s.id}-card-${idx}-${Date.now()}.webp`;
     try {
-      const { error: upErr } = await uploadToBucket.from("assets").upload(path, file, { cacheControl: "3600", upsert: false });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("assets").getPublicUrl(path);
-      const url = pub?.publicUrl;
+      const url = await uploadCompressedAsset(file, path);
       setAt(idx, { image: url });
     } catch (e) {
       alert(e.message);
@@ -724,13 +733,9 @@ const CategoriesEditor = ({ s, readData, writeData, page, uploadToBucket }) => {
 
   const uploadForIdx = async (idx, file) => {
     if (!file) return;
-    const ext = file.name.split(".").pop();
-    const path = `pages/${page}/${s.id}-cat-${idx}-${Date.now()}.${ext}`;
+    const path = `pages/${page}/${s.id}-cat-${idx}-${Date.now()}.webp`;
     try {
-      const { error: upErr } = await uploadToBucket.from("assets").upload(path, file, { cacheControl: "3600", upsert: false });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("assets").getPublicUrl(path);
-      const url = pub?.publicUrl;
+      const url = await uploadCompressedAsset(file, path);
       const arr = items.slice();
       arr[idx] = { ...(arr[idx] || {}), image: url };
       setItems(arr);
@@ -1274,8 +1279,7 @@ if (error) {
 
   const onUploadPkgImage = async (p, file) => {
     if (!file) return;
-    const ext = file.name.split(".").pop();
-    const path = `packages/${p.id}-default-${Date.now()}.${ext}`;
+    const path = `packages/${p.id}-default-${Date.now()}.webp`;
 try {
   const url = await uploadToBucket(file, path);
   updatePkgField(p.id, "default_image", url);
@@ -1659,17 +1663,11 @@ await loadPackages();
 } finally { setSaving(false); }
   };
 
-  const uploadToBucket = async (file, path) => {
-    const { error: upErr } = await supabase.storage.from("assets").upload(path, file, { cacheControl: "3600", upsert: false });
-    if (upErr) throw upErr;
-    const { data: pub } = supabase.storage.from("assets").getPublicUrl(path);
-    return pub?.publicUrl;
-  };
+  const uploadToBucket = async (file, path) => uploadCompressedAsset(file, path);
 
   const onUploadToImages = async (sid, file) => {
     if (!file) return;
-    const ext = file.name.split(".").pop();
-    const path = `pages/${page}/${sid}-${Date.now()}.${ext}`;
+    const path = `pages/${page}/${sid}-${Date.now()}.webp`;
     try {
       const url = await uploadToBucket(file, path);
       setSections((prev) =>
@@ -1686,8 +1684,7 @@ await loadPackages();
 
   const onUploadToField = async (sid, file, field = "image") => {
     if (!file) return;
-    const ext = file.name.split(".").pop();
-    const path = `pages/${page}/${sid}-${field}-${Date.now()}.${ext}`;
+    const path = `pages/${page}/${sid}-${field}-${Date.now()}.webp`;
     try {
       const url = await uploadToBucket(file, path);
       setSections((prev) =>

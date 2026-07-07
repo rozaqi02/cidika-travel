@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronDown, MessageCircle } from "lucide-react";
+import { Search, ChevronDown, MessageCircle, Calendar, CreditCard, MapPin, HelpCircle } from "lucide-react";
 import BlurText from "../components/BlurText"; // Tambah import ini
+import OptimizedImage from "../components/OptimizedImage";
+import { FaqListSkeleton } from "../components/Skeleton";
 import usePageSections from "../hooks/usePageSections";
 
 function Chevron({ open }) {
@@ -41,6 +43,8 @@ function SpotlightOverlay({ className = "" }) {
     />
   );
 }
+
+const FAQ_ICONS = [Calendar, CreditCard, MapPin, HelpCircle];
 
 export default function FAQ() {
   const { t } = useTranslation();
@@ -88,13 +92,16 @@ export default function FAQ() {
         transition={{ duration: 1, ease: "easeOut" }}
         className="relative h-[60vh] md:h-[70vh] overflow-hidden"
       >
-        <img
-          src={S.hero?.data?.images?.[0] || "https://sftqstwvvtflwyfrvqdt.supabase.co/storage/v1/object/public/assets/pages/faq/hero.jpg"}
+        <OptimizedImage
+          src={S.hero?.data?.images?.[0] || "/hero2.jpg"}
           alt="Nusa Penida"
+          preset="detail"
           className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
+          fetchPriority="high"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-900/70 via-gray-900/30 to-white/80 dark:to-gray-900/85" />
+        <div className="absolute inset-0 hero-tropical-overlay" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-transparent to-slate-50/90 dark:to-slate-950/90" />
         <SpotlightOverlay />
         <div className="relative z-10 container h-full flex flex-col justify-center items-center text-center px-6">
           <BlurText
@@ -133,9 +140,7 @@ export default function FAQ() {
       {/* FAQ List */}
       <section className="container my-12 px-6">
         {loading ? (
-          <div className="text-center text-gray-600 dark:text-gray-400">
-            {t("misc.loading", { defaultValue: "Memuat…" })}
-          </div>
+          <FaqListSkeleton count={6} />
         ) : (
           <div className="grid gap-4 max-w-4xl mx-auto">
             <AnimatePresence initial={false} mode="popLayout">
@@ -152,12 +157,22 @@ export default function FAQ() {
                     className="rounded-xl bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-700/60 shadow-sm hover:shadow-md transition-shadow"
                   >
                     <button
-                      className="w-full flex justify-between items-center p-5 text-left"
+                      className="flex w-full items-center justify-between gap-3 p-5 text-left"
                       aria-expanded={open}
                       onClick={() => setOpenIdx(open ? null : i)}
                     >
-                      <span className="font-semibold text-gray-900 dark:text-white text-lg pr-4">
-                        {item.q}
+                      <span className="flex items-start gap-3 pr-2">
+                        {(() => {
+                          const Icon = FAQ_ICONS[i % FAQ_ICONS.length];
+                          return (
+                            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400">
+                              <Icon size={18} />
+                            </span>
+                          );
+                        })()}
+                        <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {item.q}
+                        </span>
                       </span>
                       <Chevron open={open} />
                     </button>
@@ -198,13 +213,13 @@ export default function FAQ() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed bottom-6 right-6 z-50"
+            className="fixed bottom-6 right-6 z-30 hidden lg:block"
           >
             <a
               href="https://wa.me/62895630193926"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 bg-sky-600 text-white rounded-full px-6 py-3 shadow-lg hover:bg-sky-700 transition-colors"
+              className="btn btn-wa flex items-center gap-2 rounded-full px-6 py-3 shadow-lg"
             >
               <MessageCircle size={20} />
               {t("home.helpCTA", { defaultValue: "Butuh bantuan? Chat WhatsApp" })}

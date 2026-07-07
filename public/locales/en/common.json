@@ -12,15 +12,16 @@
     "light": "Light",
     "dark": "Dark",
     "menu": "Menu",
-    "appearance": "Appearance"
+    "appearance": "Appearance",
+    "adminAccess": "Admin access"
   },
   "hero": {
     "tag": "BEST OFFERS",
-    "line1": "Jelajahi Nusa Penida bersama",
+    "line1": "Explore Nusa Penida with",
     "line2": "CIDIKA TRAVEL&TOUR",
-    "desc": "Agen perjalanan terpercaya untuk tour, snorkeling, dan lainnya.",
-    "ctaExplore": "Lihat Paket",
-    "ctaContact": "Lihat Paket Populer"
+    "desc": "Your trusted travel agency for tours, snorkeling, and more.",
+    "ctaExplore": "View Packages",
+    "ctaContact": "View Popular Packages"
   },
   "home": {
     "popularSearch": "Popular Searches",
@@ -32,6 +33,7 @@
     "followIg": "Follow on Instagram",
     "helpImprove": "Help us improve by leaving a review!",
     "popular": "Popular Packages",
+    "popularBadge": "Popular",
     "popularSub": "Traveler favorites.",
     "calcFor": "Calculate price for",
     "pax": "pax",
@@ -107,7 +109,13 @@
     "destinationBadge": "Destination",
     "testimonialRequired": "Please fill in your name and testimonial.",
     "testimonialSubmitted": "Thank you, your review has been submitted.",
-    "testimonialFailed": "Failed to submit your review."
+    "testimonialFailed": "Failed to submit your review.",
+    "noPackages": "No popular packages available.",
+    "galleryLabel": "Trip Gallery",
+    "galleryMoments": "Captured Moments",
+    "galleryMomentsHint": "Selected shots from our latest trips.",
+    "galleryAction": "Daily Inspiration",
+    "galleryFeatured": "Travel Highlight"
   },
   "explore": {
     "title": "Explore Packages",
@@ -141,7 +149,8 @@
     "totalPrice": "Total",
     "recommended": "Other Trips You Might Like",
     "resultsCount": "Found {{count}} packages",
-    "emptyHint": "Try adjusting your search or filters."
+    "emptyHint": "Try adjusting your search or filters.",
+    "resetFilters": "Reset filters"
   },
   "actions": {
     "order": "Book now",
@@ -149,21 +158,21 @@
   },
   "faq": {
     "title": "FAQ",
-    "subtitle": "Pertanyaan umum seputar pemesanan & tur.",
-    "search": "Cari pertanyaan…",
-    "noResults": "Tidak ada hasil untuk pencarianmu.",
+    "subtitle": "Common questions about bookings and tours.",
+    "search": "Search questions…",
+    "noResults": "No results for your search.",
     "list": [
       {
-        "q": "Bagaimana cara booking?",
-        "a": "Tambah paket ke keranjang lalu Checkout, atau hubungi kami langsung."
+        "q": "How do I book?",
+        "a": "Add packages to your cart and checkout, or contact us directly."
       },
       {
-        "q": "Apakah private tour?",
-        "a": "Ya, semua paket bersifat private (tidak digabung)."
+        "q": "Is it a private tour?",
+        "a": "Yes, all packages are private (not combined with other groups)."
       },
       {
-        "q": "Bisa custom itinerary?",
-        "a": "Bisa. Sebutkan preferensi Anda saat menghubungi kami."
+        "q": "Can I customize the itinerary?",
+        "a": "Yes. Tell us your preferences when you contact us."
       }
     ]
   },
@@ -182,24 +191,24 @@
     "explore": "Explore"
   },
   "contact": {
-    "title": "Kontak Kami",
-    "subtitle": "Hubungi kami untuk pertanyaan atau custom trip—balas cepat via WhatsApp.",
-    "info": "Informasi Kontak",
-    "formTitle": "Form Cepat",
-    "formNote": "Form ini contoh; di produksi arahkan ke WhatsApp/Email.",
-    "name": "Nama",
-    "emailwa": "Email/WA",
-    "message": "Pesan",
-    "send": "Kirim",
-    "sent": "Terima kasih! Kami akan menghubungi Anda.",
-    "addressLabel": "ALAMAT",
+    "title": "Contact Us",
+    "subtitle": "Reach out for questions or custom trips—we reply quickly on WhatsApp.",
+    "info": "Contact Information",
+    "formTitle": "Quick Form",
+    "formNote": "This form is a demo; in production, route to WhatsApp or email.",
+    "name": "Name",
+    "emailwa": "Email / WhatsApp",
+    "message": "Message",
+    "send": "Send",
+    "sent": "Thank you! We will get back to you soon.",
+    "addressLabel": "ADDRESS",
     "emailLabel": "EMAIL",
-    "phoneLabel": "WA/TLP",
+    "phoneLabel": "WA / PHONE",
     "instagramLabel": "IG",
     "error": {
-      "name": "Nama diperlukan",
-      "contact": "Kontak diperlukan",
-      "message": "Pesan diperlukan"
+      "name": "Name is required",
+      "contact": "Contact is required",
+      "message": "Message is required"
     }
   },
   "checkout": {
@@ -253,7 +262,10 @@
     "secureDesc": "Handled securely via WhatsApp.",
     "itemUnit": "item",
     "subtotal": "Subtotal",
-    "singlePackageOnly": "Please checkout one package selection at a time."
+    "singlePackageOnly": "Please checkout one package selection at a time.",
+    "stepPackage": "Package",
+    "stepDetails": "Details",
+    "stepConfirm": "Confirm"
   },
   "footer": {
     "cta": {
@@ -299,8 +311,14 @@
       "orders": "Orders",
       "customize": "Customization"
     },
+    "shell": {
+      "menu": "Menu",
+      "navigation": "Admin navigation",
+      "workspace": "Operations workspace",
+      "backToSite": "Back to website"
+    },
     "common": {
-      "empty": "Belum ada data"
+      "empty": "No data yet"
     },
     "login": {
       "title": "Admin Login",
@@ -332,8 +350,14 @@
         "total": "Total"
       },
       "title": "Dashboard",
+      "subtitle": "Performance overview",
+      "heroCopy": "Monitor bookings, revenue, and conversion in one command center.",
+      "window": "Active window",
+      "pendingBadge": "Pending bookings",
       "refresh": "Refresh",
       "filters": {
+        "title": "Filters & controls",
+        "subtitle": "Tune the analytics view",
         "confirmedOnly": "Confirmed only",
         "pendingOnly": "Pending only",
         "allStatus": "All status",
@@ -378,56 +402,56 @@
       "emptyRecent": "No recent bookings"
     },
     "customize": {
-      "title": "Kustomisasi Halaman",
-      "saveAll": "Simpan Semua",
-      "saving": "Menyimpan...",
+      "title": "Page Customization",
+      "saveAll": "Save All",
+      "saving": "Saving...",
       "section": "Section:",
       "sort": "Sort",
-      "dataJsonLabel": "Data (JSON) — contoh: hero { images:[] }",
-      "titleLabel": "Judul",
-      "bodyLabel": "Isi (Markdown)",
-      "saved": "Tersimpan",
-      "saveFailed": "Gagal simpan",
-      "addSection": "Tambah Section"
+      "dataJsonLabel": "Data (JSON) — e.g. hero { images:[] }",
+      "titleLabel": "Title",
+      "bodyLabel": "Body (Markdown)",
+      "saved": "Saved",
+      "saveFailed": "Save failed",
+      "addSection": "Add Section"
     },
     "orders": {
-      "title": "Orderan",
-      "saved": "Tersimpan",
+      "title": "Orders",
+      "saved": "Saved",
       "table": {
-        "date": "Tanggal",
-        "package": "Paket",
-        "name": "Nama",
-        "contact": "Kontak",
+        "date": "Date",
+        "package": "Package",
+        "name": "Name",
+        "contact": "Contact",
         "pax": "Pax",
         "status": "Status",
         "totalIDR": "Total (IDR)"
       },
       "status": {
         "pending": "Pending",
-        "success": "Sukses",
-        "cancelled": "Dibatalkan"
+        "success": "Success",
+        "cancelled": "Cancelled"
       },
       "actions": {
-        "edit": "Ubah",
-        "save": "Simpan",
-        "saving": "Menyimpan...",
-        "saved": "Tersimpan",
-        "updateStatus": "Perbarui Status",
+        "edit": "Edit",
+        "save": "Save",
+        "saving": "Saving...",
+        "saved": "Saved",
+        "updateStatus": "Update Status",
         "invoice": "Invoice",
-        "invoicePlaceholder": "Tempel nomor/tautan invoice di sini",
-        "viewBooking": "Lihat Booking"
+        "invoicePlaceholder": "Paste invoice number or link here",
+        "viewBooking": "View Booking"
       }
     },
     "reset": {
       "title": "Reset Password",
-      "subtitle": "Buat kata sandi baru yang kuat.",
-      "newPass": "Password Baru",
-      "confirmPass": "Konfirmasi Password",
-      "mismatch": "Password tidak cocok.",
-      "minChar": "Password min 6 karakter.",
-      "btn": "Perbarui Password",
-      "success": "Berhasil! Mengalihkan...",
-      "process": "Mengamankan akun..."
+      "subtitle": "Create a new strong password.",
+      "newPass": "New Password",
+      "confirmPass": "Confirm Password",
+      "mismatch": "Passwords do not match.",
+      "minChar": "Password must be at least 6 characters.",
+      "btn": "Update Password",
+      "success": "Success! Redirecting...",
+      "process": "Securing your account..."
     },
     "loginHero": {
       "title": "Manage Every Trip\nWith Confidence.",
@@ -443,8 +467,8 @@
     "toggleLayout": "Toggle layout",
     "clearSearch": "Clear search"
   },
-  "back": "Kembali",
-  "gallery": "Galeri",
+  "back": "Back",
+  "gallery": "Gallery",
   "packageDetail": {
     "countryFallback": "Indonesia",
     "from": "From",
@@ -455,6 +479,7 @@
     "travelerType": "Traveler Type",
     "totalPax": "Total Pax",
     "noPaymentToday": "No payment required today",
-    "seeAll": "See All"
+    "seeAll": "See All",
+    "bookingOptions": "Booking Options"
   }
 }

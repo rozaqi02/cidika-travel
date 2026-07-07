@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion"; // Hapus useScroll/useTransform jika tidak dipakai lagi
 import { Search, MapPin, ArrowRight } from "lucide-react";
 import BlurText from "../components/BlurText";
+import OptimizedImage from "../components/OptimizedImage";
+import { DestinationCardSkeleton } from "../components/Skeleton";
 import usePageSections from "../hooks/usePageSections";
 
 /* --- HELPER COMPONENTS (SpotlightOverlay dari FAQ) --- */
@@ -48,9 +50,11 @@ function DestinationCard({ item, index, onExplore, t }) {
       <div className="w-full lg:w-1/2 group">
         <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl aspect-[4/3] lg:aspect-[5/4]">
            <div className="absolute inset-0 bg-slate-900/20 group-hover:bg-slate-900/0 transition-colors duration-500 z-10" />
-           <img 
-             src={item.image} 
-             alt={item.title} 
+           <OptimizedImage
+             src={item.image}
+             alt={item.title}
+             preset="card"
+             width={960}
              className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-out"
              loading="lazy"
            />
@@ -63,8 +67,8 @@ function DestinationCard({ item, index, onExplore, t }) {
       </div>
 
       {/* Text Side */}
-      <div className="w-full lg:w-1/2 space-y-6 text-center lg:text-left">
-         <h2 className="text-4xl lg:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+      <div className={`w-full space-y-6 rounded-3xl p-6 text-center lg:w-1/2 lg:p-8 lg:text-left ${isEven ? "wash-sky" : "wash-warm"}`}>
+         <h2 className="section-title text-4xl leading-tight text-slate-900 dark:text-white lg:text-6xl">
             {item.title}
          </h2>
          <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -118,7 +122,7 @@ export default function Destinasi() {
     const dynamicSections = (sections || []).filter(s => !['hero', 'intro', 'cards'].includes(s.section_key));
     
     dynamicSections.forEach(s => {
-       const img = s.data?.images?.[0] || "https://images.unsplash.com/photo-1505993597083-3bd19fb75e57?auto=format&fit=crop&w=800&q=80";
+       const img = s.data?.images?.[0] || "/23.jpg";
        
        list.push({
           key: s.section_key,
@@ -159,14 +163,17 @@ export default function Destinasi() {
         transition={{ duration: 1, ease: "easeOut" }}
         className="relative h-[60vh] md:h-[70vh] overflow-hidden" // Removed rounded-b & shadow, added md:h
       >
-         <img
+         <OptimizedImage
            src={heroBg}
            alt="Hero"
+           preset="detail"
            className="absolute inset-0 w-full h-full object-cover"
            loading="eager"
+           fetchPriority="high"
          />
          {/* Updated Gradient to match FAQ */}
-         <div className="absolute inset-0 bg-gradient-to-b from-gray-900/70 via-gray-900/30 to-white/80 dark:to-gray-900/85" />
+         <div className="absolute inset-0 hero-tropical-overlay" />
+         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-transparent to-slate-50/90 dark:to-slate-950/90" />
          
          <SpotlightOverlay />
 
@@ -212,10 +219,11 @@ export default function Destinasi() {
       <section className="container py-32">
          <div className="max-w-6xl mx-auto">
             {loading ? (
-               <div className="text-center py-20">
-                  <div className="animate-spin w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full mx-auto mb-4" />
-                  <p className="text-slate-500">{t("misc.loading")}</p>
-               </div>
+               <>
+                 <DestinationCardSkeleton />
+                 <DestinationCardSkeleton reverse />
+                 <DestinationCardSkeleton />
+               </>
             ) : filteredList.length > 0 ? (
                filteredList.map((item, idx) => (
                   <DestinationCard 

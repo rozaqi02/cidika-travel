@@ -5,11 +5,19 @@ import { useTranslation } from "react-i18next";
 import {
   ResponsiveContainer,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  BarChart, Bar,
   PieChart, Pie, Cell,
   AreaChart, Area,
 } from "recharts";
-import { RotateCcw, DollarSign, Users, Calendar, TrendingUp, PieChart as PieIcon, BarChart as BarIcon } from "lucide-react";
+import {
+  RotateCcw,
+  Users,
+  Calendar,
+  TrendingUp,
+  PieChart as PieIcon,
+  Package,
+  Filter,
+  ChevronRight,
+} from "lucide-react";
 
 function fmtIDR(n) {
   try { return (n ?? 0).toLocaleString("id-ID"); } catch { return String(n ?? 0); }
@@ -34,10 +42,90 @@ function formatYYYYMMDD(d) {
 }
 
 
-const COLORS = ["#0ea5e9", "#a78bfa", "#f59e0b", "#10b981", "#ef4444", "#22d3ee"];
+const CHART_COLORS = ["#8b5cf6", "#22d3ee", "#f59e0b", "#34d399", "#fb7185", "#6366f1"];
+const CHART_GRID = "rgba(148, 163, 184, 0.15)";
+const CHART_AXIS = "#94a3b8";
 
 function Skeleton({ className = "" }) {
-  return <div className={`animate-pulse bg-slate-200 dark:bg-slate-700 rounded-xl ${className}`}></div>;
+  return <div className={`animate-pulse rounded-2xl bg-slate-200/80 dark:bg-white/10 ${className}`} />;
+}
+
+function AdminPanel({ title, subtitle, icon: Icon, children, className = "" }) {
+  return (
+    <section className={`admin-panel overflow-hidden ${className}`}>
+      <div className="flex items-start justify-between gap-3 border-b border-slate-200/70 px-5 py-4 dark:border-white/10">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            {Icon ? (
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-300">
+                <Icon size={16} />
+              </span>
+            ) : null}
+            <h2 className="truncate text-sm font-bold md:text-base">{title}</h2>
+          </div>
+          {subtitle ? <p className="mt-1 text-xs text-slate-500 dark:text-indigo-200/60">{subtitle}</p> : null}
+        </div>
+      </div>
+      <div className="p-4 md:p-5">{children}</div>
+    </section>
+  );
+}
+
+function MetricPill({ label, value, accent, loading }) {
+  if (loading) return <Skeleton className="h-20 min-w-[140px]" />;
+  return (
+    <div className="admin-metric-pill min-w-[140px] flex-shrink-0">
+      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500 dark:text-indigo-200/60">{label}</p>
+      <p className={`mt-1 text-xl font-black ${accent}`}>{value}</p>
+    </div>
+  );
+}
+
+function RankedPackage({ name, value, max, isRevenue }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2 text-sm">
+        <span className="truncate font-semibold">{name}</span>
+        <span className="flex-shrink-0 font-bold text-violet-600 dark:text-violet-300">
+          {isRevenue ? `Rp ${fmtIDR(value)}` : value}
+        </span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-slate-200/80 dark:bg-white/10">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status, label }) {
+  const normalized = String(status || "pending").toLowerCase();
+  const styles = {
+    confirmed: "bg-emerald-500/15 text-emerald-700 ring-emerald-500/20 dark:text-emerald-300",
+    pending: "bg-amber-500/15 text-amber-700 ring-amber-500/20 dark:text-amber-300",
+    cancelled: "bg-rose-500/15 text-rose-700 ring-rose-500/20 dark:text-rose-300",
+  };
+
+  return (
+    <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ring-1 ring-inset ${styles[normalized] || styles.pending}`}>
+      {label}
+    </span>
+  );
+}
+
+function FilterSelect({ value, onChange, children, className = "" }) {
+  return (
+    <select
+      value={value}
+      onChange={onChange}
+      className={`admin-select ${className}`}
+    >
+      {children}
+    </select>
+  );
 }
 
 export default function Dashboard() {
@@ -78,16 +166,8 @@ export default function Dashboard() {
   const [topPackages, setTopPackages] = useState([]);         // daftar paket top
   const [recent, setRecent] = useState([]);                   // tabel terbaru (ikut filter statusScope)
 
-  const languageCode = (i18n.language || "id").slice(0, 2);
-  const dateLocale = useMemo(
-    () =>
-      ({
-        id: "id-ID",
-        en: "en-US",
-        ja: "ja-JP",
-      })[languageCode] || "en-US",
-    [languageCode]
-  );
+  const languageCode = "id";
+  const dateLocale = "id-ID";
 
   const labels = useMemo(
     () => ({
@@ -386,122 +466,163 @@ export default function Dashboard() {
     setSortPkgDir("desc");
   };
 
+  const topPackagesMax = useMemo(
+    () => topPackages.reduce((max, item) => Math.max(max, item.value || 0), 0),
+    [topPackages]
+  );
+
+  const tooltipStyle = {
+    borderRadius: 14,
+    border: "1px solid rgba(148,163,184,0.2)",
+    background: "rgba(15,23,42,0.92)",
+    color: "#e2e8f0",
+  };
+
   return (
-    <div className="container mt-3 space-y-4">
-      <div>
-        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 backdrop-blur-md px-3 sm:px-4 py-2 glass shadow-smooth">
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl sm:text-2xl font-bold">{t("admin.dashboard.title", { defaultValue: "Dashboard" })}</h1>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  className="btn btn-outline !py-1.5 !px-3"
-                  onClick={() => window.location.reload()}
-                  title={labels.refresh}
-                >
-                  <RotateCcw size={16} />
-                </button>
-              </div>
+    <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+      <aside className="admin-filter-rail w-full flex-shrink-0 xl:sticky xl:top-24 xl:w-72">
+        <div className="admin-panel p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-300">
+              <Filter size={16} />
+            </span>
+            <div>
+              <h2 className="text-sm font-bold">Panel Filter</h2>
+              <p className="text-xs text-slate-500 dark:text-indigo-200/60">Atur rentang & tampilan data</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-xs font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-indigo-200/60">Status</label>
+            <FilterSelect value={statusScope} onChange={(e) => setStatusScope(e.target.value)}>
+              <option value="confirmed">{labels.confirmedOnly}</option>
+              <option value="pending">{labels.pendingOnly}</option>
+              <option value="all">{labels.allStatus}</option>
+            </FilterSelect>
+
+            <label className="block text-xs font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-indigo-200/60">Audiens</label>
+            <FilterSelect value={audience} onChange={(e) => setAudience(e.target.value)}>
+              <option value="">{labels.allAudience}</option>
+              <option value="domestic">{labels.audienceDomestic}</option>
+              <option value="foreign">{labels.audienceForeign}</option>
+            </FilterSelect>
+
+            <label className="block text-xs font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-indigo-200/60">Periode</label>
+            <FilterSelect value={String(daysPreset)} onChange={(e) => setDaysPreset(Number(e.target.value))}>
+              <option value="7">{dayLabel(7)}</option>
+              <option value="30">{dayLabel(30)}</option>
+              <option value="90">{dayLabel(90)}</option>
+              <option value="0">{labels.customDate}</option>
+            </FilterSelect>
+
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="date"
+                disabled={daysPreset !== 0}
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="admin-input disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <input
+                type="date"
+                disabled={daysPreset !== 0}
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="admin-input disabled:cursor-not-allowed disabled:opacity-50"
+              />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-6 gap-2">
-              <select className="px-3 py-2 rounded-2xl border" value={statusScope} onChange={(e) => setStatusScope(e.target.value)}>
-                <option value="confirmed">{labels.confirmedOnly}</option>
-                <option value="pending">{labels.pendingOnly}</option>
-                <option value="all">{labels.allStatus}</option>
-              </select>
+            <label className="admin-toggle">
+              <input
+                type="checkbox"
+                checked={includePendingOverlay}
+                onChange={(e) => setIncludePendingOverlay(e.target.checked)}
+              />
+              <span>{labels.showPendingOverlay}</span>
+            </label>
 
-              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl border">
-                <input type="checkbox" checked={includePendingOverlay} onChange={(e) => setIncludePendingOverlay(e.target.checked)} />
-                <span className="text-sm">{labels.showPendingOverlay}</span>
-              </label>
-
-              <select className="px-3 py-2 rounded-2xl border" value={audience} onChange={(e) => setAudience(e.target.value)}>
-                <option value="">{labels.allAudience}</option>
-                <option value="domestic">{labels.audienceDomestic}</option>
-                <option value="foreign">{labels.audienceForeign}</option>
-              </select>
-
-              <select className="px-3 py-2 rounded-2xl border" value={String(daysPreset)} onChange={(e) => setDaysPreset(Number(e.target.value))}>
-                <option value="7">{dayLabel(7)}</option>
-                <option value="30">{dayLabel(30)}</option>
-                <option value="90">{dayLabel(90)}</option>
-                <option value="0">{labels.customDate}</option>
-              </select>
-              
-              {/* PERBAIKAN: Gunakan `daysPreset === 0` untuk logika disabled */}
-              <input type="date" disabled={daysPreset !== 0} value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="px-3 py-2 rounded-2xl border disabled:opacity-50 disabled:cursor-not-allowed" />
-              <input type="date" disabled={daysPreset !== 0} value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="px-3 py-2 rounded-2xl border disabled:opacity-50 disabled:cursor-not-allowed" />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm">
-                <button className="btn btn-outline !py-1 !px-3" onClick={resetFilters}>
-                  {labels.reset}
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500">{labels.topSort}:</span>
-                <select className="px-2 py-1.5 rounded-xl border" value={sortPkgBy} onChange={(e) => setSortPkgBy(e.target.value)}>
+            <div className="border-t border-slate-200/70 pt-3 dark:border-white/10">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500 dark:text-indigo-200/60">{labels.topSort}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <FilterSelect value={sortPkgBy} onChange={(e) => setSortPkgBy(e.target.value)}>
                   <option value="bookings">{labels.sortBookings}</option>
                   <option value="revenue">{labels.sortRevenue}</option>
-                </select>
-                <select className="px-2 py-1.5 rounded-xl border" value={sortPkgDir} onChange={(e) => setSortPkgDir(e.target.value)}>
+                </FilterSelect>
+                <FilterSelect value={sortPkgDir} onChange={(e) => setSortPkgDir(e.target.value)}>
                   <option value="desc">{labels.sortDesc}</option>
                   <option value="asc">{labels.sortAsc}</option>
-                </select>
+                </FilterSelect>
               </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button type="button" className="admin-btn-secondary flex-1" onClick={resetFilters}>
+                {labels.reset}
+              </button>
+              <button
+                type="button"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-violet-600 px-3 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-600/25 transition hover:bg-violet-500"
+                onClick={() => window.location.reload()}
+              >
+                <RotateCcw size={15} />
+                {labels.refresh}
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </aside>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {loading ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />) : (
-          <>
-            <div className="card p-4 flex flex-col justify-between">
-              <div className="flex items-center gap-2 text-slate-500">
-                <TrendingUp size={20} /> {labels.confirmedBookings}
-              </div>
-              <div className="text-3xl font-bold">{stats.bookingsConfirm}</div>
+      <div className="min-w-0 flex-1 space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight md:text-3xl">Ringkasan Operasional</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-indigo-200/60">
+              Periode aktif: <span className="font-semibold text-slate-700 dark:text-white">{dayLabel(daysWindow)}</span>
+            </p>
+          </div>
+          <div className="admin-panel inline-flex items-center gap-3 self-start px-4 py-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Konversi</p>
+              <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{loading ? "—" : `${stats.conversionRate}%`}</p>
             </div>
-            <div className="card p-4 flex flex-col justify-between">
-              <div className="flex items-center gap-2 text-slate-500">
-                <DollarSign size={20} /> {labels.confirmedRevenue}
-              </div>
-              <div className="text-3xl font-bold">Rp {fmtIDR(stats.revenueConfirm)}</div>
+            <div className="h-10 w-px bg-slate-200 dark:bg-white/10" />
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Pending</p>
+              <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{loading ? "—" : stats.bookingsPending}</p>
             </div>
-            <div className="card p-4 flex flex-col justify-between">
-              <div className="flex items-center gap-2 text-slate-500">
-                <Users size={20} /> {labels.avgRevenue}
-              </div>
-              <div className="text-3xl font-bold">Rp {fmtIDR(stats.avgRevenue)}</div>
-            </div>
-            <div className="card p-4 flex flex-col justify-between">
-              <div className="flex items-center gap-2 text-slate-500">
-                <PieIcon size={20} /> {labels.conversionRate}
-              </div>
-              <div className="text-3xl font-bold">{stats.conversionRate}%</div>
-            </div>
-          </>
-        )}
-      </div>
+          </div>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="card p-4">
-          <h2 className="font-semibold mb-2 flex items-center gap-2">
-            <BarIcon size={18} /> {labels.dailyTrends}
-          </h2>
-          {loading ? <Skeleton className="h-64" /> : (
-            <ResponsiveContainer width="100%" height={256}>
+        <div className="admin-panel overflow-hidden">
+          <div className="flex gap-3 overflow-x-auto p-4">
+            <MetricPill label={labels.confirmedBookings} value={stats.bookingsConfirm} accent="text-violet-600 dark:text-violet-300" loading={loading} />
+            <MetricPill label={labels.confirmedRevenue} value={`Rp ${fmtIDR(stats.revenueConfirm)}`} accent="text-cyan-600 dark:text-cyan-300" loading={loading} />
+            <MetricPill label={labels.avgRevenue} value={`Rp ${fmtIDR(stats.avgRevenue)}`} accent="text-amber-600 dark:text-amber-300" loading={loading} />
+            <MetricPill label="Paket Aktif" value={stats.packages} accent="text-indigo-600 dark:text-indigo-300" loading={loading} />
+            <MetricPill label="Section" value={stats.sections} accent="text-slate-700 dark:text-slate-200" loading={loading} />
+          </div>
+        </div>
+
+        <AdminPanel title={labels.dailyTrends} subtitle="Grafik order & pendapatan harian" icon={TrendingUp} className="xl:col-span-2">
+          {loading ? <Skeleton className="h-80" /> : (
+            <ResponsiveContainer width="100%" height={320}>
               <AreaChart data={seriesDaily}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
+                <defs>
+                  <linearGradient id="bookingFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#22d3ee" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="#22d3ee" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke={CHART_GRID} strokeDasharray="4 4" />
+                <XAxis dataKey="label" tick={{ fill: CHART_AXIS, fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="left" tick={{ fill: CHART_AXIS, fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fill: CHART_AXIS, fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip
+                  contentStyle={tooltipStyle}
                   formatter={(v, n) =>
                     n === "revenue"
                       ? [`Rp ${fmtIDR(v)}`, labels.revenueMetric]
@@ -509,112 +630,109 @@ export default function Dashboard() {
                   }
                 />
                 <Legend />
-                <Area yAxisId="left" type="monotone" dataKey="count" name={labels.confirmedBookingMetric} stroke="#0ea5e9" fill="#0ea5e9" fillOpacity={0.3} />
-                <Area yAxisId="right" type="monotone" dataKey="revenue" name={labels.confirmedRevenueMetric} stroke="#a78bfa" fill="#a78bfa" fillOpacity={0.3} />
-                {includePendingOverlay && (
-                  <Area yAxisId="left" type="monotone" data={seriesDailyPending} dataKey="count" name={labels.pendingMetric} stroke="#ef4444" fill="#ef4444" fillOpacity={0.1} strokeDasharray="4 4" />
-                )}
+                <Area yAxisId="left" type="monotone" dataKey="count" name={labels.confirmedBookingMetric} stroke="#8b5cf6" fill="url(#bookingFill)" strokeWidth={2.5} />
+                <Area yAxisId="right" type="monotone" dataKey="revenue" name={labels.confirmedRevenueMetric} stroke="#22d3ee" fill="url(#revenueFill)" strokeWidth={2.5} />
+                {includePendingOverlay ? (
+                  <Area
+                    yAxisId="left"
+                    type="monotone"
+                    data={seriesDailyPending}
+                    dataKey="count"
+                    name={labels.pendingMetric}
+                    stroke="#f59e0b"
+                    fill="#f59e0b"
+                    fillOpacity={0.08}
+                    strokeDasharray="5 5"
+                    strokeWidth={2}
+                  />
+                ) : null}
               </AreaChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </AdminPanel>
 
-        <div className="card p-4">
-          <h2 className="font-semibold mb-2 flex items-center gap-2">
-            <PieIcon size={18} /> {labels.statusDistribution}
-          </h2>
-          {loading ? <Skeleton className="h-64" /> : (
-            <ResponsiveContainer width="100%" height={256}>
-              <PieChart>
-                <Pie data={statusCounts} dataKey="count" nameKey="label" innerRadius={60} outerRadius={100} paddingAngle={2}>
-                  {statusCounts.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        <div className="card p-4">
-          <h2 className="font-semibold mb-2 flex items-center gap-2">
-            <Users size={18} /> {labels.audienceDistribution}
-          </h2>
-          {loading ? <Skeleton className="h-64" /> : (
-            <ResponsiveContainer width="100%" height={256}>
-              <PieChart>
-                <Pie data={audienceDist} dataKey="count" nameKey="label" innerRadius={60} outerRadius={100} paddingAngle={2}>
-                  {audienceDist.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
-        <div className="card p-4">
-          <h2 className="font-semibold mb-2 flex items-center gap-2">
-            <TrendingUp size={18} /> {labels.topPackages}
-          </h2>
-          {loading ? <Skeleton className="h-64" /> : (
-            <ResponsiveContainer width="100%" height={256}>
-              <BarChart data={topPackages} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" allowDecimals={false} />
-                <YAxis type="category" dataKey="name" width={120} />
-                <Tooltip formatter={(v) => sortPkgBy === "revenue" ? [`Rp ${fmtIDR(v)}`, labels.revenueMetric] : [v, labels.bookingsMetric]} />
-                <Bar dataKey="value" name={sortPkgBy === "revenue" ? labels.revenueMetric : labels.bookingsMetric} fill="#10b981" radius={[4, 4, 4, 4]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
-
-      <div className="card p-4">
-        <h2 className="font-semibold mb-2 flex items-center gap-2">
-          <Calendar size={18} /> {labels.recentBookings}
-        </h2>
-        {loading ? <Skeleton className="h-48" /> : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-100 dark:bg-slate-800 text-left">
-                  <th className="p-3">{labels.date}</th>
-                  <th className="p-3">{labels.customer}</th>
-                  <th className="p-3">{labels.package}</th>
-                  <th className="p-3">{labels.audience}</th>
-                  <th className="p-3">{labels.total}</th>
-                  <th className="p-3">{labels.status}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map(r => (
-                  <tr key={r.id} className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    <td className="p-3">{new Date(r.created_at).toLocaleDateString(dateLocale)}</td>
-                    <td className="p-3">{r.customer_name}</td>
-                    <td className="p-3">{r.package_id.slice(0, 8)}...</td>
-                    <td className="p-3 capitalize">{formatAudienceLabel(r.audience)}</td>
-                    <td className="p-3">Rp {fmtIDR(r.total_idr)}</td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${r.status === "confirmed" ? "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200" :
-                        r.status === "pending" ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200" :
-                          "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200"
-                        }`}>{formatStatusLabel(r.status)}</span>
-                    </td>
-                  </tr>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <AdminPanel title={labels.recentBookings} icon={Calendar} className="lg:col-span-7">
+            {loading ? <Skeleton className="h-80" /> : recent.length === 0 ? (
+              <p className="py-12 text-center text-sm text-slate-500 dark:text-indigo-200/60">{labels.noRecentBookings}</p>
+            ) : (
+              <div className="space-y-3">
+                {recent.map((row) => (
+                  <article
+                    key={row.id}
+                    className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 transition hover:border-violet-300/60 dark:border-white/10 dark:bg-white/5 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-bold">{row.customer_name}</p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-indigo-200/60">
+                        {new Date(row.created_at).toLocaleDateString(dateLocale)} · {formatAudienceLabel(row.audience)} · {row.package_id.slice(0, 8)}...
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="font-black text-violet-700 dark:text-violet-300">Rp {fmtIDR(row.total_idr)}</p>
+                      <StatusBadge status={row.status} label={formatStatusLabel(row.status)} />
+                      <ChevronRight size={16} className="hidden text-slate-400 sm:block" />
+                    </div>
+                  </article>
                 ))}
-                {recent.length === 0 && (
-                  <tr>
-                    <td className="p-3 text-center text-slate-500" colSpan={6}>
-                      {labels.noRecentBookings}
-                    </td>
-                  </tr>
+              </div>
+            )}
+          </AdminPanel>
+
+          <div className="space-y-4 lg:col-span-5">
+            <AdminPanel title={labels.topPackages} subtitle="Peringkat berdasarkan filter aktif" icon={Package}>
+              {loading ? <Skeleton className="h-48" /> : topPackages.length === 0 ? (
+                <p className="py-8 text-center text-sm text-slate-500">Belum ada data paket</p>
+              ) : (
+                <div className="space-y-4">
+                  {topPackages.map((item, index) => (
+                    <div key={`${item.name}-${index}`} className="flex gap-3">
+                      <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-sm font-black text-violet-600 dark:text-violet-300">
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <RankedPackage
+                          name={item.name}
+                          value={item.value}
+                          max={topPackagesMax}
+                          isRevenue={sortPkgBy === "revenue"}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </AdminPanel>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              <AdminPanel title={labels.statusDistribution} icon={PieIcon}>
+                {loading ? <Skeleton className="h-52" /> : (
+                  <ResponsiveContainer width="100%" height={208}>
+                    <PieChart>
+                      <Pie data={statusCounts} dataKey="count" nameKey="label" innerRadius={48} outerRadius={78} paddingAngle={3}>
+                        {statusCounts.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip contentStyle={tooltipStyle} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 )}
-              </tbody>
-            </table>
+              </AdminPanel>
+
+              <AdminPanel title={labels.audienceDistribution} icon={Users}>
+                {loading ? <Skeleton className="h-52" /> : (
+                  <ResponsiveContainer width="100%" height={208}>
+                    <PieChart>
+                      <Pie data={audienceDist} dataKey="count" nameKey="label" innerRadius={48} outerRadius={78} paddingAngle={3}>
+                        {audienceDist.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip contentStyle={tooltipStyle} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </AdminPanel>
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
